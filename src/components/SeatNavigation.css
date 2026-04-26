@@ -1,0 +1,136 @@
+.seat-navigation-layer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 5; /* Above mask, below guides */
+  pointer-events: none;
+  overflow: hidden;
+}
+
+/* 
+   THE CORE LOGIC: 
+   This div must behave exactly like 'object-fit: cover' 
+   relative to the 8360/4705 image aspect ratio.
+*/
+.coordinate-match-system {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  
+  aspect-ratio: 8360 / 4705; 
+  min-width: 100%;
+  min-height: 100%;
+  
+  pointer-events: none;
+}
+
+/* The box representing the digital screen on the seat */
+.seat-screen-container {
+  position: absolute;
+  pointer-events: auto;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Calibration Helper (Hidden when done) */
+.calibration-border {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border: 2px dashed rgba(255, 0, 255, 0); /* Fully transparent */
+  pointer-events: none;
+  display: none; 
+}
+
+/* Seat Screen Digital UI */
+.seat-screen-ui {
+  width: 100%;
+  height: 100%;
+  background: transparent; /* Pure transparency as requested */
+  backdrop-filter: blur(8px); /* Optional: keep subtle blur for depth */
+  border: none; /* Removed border lines */
+  border-radius: 24px; /* Soft rounded corners */
+  display: flex;
+  flex-direction: column;
+  padding: 4% 6%;
+  box-sizing: border-box;
+  color: #fff;
+  font-family: 'Inter', sans-serif;
+  overflow: hidden;
+}
+
+.seat-screen-ui.image-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5%;
+}
+
+.screen-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.5vw;
+  width: 100%;
+}
+
+.screen-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  cursor: pointer;
+  filter: drop-shadow(0 0 5px rgba(0, 242, 255, 0));
+}
+
+.screen-btn:hover {
+  transform: scale(1.1);
+  filter: drop-shadow(0 0 15px rgba(0, 242, 255, 0.4)) brightness(1.2);
+}
+
+.screen-btn img {
+  width: 100%;
+  height: auto;
+  max-height: 8vw;
+  object-fit: contain;
+}
+
+/* Specific layout for 3 items in 2 columns: 
+   Make the 3rd one span or just align centered */
+.screen-btn:nth-child(3) {
+  grid-column: span 2;
+  justify-self: center;
+  width: 50%; /* Adjust width for the lone bottom button */
+}
+
+.screen-tab:hover {
+  color: #fff;
+}
+
+.screen-main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  opacity: 0.8;
+}
+
+.screen-main-content h4 {
+  margin: 0;
+  font-size: 2vw;
+  font-family: 'Playfair Display', serif;
+  font-weight: 700;
+}
+
+.screen-main-content p {
+  font-size: 0.8vw;
+  opacity: 0.7;
+  max-width: 80%;
+}

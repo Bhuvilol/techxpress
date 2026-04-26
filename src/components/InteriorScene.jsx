@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import gsap from "gsap";
 import "./InteriorScene.css";
 import StationMaster from "./StationMaster";
+import SeatNavigation from "./SeatNavigation";
 
 const ASSETS = {
   video: "/assets/train_bg.mp4",
@@ -21,6 +22,9 @@ const INTERIOR_DIALOGUE = [
   },
   {
     text: "We hope that you're enjoying your journey so far\n Our attendees will be joining you shortly \n",
+  },
+  {
+    text: "If you want to visit any other compartment, you can access the screen infront of you for help"
   }
 ];
 
@@ -30,7 +34,7 @@ const VENDOR_DATA = [
   { image: ASSETS.vendor3, text: "We prioritize security above all else.\nYour data stays protected at every turn." },
   { image: ASSETS.vendor4, text: "Collaboration made simple.\nWork together in real-time with our native tools." },
   { image: ASSETS.vendor6, text: "Customization is key.\nTailor your experience to match your unique brand." },
-  { image: ASSETS.vendor6, text: "If you want to visit any other compartment, you can access the screen infront of you for help" }
+  { image: ASSETS.vendor6, text: "Ready to explore? Feel free to browse our main features on the display." }
 ];
 
 export default function InteriorScene() {
@@ -98,7 +102,7 @@ export default function InteriorScene() {
       {/* 3. Initial Reveal Overlay (Blackout) */}
       <div className="interior-reveal-overlay" ref={revealRef} />
 
-      {/* 4. Actor 1: Station Master Guide (Bottom-Left) */}
+      {/* 4. Station Master Guide (Rajesh inside the train) */}
       <StationMaster
         isVisible={activeStage === 1}
         dialogues={INTERIOR_DIALOGUE}
@@ -115,6 +119,9 @@ export default function InteriorScene() {
         variant="right"
         onComplete={() => setActiveStage(3)}
       />
+
+      {/* 6. Seat Screen Navigation Layout */}
+      <SeatNavigation isVisible={activeStage >= 1} onNavigate={onNavigate} />
 
       {/* Hidden pre-loaders to ensure assets are ready */}
       <div style={{ display: "none" }}>

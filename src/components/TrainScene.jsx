@@ -300,6 +300,11 @@ export default function TrainScene({ onComplete }) {
             />
           </div>
 
+          {/* 4. Layer 3: Interior Perspective (Foreground) */}
+          <div className={`scene-layer interior-pov ${activeScene === 'interior' ? 'active' : ''}`}>
+             <InteriorScene onNavigate={onNavigate} />
+          </div>
+
           {/* z-3: Train (doors open) */}
           <div className="scene-layer layer-train layer-train-open">
             <img
