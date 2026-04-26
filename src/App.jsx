@@ -1,12 +1,15 @@
 import { useEffect, useState } from 'react';
+import { Routes, Route, useNavigate } from 'react-router-dom';
 import Lenis from 'lenis';
 import TrainScene from './components/TrainScene';
+import InteriorScene from './components/InteriorScene';
 import AboutPage from './components/content/AboutPage';
 import RegisterPage from './components/content/RegisterPage';
 import AskRajesh from './components/content/AskRajesh';
 
 export default function App() {
-  const [currentPage, setCurrentPage] = useState('journey');
+  const navigate = useNavigate();
+  const [journeyStage, setJourneyStage] = useState('station');
 
   useEffect(() => {
     // Initialize Lenis for smooth momentum scrolling
@@ -19,27 +22,23 @@ export default function App() {
     };
   }, []);
 
-  const handleNavigate = (page) => {
-    setCurrentPage(page);
-  };
-
   return (
     <div className="App">
-      {currentPage === 'journey' && (
-        <TrainScene onNavigate={handleNavigate} />
-      )}
+      <Routes>
+        {/* The Cinematic Journey (Root) */}
+        <Route path="/" element={
+          journeyStage === 'station' ? (
+            <TrainScene onComplete={() => setJourneyStage('interior')} />
+          ) : (
+            <InteriorScene onNavigate={(path) => navigate(`/${path}`)} />
+          )
+        } />
 
-      {currentPage === 'about' && (
-        <AboutPage onBack={() => setCurrentPage('journey')} />
-      )}
-
-      {currentPage === 'register' && (
-        <RegisterPage onBack={() => setCurrentPage('journey')} />
-      )}
-
-      {currentPage === 'ask' && (
-        <AskRajesh onBack={() => setCurrentPage('journey')} />
-      )}
+        {/* Destination Content Pages */}
+        <Route path="/about" element={<AboutPage onBack={() => navigate('/')} />} />
+        <Route path="/register" element={<RegisterPage onBack={() => navigate('/')} />} />
+        <Route path="/ask" element={<AskRajesh onBack={() => navigate('/')} />} />
+      </Routes>
     </div>
   );
 }

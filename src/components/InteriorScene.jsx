@@ -37,7 +37,7 @@ const VENDOR_DATA = [
   { image: ASSETS.vendor6, text: "Ready to explore? Feel free to browse our main features on the display." }
 ];
 
-export default function InteriorScene() {
+export default function InteriorScene({ onNavigate }) {
   const containerRef = useRef(null);
   const videoRef = useRef(null);
   const revealRef = useRef(null);

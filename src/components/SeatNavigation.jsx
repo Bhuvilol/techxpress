@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import './SeatNavigation.css';
+import { Link } from 'react-router-dom';
 
 /**
  * SeatNavigation Component
@@ -7,7 +8,7 @@ import './SeatNavigation.css';
  *
  * @param {boolean} isVisible - Whether the screen UI is active
  */
-export default function SeatNavigation({ isVisible }) {
+export default function SeatNavigation({ isVisible, onNavigate }) {
   // Calibration Coordinates (Trial & Error starting points)
   // These are % relative to the 8360x4705 image
   const [coords, setCoords] = useState({
@@ -18,9 +19,9 @@ export default function SeatNavigation({ isVisible }) {
   });
 
   const navButtons = [
-    { id: 'about', img: '/assets/about_wbg.png', path: '#about' },
-    { id: 'register', img: '/assets/register_wbg.png', path: '#register' },
-    { id: 'ask', img: '/assets/ask_rajesh_wbg.png', path: '#ask' }
+    { id: 'about', img: '/assets/about_wbg.png', path: '/about' },
+    { id: 'register', img: '/assets/register_wbg.png', path: '/register' },
+    { id: 'ask', img: '/assets/ask_rajesh_wbg.png', path: '/ask' }
   ];
 
   if (!isVisible) return null;
@@ -28,7 +29,7 @@ export default function SeatNavigation({ isVisible }) {
   return (
     <div className="seat-navigation-layer">
       <div className="coordinate-match-system">
-        <div 
+        <div
           className="seat-screen-container"
           style={{
             top: `${coords.top}%`,
@@ -41,17 +42,13 @@ export default function SeatNavigation({ isVisible }) {
           <div className="seat-screen-ui image-nav">
             <div className="screen-grid">
               {navButtons.map(btn => (
-                <a 
-                  key={btn.id} 
-                  href={btn.path} 
+                <Link
+                  key={btn.id}
+                  to={btn.path}
                   className="screen-btn"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    onNavigate(btn.id);
-                  }}
                 >
                   <img src={btn.img} alt={btn.id} />
-                </a>
+                </Link>
               ))}
             </div>
           </div>
