@@ -30,13 +30,15 @@ const ZOOM_SCALE_FACTOR = 8; // Global scale reached on scroll (boarding)
    Asset paths (relative to public/)
    ───────────────────────────────────────────── */
 const ASSETS = {
-  background: '/assets/background1.png',
+  background: '/assets/background2.png',
   tracks: '/assets/track_wbg.png',
   trainClosed: '/assets/train_long_closed_wbg.png',
   trainOpen: '/assets/train_long_open_wbg.png',
   platform: '/assets/platform_wbg.png',
   ttMaster: '/assets/TT_master_wbg.png',
   cloud: '/assets/cloud_wbg.png',
+  interiorVideo: '/assets/train_bg.mp4',
+  interiorMask: '/assets/train_interior_pov_masked1.png',
 };
 
 const STATION_MASTER_DIALOGUE = [
@@ -50,7 +52,7 @@ const STATION_MASTER_DIALOGUE = [
    ───────────────────────────────────────────── */
 import StationMaster from './StationMaster';
 
-export default function TrainScene() {
+export default function TrainScene({ onComplete }) {
   const spacerRef = useRef(null);
   const sceneRef = useRef(null);
   const masterContainerRef = useRef(null); // Container for global zoom
@@ -75,7 +77,7 @@ export default function TrainScene() {
   /* loading gate */
   const [loaded, setLoaded] = useState(false);
   const loadCount = useRef(0);
-  const TOTAL_IMAGES = 8; // BG-sharp, BG-blur, tracks, train-closed, train-open, platform, ttMaster, cloud
+  const TOTAL_IMAGES = 10; // BG-sharp, BG-blur, tracks, train-closed, train-open, platform, ttMaster, cloud + interiorVideo, interiorMask
 
   const handleImgReady = useCallback(() => {
     loadCount.current += 1;
@@ -218,6 +220,14 @@ export default function TrainScene() {
       gsap.set(marker, { left: pivotX, top: pivotY });
     }
 
+    // ─── Phase 4: Transition to Interior ───
+    if (onComplete) {
+      scrollTl.eventCallback("onComplete", () => {
+        // Short delay for cinematic feel (snappier transition)
+        setTimeout(onComplete, 200);
+      });
+    }
+
     // Store for cleanup
     tlRef.current = { trainEntry, scrollTl };
     stRef.current = st;
@@ -229,7 +239,7 @@ export default function TrainScene() {
         tlRef.current.scrollTl?.kill();
       }
     };
-  }, [loaded]); // Re-run when loaded or window size fluctuates
+  }, [loaded, onComplete]); // Re-run when loaded or window size fluctuates
 
   return (
     <>
@@ -325,10 +335,12 @@ export default function TrainScene() {
           onComplete={() => setDialogueStep(2)}
         />
 
-        {/* Hidden pre-loaders to prevent deadlock */}
+        {/* Hidden pre-loaders to prevent deadlock & pre-load Phase 3 assets */}
         <div style={{ display: 'none' }}>
            <img src={ASSETS.ttMaster} onLoad={handleImgReady} alt="" />
            <img src={ASSETS.cloud} onLoad={handleImgReady} alt="" />
+           <img src={ASSETS.interiorMask} onLoad={handleImgReady} alt="" />
+           <video src={ASSETS.interiorVideo} onCanPlayThrough={handleImgReady} muted />
         </div>
       </div>
 
