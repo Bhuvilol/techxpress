@@ -34,6 +34,7 @@ export default function StationMaster({
   }, [isVisible]);
 
   if (!dialogues || dialogues.length === 0) return null;
+  if (!isVisible && index === 0) return null; // Don't render until actually triggered
 
   const currentDialogue = dialogues[index];
   const currentText = currentDialogue.text;
@@ -43,7 +44,7 @@ export default function StationMaster({
 
   return (
     <div
-      className={`guide-overlay ${isVisible ? "visible" : ""} ${!isVisible && index > 0 ? "exit" : ""} variant-${variant}`}
+      className={`guide-overlay ${isVisible ? "visible" : ""} ${!isVisible ? "exit" : ""} variant-${variant}`}
       onClick={isVisible ? handleNext : undefined}
     >
       <div className="guide-character" key={activeImg}>

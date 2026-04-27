@@ -46,6 +46,8 @@ export default function SeatNavigation({ isVisible, onNavigate }) {
                   key={btn.id}
                   to={btn.path}
                   className="screen-btn"
+                  onClick={() => console.log(`[SeatNavigation] Link clicked: ${btn.id}`)}
+                  onMouseEnter={() => console.log(`[SeatNavigation] Hovering over: ${btn.id}`)}
                 >
                   <img src={btn.img} alt={btn.id} />
                 </Link>

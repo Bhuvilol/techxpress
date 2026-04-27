@@ -4,7 +4,7 @@
   left: 0;
   width: 100vw;
   height: 100vh;
-  z-index: 5; /* Above mask, below guides */
+  z-index: 100; /* Above mask, but below the character guides' foreground presence */
   pointer-events: none;
   overflow: hidden;
 }
