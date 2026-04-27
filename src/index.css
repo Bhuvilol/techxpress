@@ -50,16 +50,22 @@ img {
   width: 100vw;
   height: 100vh;
   z-index: 10000;
-  cursor: pointer;
-  background: rgba(0, 0, 0, 0.2);
-  transition: opacity 0.5s ease;
-  opacity: 0;
+  cursor: default;
+  background: rgba(0, 0, 0, 0);
   pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.5s ease;
 }
 
 .guide-overlay.visible {
   opacity: 1;
+}
+
+/* Only the character and cloud can catch clicks to advance dialogue when VISIBLE */
+.guide-overlay.visible .guide-character, 
+.guide-overlay.visible .guide-cloud {
   pointer-events: auto;
+  cursor: pointer;
 }
 
 .guide-overlay.exit {
@@ -73,13 +79,12 @@ img {
   left: 3vw;
   width: auto;
   height: var(--master-height);
-  animation: slideInLeft 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  opacity: 0; /* Hidden by default */
 }
 
-.guide-overlay.variant-right .guide-character {
-  left: auto;
-  right: 3vw;
-  animation: slideInRight 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+.guide-overlay.visible .guide-character {
+  opacity: 1;
+  animation: slideInLeft 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
 
 .guide-character img {
@@ -93,7 +98,21 @@ img {
   bottom: var(--cloud-offset-y);
   left: var(--cloud-offset-x);
   width: var(--cloud-width);
+  opacity: 0; /* Hidden by default */
+}
+
+.guide-overlay.visible .guide-cloud {
+  opacity: 1;
   animation: popInCloud 0.6s 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+.guide-overlay.variant-right .guide-character {
+  left: auto;
+  right: 3vw;
+}
+
+.guide-overlay.variant-right.visible .guide-character {
+  animation: slideInRight 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
 
 .guide-overlay.variant-right .guide-cloud {
