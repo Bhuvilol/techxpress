@@ -9,7 +9,8 @@
   height: 100vh;
   overflow: hidden;
   z-index: 1;
-  pointer-events: none; /* let scroll events pass through */
+  pointer-events: none;
+  /* let scroll events pass through */
 }
 
 /* ─── Scroll spacer — creates scrollable height ─── */
@@ -59,7 +60,8 @@
 
 .layer-background-blur img {
   filter: blur(50px);
-  transform: scale(1.15); /* Overscale slightly to hide blurred edges */
+  transform: scale(1.15);
+  /* Overscale slightly to hide blurred edges */
 }
 
 .layer-background-sharp {
@@ -79,7 +81,7 @@
   width: 120vw;
   height: 20vw;
   display: block;
-  margin-bottom: -6.3vw;
+  margin-bottom: -15vw;
   /* NO CSS transform — GSAP handles initial x position */
   will-change: transform;
 }
@@ -92,11 +94,12 @@
      should sit with its wheels just above that line */
   display: flex;
   align-items: flex-end;
-  padding-bottom: 28vh; /* push train up from the very bottom to sit on tracks */
+  padding-bottom: 20vh;
+  /* push train up from the very bottom to sit on tracks */
 }
 
 .layer-train img {
-  height: 37vh;
+  height: 60vh;
   width: auto;
   display: block;
   /* ALL transforms (scale, x) handled by GSAP for alignment */
@@ -117,10 +120,11 @@
 
 .layer-platform img {
   width: 100vw;
-  height: auto;
+  height: 25vh;
+  object-fit: cover;
+  object-position: top;
   display: block;
-  scale: 1;
-  margin-bottom: -25vh;
+  margin-bottom: 0;
 }
 
 /* ─── z-5: Entry blackout overlay ─── */
@@ -167,8 +171,41 @@
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* --- Debug Guide (Remove when done) --- */
 /* (Styles moved to index.css) */
+
+/* ─── Mobile Optimizations (≤ 768px) ─── */
+@media (max-width: 768px) {
+  .layer-background img {
+    object-fit: cover;
+    /* Fill the screen better on portrait */
+  }
+
+  .layer-tracks img {
+    width: 250vw;
+    height: auto;
+    margin-bottom: -25vw;
+  }
+
+  .layer-train {
+    padding-bottom: 16vh;
+  }
+
+  .layer-train img {
+    height: 55vh;
+  }
+
+  .layer-platform img {
+    width: 280vw;
+    height: 32vh;
+    object-fit: cover;
+    object-position: top;
+    margin-bottom: 0;
+    margin-left: -90vw;
+  }
+}

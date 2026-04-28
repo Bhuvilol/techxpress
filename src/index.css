@@ -1,3 +1,4 @@
+
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
 
 *,
@@ -51,6 +52,13 @@ img {
   height: 100vh;
   z-index: 10000;
   cursor: pointer;
+  .layer-background img {
+  width: 100vw;
+  height: 100vh;
+  object-fit: cover;
+  object-position: center bottom;
+  will-change: opacity, transform;
+}
   background: rgba(0, 0, 0, 0.2);
   transition: opacity 0.5s ease;
   opacity: 0;
@@ -79,6 +87,7 @@ img {
 .guide-overlay.variant-right .guide-character {
   left: auto;
   right: 3vw;
+  height: 65vh; /* Scaled down slightly so faces aren't cut off */
   animation: slideInRight 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
 
@@ -125,9 +134,9 @@ img {
 
   color: #1a1a1a;
   font-family: 'Playfair Display', serif;
-  font-size: 1.3rem;
+  font-size: clamp(1.2rem, 2.5vh, 2.5rem);
   font-weight: 700;
-  line-height: 1.05;
+  line-height: 1.2;
   text-align: center;
   letter-spacing: -0.015em;
 }
@@ -140,7 +149,7 @@ img {
 .cloud-text span {
   display: block;
   font-family: 'Bebas Neue', sans-serif;
-  font-size: 0.9rem;
+  font-size: clamp(1rem, 1.8vh, 1.8rem);
   margin-top: 15px;
   font-weight: 400;
   letter-spacing: 0.12em;
@@ -202,5 +211,103 @@ img {
   z-index: 1000;
   pointer-events: none;
   opacity: 0.3;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Mobile Responsive Overrides — TT Master + Cloud only
+   Desktop layout (above this block) is completely untouched.
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── Tablet landscape (≤ 1024px) ── */
+@media (max-width: 1024px) {
+  :root {
+    --master-height: 60vh;
+    --cloud-width: 48vw;
+    --cloud-offset-x: 20vw;
+    --cloud-offset-y: 42vh;
+  }
+}
+
+/* ── Mobile (≤ 768px) ── */
+@media (max-width: 768px) {
+  .guide-character {
+    left: 1vw;
+    height: 45vh;               /* Height-driven for reliable presence */
+    width: auto;
+    max-width: none;
+  }
+
+  .guide-character img {
+    height: 100%;
+    width: auto;
+  }
+
+  .guide-overlay.variant-right .guide-character {
+    right: -5vw;
+    left: auto;
+    height: 55vh;
+  }
+
+  .guide-cloud {
+    width: 65vw;
+    max-width: 75vw;
+    left: 28vw;
+    bottom: 32vh;              /* Lifted to upper body area */
+  }
+
+  .guide-overlay.variant-right .guide-cloud {
+    left: auto;
+    right: 28vw;
+    bottom: 50vh;
+  }
+
+  .cloud-text {
+    font-size: clamp(1rem, 4.5vw, 1.3rem); 
+    line-height: 1.1;
+    padding: 0 10%;
+  }
+
+  .cloud-text span {
+    font-size: clamp(0.75rem, 3.8vw, 1.1rem);
+    margin-top: 12px;
+  }
+}
+
+/* ── Narrow phone portrait (≤ 480px) ── */
+@media (max-width: 480px) {
+  .guide-character {
+    left: 0;
+    height: 48vh;               /* Slightly more compact */
+    width: auto;
+  }
+
+  .guide-cloud {
+    width: 85vw;
+    max-width: 95vw;
+    left: 5vw;                 /* More centered */
+    bottom: 32vh;              
+  }
+
+  .guide-overlay.variant-right .guide-cloud {
+    left: auto;
+    right: 5vw;
+    bottom: 50vh;
+  }
+  
+  .guide-overlay.variant-right .guide-character {
+    right: -10vw;
+    left: auto;
+    height: 55vh;
+  }
+
+  .cloud-text {
+    padding: 0 10%;
+    font-size: clamp(0.9rem, 5vw, 1.15rem);
+  }
+
+  .cloud-text span {
+    font-size: clamp(0.65rem, 4.5vw, 0.85rem);
+    margin-top: 8px;
+  }
 }
 

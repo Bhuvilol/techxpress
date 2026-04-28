@@ -12,7 +12,7 @@ const TRAIN_NATURAL_W = 1629;
 const TRAIN_NATURAL_H = 543;
 
 // Door center in the closed train PNG (px from top-left of image)
-const DOOR_CENTER_X_PX = 530;
+const DOOR_CENTER_X_PX = 796;
 const DOOR_CENTER_Y_PX = 250;
 
 // Ratios for dynamic computation
@@ -22,9 +22,7 @@ const DOOR_Y_RATIO = DOOR_CENTER_Y_PX / TRAIN_NATURAL_H; // ≈ 0.460
 // Background: the platform edge (top of red brick wall) sits at ~62% of image height
 const PLATFORM_Y_PERCENT = 0.62;
 
-// --- GLOBAL SCALE & POSITIONING ---
-const BASE_SCALE = 2; // Initial arrival scale
-const ZOOM_SCALE_FACTOR = 8; // Global scale reached on scroll (boarding)
+// --- GLOBAL SCALE & POSITIONING (Now handled dynamically) ---
 
 /* ─────────────────────────────────────────────
    Asset paths (relative to public/)
@@ -66,6 +64,7 @@ export default function TrainScene({ onComplete }) {
   const ttMasterRef = useRef(null);
   const cloudRef = useRef(null);
   const pivotMarkerRef = useRef(null); // Added ref for visual debugging
+  const lastTapRef = useRef(0); // For mobile double-tap detection
 
   // Dialogue state
   const [dialogueStep, setDialogueStep] = useState(0); // 0: hidden, 1: showing, 2: finished
@@ -102,6 +101,13 @@ export default function TrainScene({ onComplete }) {
 
     const vw = window.innerWidth;
     const vh = window.innerHeight;
+    const isMobile = vw <= 768;
+
+    /* ── Responsive Constants ── */
+    const baseScale = isMobile ? 2.1 : 2.6;
+    const zoomScaleFactor = isMobile ? 12 : 8;
+    // Nudge the door centering: Set to 0 to align exactly with the center red line
+    const doorCenterNudge = 0;
 
     /* ── Set initial positions via GSAP (not CSS) ── */
 
@@ -110,7 +116,7 @@ export default function TrainScene({ onComplete }) {
     const renderedTrainH = openImg.offsetHeight;
 
     // Starting X: Pushed way left to account for large scale
-    const startingX = -renderedTrainW * BASE_SCALE - 500;
+    const startingX = -renderedTrainW * baseScale - 500;
 
     /* ── Transform origin for the zoom (relative to the img element) ── */
     const originX = DOOR_X_RATIO * renderedTrainW;
@@ -118,16 +124,12 @@ export default function TrainScene({ onComplete }) {
     const originStr = `${originX}px ${originY}px`;
 
     // --- DOOR CENTERING & ZOOM PIVOT ---
-    // Change this value to move the train door!
-    const DOOR_CENTER_NUDGE = -344;
-
     // Zoom origin is FIXED at the middle of the screen (the red line)
     const pivotX = vw / 2;
-    const pivotY = vh * 0.62;
+    const pivotY = vh * 0.45;
 
     // The point where we want the door to stop (Pivot + Nudge)
-    // The user should adjust Nudge until the door is ON the pivot
-    const targetDoorX = pivotX + DOOR_CENTER_NUDGE;
+    const targetDoorX = pivotX + doorCenterNudge;
 
     // The train's X position needed to align its door with targetDoorX
     const trainFinalX = targetDoorX - originX;
@@ -135,7 +137,8 @@ export default function TrainScene({ onComplete }) {
     console.log('--- SYNC DEBUG ---', {
       pivotX,
       trainFinalX,
-      originX
+      originX,
+      isMobile
     });
 
     // Reset positions
@@ -144,7 +147,7 @@ export default function TrainScene({ onComplete }) {
     gsap.set(openImg, {
       x: startingX,
       opacity: 1,
-      scale: BASE_SCALE,
+      scale: baseScale,
       transformOrigin: originStr
     });
     gsap.set(blackout, { opacity: 0 });
@@ -167,7 +170,7 @@ export default function TrainScene({ onComplete }) {
 
     // 1. Global Zoom: Pivot EXACTLY on pivotX
     scrollTl.to(masterContainer, {
-      scale: ZOOM_SCALE_FACTOR,
+      scale: zoomScaleFactor,
       y: -20, // subtle "lift" as you step in
       transformOrigin: `${pivotX}px ${pivotY}px`,
       ease: 'power2.inOut',
@@ -251,7 +254,12 @@ export default function TrainScene({ onComplete }) {
       )}
 
       {/* Fixed scene viewport */}
-      <div className="train-scene" id="train-scene" ref={sceneRef}>
+      <div 
+        className="train-scene" 
+        id="train-scene" 
+        ref={sceneRef}
+        style={{ touchAction: 'manipulation' }}
+      >
         {/* Master container that holds everything for global zoom */}
         <div className="master-container" ref={masterContainerRef}>
           {/* z-0: Background (Sharper default layer) */}
@@ -309,6 +317,26 @@ export default function TrainScene({ onComplete }) {
               onLoad={handleImgReady}
               onError={handleImgReady}
               draggable={false}
+              style={{ pointerEvents: 'auto' }}
+              onTouchStart={(e) => {
+                // Double tap detection exclusively for mobile on the train door
+                if (window.innerWidth > 768) return;
+                
+                const now = Date.now();
+                if (now - lastTapRef.current < 300) {
+                  // If dialogue is active, skip it first
+                  if (dialogueStep === 1) {
+                    setDialogueStep(2);
+                  }
+                  
+                  // Programmatically scroll to the end to trigger the boarding
+                  window.scrollTo({
+                    top: document.body.scrollHeight,
+                    behavior: 'smooth'
+                  });
+                }
+                lastTapRef.current = now;
+              }}
             />
           </div>
         </div>
