@@ -16,7 +16,8 @@ export default function StationMaster({
   onComplete,
   assets,
   characterImg,
-  variant = 'left'
+  variant = 'left',
+  showSkipOption = false
 }) {
   const [index, setIndex] = useState(0);
 
@@ -61,6 +62,17 @@ export default function StationMaster({
             }}
           />
           <span>(Click to continue)</span>
+          {showSkipOption && index === dialogues.length - 1 && (
+             <label className="skip-guide-label" onClick={e => e.stopPropagation()}>
+               <input type="checkbox" onChange={(e) => {
+                  if (e.target.checked) {
+                    window.SKIP_GUIDES = true;
+                  } else {
+                    window.SKIP_GUIDES = false;
+                  }
+               }} /> Do not show again
+             </label>
+          )}
         </div>
         {/* Debug: Cloud Origin Reference Point */}
         <div className="debug-point cloud-origin" />

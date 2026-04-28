@@ -161,7 +161,10 @@ export default function TrainScene({ onComplete }) {
       duration: 3.5,
       onComplete: () => {
         // Trigger the Station Master arrival 2 seconds after the train stops
-        gsap.delayedCall(2, () => setDialogueStep(1));
+        gsap.delayedCall(2, () => {
+          const skipGuides = window.SKIP_GUIDES === true;
+          setDialogueStep(skipGuides ? 2 : 1);
+        });
       }
     }, 0);
 
@@ -206,14 +209,22 @@ export default function TrainScene({ onComplete }) {
       duration: 0.15,
     }, 0.85);
 
+      let completeTriggered = false;
+
       /* ── ScrollTrigger scrubs the zoom timeline ── */
       const st = ScrollTrigger.create({
         trigger: spacer,
         start: 'top top',
         end: 'bottom bottom',
+        animation: scrollTl,
         scrub: 1.5, // smoother scrubbing
         onUpdate: (self) => {
-          scrollTl.progress(self.progress);
+          // Lenis smooth scroll sometimes stops at 0.999 progress
+          if (self.progress > 0.99 && !completeTriggered && onComplete) {
+            completeTriggered = true;
+            // Short delay for cinematic feel
+            setTimeout(onComplete, 200);
+          }
         },
       });
 
@@ -221,14 +232,6 @@ export default function TrainScene({ onComplete }) {
     const marker = pivotMarkerRef.current;
     if (marker) {
       gsap.set(marker, { left: pivotX, top: pivotY });
-    }
-
-    // ─── Phase 4: Transition to Interior ───
-    if (onComplete) {
-      scrollTl.eventCallback("onComplete", () => {
-        // Short delay for cinematic feel (snappier transition)
-        setTimeout(onComplete, 200);
-      });
     }
 
     // Store for cleanup
@@ -358,7 +361,13 @@ export default function TrainScene({ onComplete }) {
         {/* --- Station Master Guide (Rajesh Sharma) --- */}
         <StationMaster
           isVisible={dialogueStep === 1}
-          dialogues={STATION_MASTER_DIALOGUE}
+          dialogues={[
+            {
+              text: `Hi! I am Rajesh Sharma, your station master.\nWelcome to the journey.\n${
+                window.innerWidth <= 768 ? 'click, then double tap train to enter' : 'click, then scroll to continue'
+              }`
+            }
+          ]}
           assets={ASSETS}
           onComplete={() => setDialogueStep(2)}
         />

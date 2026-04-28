@@ -169,6 +169,27 @@ img {
   animation: blink 1.5s infinite;
 }
 
+.skip-guide-label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 15px;
+  font-family: 'Inter', sans-serif;
+  font-size: clamp(0.75rem, 1.5vh, 1rem);
+  font-weight: 500;
+  color: #333;
+  cursor: pointer;
+  letter-spacing: normal;
+}
+
+.skip-guide-label input[type="checkbox"] {
+  cursor: pointer;
+  width: 16px;
+  height: 16px;
+  accent-color: #d32f2f;
+}
+
 @keyframes slideInLeft {
   from { transform: translateX(-100%); }
   to { transform: translateX(0); }

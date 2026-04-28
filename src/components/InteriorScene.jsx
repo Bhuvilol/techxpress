@@ -65,8 +65,9 @@ export default function InteriorScene({ onNavigate }) {
         ease: "power2.inOut",
         delay: 0.2,
         onComplete: () => {
-          // Start the journey with the Station Master
-          setActiveStage(1);
+          // Start the journey with the Station Master or skip if opted out
+          const skipGuides = window.SKIP_GUIDES === true;
+          setActiveStage(skipGuides ? 3 : 1);
         },
       });
     }
@@ -117,6 +118,7 @@ export default function InteriorScene({ onNavigate }) {
         dialogues={VENDOR_DATA}
         assets={ASSETS}
         variant="right"
+        showSkipOption={true}
         onComplete={() => setActiveStage(3)}
       />
 
