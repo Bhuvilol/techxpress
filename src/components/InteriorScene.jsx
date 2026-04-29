@@ -30,10 +30,6 @@ const INTERIOR_DIALOGUE = [
 
 const VENDOR_DATA = [
   { image: ASSETS.vendor1, text: "Welcome! I'm your first vendor guide.\nI'll be walking you through our platform's basics." },
-  { image: ASSETS.vendor2, text: "Speed and performance are at our core.\nExperience the fastest commerce journey yet." },
-  { image: ASSETS.vendor3, text: "We prioritize security above all else.\nYour data stays protected at every turn." },
-  { image: ASSETS.vendor4, text: "Collaboration made simple.\nWork together in real-time with our native tools." },
-  { image: ASSETS.vendor6, text: "Customization is key.\nTailor your experience to match your unique brand." },
   { image: ASSETS.vendor6, text: "Ready to explore? Feel free to browse our main features on the display." }
 ];
 
@@ -44,7 +40,7 @@ export default function InteriorScene({ onNavigate }) {
 
   const [isAssetsReady, setIsAssetsReady] = useState(false);
   const loadCount = useRef(0);
-  const TOTAL_ASSETS = 9; // Video, Mask, Master, Cloud, 5 Vendors
+  const TOTAL_ASSETS = 4 + VENDOR_DATA.length; // Video, Mask, Master, Cloud, and Vendors
 
   // Transitions: 0: LOADING, 1: STATION_MASTER, 2: VENDORS, 3: FINISHED
   const [activeStage, setActiveStage] = useState(0);
