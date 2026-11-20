@@ -3,7 +3,7 @@ DOCKER_COMPOSE = docker compose
 BACKEND_SERVICE = backend
 DB_SERVICE = db
 
-.PHONY: build up down restart logs ps db-shell migrate seed
+.PHONY: build up down restart logs ps db-shell migrate migrate-status seed-full setup launch
 
 # Build all images
 build:
@@ -33,9 +33,14 @@ ps:
 db-shell:
 	$(DOCKER_COMPOSE) exec $(DB_SERVICE) psql -U vortex_user -d vortex_db
 
-# Run Prisma migrations inside backend container
+# Apply pending Prisma migrations (prisma/migrations) inside the backend container.
+# Safe to re-run: already-applied migrations are skipped. Never uses db push.
 migrate:
-	$(DOCKER_COMPOSE) exec $(BACKEND_SERVICE) npx prisma db push --accept-data-loss
+	$(DOCKER_COMPOSE) exec $(BACKEND_SERVICE) npx prisma migrate deploy
+
+# Show which migrations are applied / pending
+migrate-status:
+	$(DOCKER_COMPOSE) exec $(BACKEND_SERVICE) npx prisma migrate status
 
 # Seed the database with full mission-ready data
 seed-full:
@@ -51,8 +56,7 @@ launch: build
 	@echo "--- WAITING_FOR_UPLINK_STABILITY ---"
 	@sleep 5
 	@echo "--- SYNCHRONIZING_DATABASE_SCHEMA ---"
-	$(DOCKER_COMPOSE) exec $(BACKEND_SERVICE) npx prisma db push --accept-data-loss
-	$(DOCKER_COMPOSE) exec $(BACKEND_SERVICE) npx prisma generate
+	$(DOCKER_COMPOSE) exec $(BACKEND_SERVICE) npx prisma migrate deploy
 	@echo "--- INJECTING_MISSION_CRITICAL_DATA ---"
 	$(DOCKER_COMPOSE) exec $(BACKEND_SERVICE) npm run db:seed
 	@echo "--- ACTIVATING_FRONTEND_INTERFACE ---"

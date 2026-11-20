@@ -7,8 +7,9 @@ import { defineConfig } from 'prisma/config';
 // build time (e.g. inside the Docker builder stage).
 //
 // Prefer DIRECT_URL for Prisma CLI operations in production. This lets the app
-// keep using a pooled DATABASE_URL (recommended on Neon) while `prisma db push`
-// and other admin commands connect directly.
+// keep using a pooled DATABASE_URL (e.g. Supabase transaction pooler) while
+// `prisma migrate deploy` and other admin commands use a session-capable
+// connection (e.g. Supabase session pooler, port 5432).
 
 export default defineConfig({
   schema: 'prisma/schema.prisma',

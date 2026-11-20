@@ -34,7 +34,9 @@ ENV PORT=3001
 
 EXPOSE 3001
 
-# Apply any pending Prisma schema changes before booting. Render's free
-# tier doesn't allow Pre-Deploy Commands, so we do it here in the CMD.
-# Idempotent — does nothing if the schema is already in sync.
-CMD npx prisma db push --accept-data-loss && node src/index.js
+# The container only starts the app. Schema changes are applied as a separate
+# deploy step BEFORE the new container starts:
+#   docker compose run --rm backend npx prisma migrate deploy
+# Never run `prisma db push` against a database with real data — it can drop
+# columns. Migrations live in prisma/migrations and are reviewed in PRs.
+CMD ["node", "src/index.js"]

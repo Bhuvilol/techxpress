@@ -65,7 +65,7 @@ cd vortex
 docker compose -p vortex up -d --build
 
 # 3. Apply the database schema (one-time, runs inside the backend container)
-docker compose -p vortex exec backend npx prisma db push
+docker compose -p vortex exec backend npx prisma migrate deploy
 
 # 4. Seed admin / juries / hackathon rules / sample registry rows
 docker compose -p vortex exec backend npm run db:seed
@@ -229,15 +229,29 @@ docker compose -p vortex exec backend npm run db:seed
 
 ### Apply schema changes
 
-After editing `backend/prisma/schema.prisma`:
+Schema changes go through **Prisma migrations** (versioned SQL files in
+`backend/prisma/migrations/`), never `prisma db push`.
 
-```bash
-docker compose -p vortex exec backend npx prisma db push
-```
+1. Edit `backend/prisma/schema.prisma`.
+2. Create a migration against your **local** database (run from `backend/`
+   with `.env` pointing at local Postgres):
 
-If the change is non-trivial (new required column on a non-empty table,
-type changes, etc.) Prisma will refuse and ask for `--force-reset`,
-which **destroys all data**. See [§10](#10-resetting-everything).
+   ```bash
+   npx prisma migrate dev --name short_description
+   ```
+
+3. Review the generated `migration.sql`, commit it together with the schema
+   change, and open a PR.
+4. Deployments apply pending migrations automatically. To apply them to the
+   local Docker stack:
+
+   ```bash
+   docker compose -p vortex exec backend npx prisma migrate deploy
+   ```
+
+If a migration would drop or rewrite data (e.g. a new required column on a
+non-empty table), write it so it's safe — add the column as optional, backfill,
+then make it required in a second migration.
 
 ### Customise admin / jury credentials before seeding
 
@@ -287,7 +301,7 @@ You'll need:
 cd backend
 cp .env.example .env       # then open it and set values (see below)
 npm install
-npx prisma db push
+npx prisma migrate deploy
 npm run db:seed
 npm run dev                # node --watch — restarts on file change
 ```
@@ -353,10 +367,10 @@ try a clean reset — [§10](#10-resetting-everything).
 
 ### Backend fails with `Prisma schema validation` errors
 
-Schema and database drifted. Apply the schema:
+Schema and database drifted. Apply any pending migrations:
 
 ```bash
-docker compose -p vortex exec backend npx prisma db push
+docker compose -p vortex exec backend npx prisma migrate deploy
 ```
 
 If Prisma refuses because data exists, it's a destructive change — you
@@ -441,7 +455,7 @@ docker compose -p vortex down -v
 docker compose -p vortex up -d --build
 
 # Reapply schema and seed
-docker compose -p vortex exec backend npx prisma db push
+docker compose -p vortex exec backend npx prisma migrate deploy
 docker compose -p vortex exec backend npm run db:seed
 ```
 
