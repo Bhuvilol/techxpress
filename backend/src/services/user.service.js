@@ -1,6 +1,8 @@
 import { prisma } from '../config/db.js';
 import { Conflict, NotFound, Forbidden } from '../utils/errors.js';
 import { generateSixDigitCode, hashPassword } from '../utils/crypto.js';
+import { rulesService } from './rules.service.js';
+import { invalidateUserStatus } from '../utils/userStatusCache.js';
 
 // Sole owner of User table writes related to the verification lifecycle.
 // Controllers must NOT touch prisma.user directly for these flows.
@@ -72,6 +74,11 @@ export const userService = {
   publicFields: PUBLIC_USER_FIELDS,
 
   async createPendingStudent(data) {
+    const rules = await rulesService.get();
+    if (!rules.registrationOpen) {
+      throw Forbidden('Registration is currently closed', { code: 'REGISTRATION_CLOSED' });
+    }
+
     // Surface uniqueness conflicts as 409 with field hints so the UI can
     // mark the offending input. The DB constraint is still authoritative.
     const conflict = await prisma.user.findFirst({
@@ -174,6 +181,7 @@ export const userService = {
       },
       select: PUBLIC_USER_FIELDS,
     });
+    invalidateUserStatus(userId); // existing tokens stop working immediately
     return { user: updated, snapshot: user };
   },
 
@@ -201,6 +209,7 @@ export const userService = {
       select: PUBLIC_USER_FIELDS,
     });
 
+    invalidateUserStatus(userId);
     return { user: updated, plaintextPassword, snapshot: user };
   },
 

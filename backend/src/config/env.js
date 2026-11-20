@@ -4,6 +4,9 @@ import { z } from 'zod';
 const schema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   PORT: z.coerce.number().int().positive().default(3001),
+  // Number of reverse proxies in front of the app, so req.ip is the real client
+  // IP (used by rate limiting). 1 = Caddy only; 2 = Cloudflare → Caddy.
+  TRUST_PROXY_HOPS: z.coerce.number().int().min(0).max(5).default(1),
   LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error']).default('info'),
 
   DATABASE_URL: z.string().min(1),

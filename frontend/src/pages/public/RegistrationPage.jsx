@@ -199,6 +199,8 @@ export const RegistrationPage = () => {
 
   const { data: instData, loading: instLoading } = useApi(() => api.get('/api/taxonomy/institutions'), []);
   const { data: domData, loading: domLoading } = useApi(() => api.get('/api/taxonomy/domains'), []);
+  const { data: regStatus } = useApi(() => api.get('/api/registration/status'), [], { refetchOnFocus: false });
+  const registrationClosed = regStatus?.open === false;
 
   const submit = async (e) => {
     e.preventDefault();
@@ -242,7 +244,6 @@ export const RegistrationPage = () => {
   };
 
   if (done) {
-    const matched = done.registryMatch?.matched;
     return (
       <section className="mx-auto flex min-h-[calc(100vh-64px)] max-w-xl flex-col items-center justify-center px-6 py-12">
         <div className="mb-8 flex h-20 w-20 items-center justify-center border border-white/20 bg-white/5">
@@ -254,9 +255,7 @@ export const RegistrationPage = () => {
         </p>
 
         <div className="mt-8">
-          <Badge tone={matched ? 'live' : 'warn'}>
-            {matched ? 'Registry Match Found' : 'Manual Review Pending'}
-          </Badge>
+          <Badge tone="warn">Pending review</Badge>
         </div>
 
         <Link to="/" className="glow-button mt-12 flex items-center gap-3 px-10">
@@ -281,6 +280,12 @@ export const RegistrationPage = () => {
           Build your Vortex profile for verification, team discovery, and collaboration. Domain and institution options are controlled by the organizers.
         </p>
       </div>
+
+      {registrationClosed && (
+        <div className="mt-10 border border-status-warn/40 bg-status-warn/5 px-5 py-4 text-center font-mono text-[13px] leading-relaxed text-status-warn">
+          Registration is currently closed. Please check back later or contact the organizers.
+        </div>
+      )}
 
       <form onSubmit={submit} className="glass-card mt-12 space-y-12 border-white/10 bg-[#050505] p-5 sm:p-6 md:mt-14 md:space-y-14 md:p-8 xl:p-10">
         <Section number="01" title="Identity">
@@ -570,7 +575,7 @@ export const RegistrationPage = () => {
           <p className="max-w-sm font-mono text-[11px] uppercase tracking-wider text-white/20">
             By registering, you agree to the event rules, code of conduct, and organizer review of the submitted profile.
           </p>
-          <button type="submit" disabled={busy} className="glow-button flex h-14 w-full items-center justify-center gap-4 font-sans text-[15px] font-black uppercase tracking-[0.2em] sm:min-w-[280px] sm:w-auto">
+          <button type="submit" disabled={busy || registrationClosed} className="glow-button flex h-14 w-full items-center justify-center gap-4 font-sans text-[15px] font-black uppercase tracking-[0.2em] sm:min-w-[280px] sm:w-auto">
             {busy ? <Spinner size={20} /> : (
               <>
                 <span>Initialize Profile</span>

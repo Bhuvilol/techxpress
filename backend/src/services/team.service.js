@@ -112,7 +112,7 @@ export const teamService = {
       }
 
       const rules = await rulesService.get(tx);
-      if (!rules.registrationOpen) throw Forbidden('Team registration is currently closed');
+      if (!rules.teamFormationOpen) throw Forbidden('Team formation is currently closed');
 
       // Domain & PS sanity checks (cheap, useful errors).
       const domain = await tx.domain.findUnique({ where: { id: domainId } });

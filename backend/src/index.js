@@ -35,7 +35,7 @@ import { initIO, closeIO } from './realtime/io.js';
 const app = express();
 
 app.disable('x-powered-by');
-app.set('trust proxy', 1);
+app.set('trust proxy', env.TRUST_PROXY_HOPS);
 
 // Security headers first, then CORS so preflights carry helmet's headers too.
 app.use(helmet());

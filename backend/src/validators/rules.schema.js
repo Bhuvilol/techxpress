@@ -11,6 +11,7 @@ export const updateRulesSchema = z
     minFemaleMembers:   intRange(0, 50).optional(),
     minDomainExperts:   intRange(0, 50).optional(),
     registrationOpen:   z.boolean().optional(),
+    teamFormationOpen:  z.boolean().optional(),
     leaderboardVisible: z.boolean().optional(),
     showMarks:          z.boolean().optional(),
     teamLockdown:       z.boolean().optional(),

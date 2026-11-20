@@ -1,6 +1,7 @@
 import jwt from 'jsonwebtoken';
 import { env } from '../config/env.js';
 import { Unauthorized, Forbidden } from '../utils/errors.js';
+import { getUserStatus } from '../utils/userStatusCache.js';
 
 // JWT payload shape: { sub: userId, role, email, institutionId? }
 // `sub` is standard; we mirror it as `id` on req.user for ergonomic access.
@@ -38,24 +39,39 @@ const attachUser = (req, payload) => {
   };
 };
 
-// Hard requirement: 401 if missing or invalid.
-export const requireAuth = (req, _res, next) => {
+// A valid signature isn't enough: the account must still be VERIFIED, so a
+// revoked (or deleted) user is locked out immediately rather than when their
+// token expires. Status is cached briefly — see utils/userStatusCache.js.
+const assertActive = async (userId) => {
+  const status = await getUserStatus(userId);
+  if (status !== 'VERIFIED') {
+    throw Unauthorized('Account is no longer active', { code: 'ACCOUNT_INACTIVE' });
+  }
+};
+
+// Hard requirement: 401 if missing, invalid, or the account is no longer active.
+export const requireAuth = async (req, _res, next) => {
   const token = extractToken(req);
   if (!token) return next(Unauthorized('Authentication required'));
   try {
-    attachUser(req, verify(token));
+    const payload = verify(token);
+    await assertActive(payload.sub);
+    attachUser(req, payload);
     next();
   } catch (err) {
     next(err);
   }
 };
 
-// Best-effort: attach user if a valid token is present, otherwise continue anonymous.
-export const optionalAuth = (req, _res, next) => {
+// Best-effort: attach user if a valid token for an active account is present,
+// otherwise continue anonymous.
+export const optionalAuth = async (req, _res, next) => {
   const token = extractToken(req);
   if (!token) return next();
   try {
-    attachUser(req, verify(token));
+    const payload = verify(token);
+    await assertActive(payload.sub);
+    attachUser(req, payload);
   } catch {
     // ignore — caller treats request as anonymous
   }

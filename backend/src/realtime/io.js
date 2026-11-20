@@ -2,6 +2,7 @@ import { Server } from 'socket.io';
 import jwt from 'jsonwebtoken';
 import { env } from '../config/env.js';
 import { logger } from '../utils/logger.js';
+import { getUserStatus } from '../utils/userStatusCache.js';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Socket.IO singleton.
@@ -30,16 +31,24 @@ import { logger } from '../utils/logger.js';
 
 let io = null;
 
-const verifyHandshake = (socket, next) => {
+const verifyHandshake = async (socket, next) => {
   const token = socket.handshake.auth?.token;
   if (!token) return next(new Error('AUTH_REQUIRED'));
+  let payload;
   try {
-    const payload = jwt.verify(token, env.ACCESS_TOKEN_SECRET);
-    socket.data.user = { id: payload.sub, role: payload.role, email: payload.email };
-    next();
+    payload = jwt.verify(token, env.ACCESS_TOKEN_SECRET);
   } catch (err) {
-    next(new Error(err.name === 'TokenExpiredError' ? 'TOKEN_EXPIRED' : 'INVALID_TOKEN'));
+    return next(new Error(err.name === 'TokenExpiredError' ? 'TOKEN_EXPIRED' : 'INVALID_TOKEN'));
   }
+  try {
+    // Same rule as the HTTP middleware: revoked / deleted accounts can't connect.
+    if ((await getUserStatus(payload.sub)) !== 'VERIFIED') return next(new Error('ACCOUNT_INACTIVE'));
+  } catch (err) {
+    logger.error('socket.status_check_failed', { err: err.message });
+    return next(new Error('SERVER_ERROR'));
+  }
+  socket.data.user = { id: payload.sub, role: payload.role, email: payload.email };
+  next();
 };
 
 const wireSocket = (socket) => {

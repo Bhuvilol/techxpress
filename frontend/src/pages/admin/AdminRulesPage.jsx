@@ -35,6 +35,7 @@ export const AdminRulesPage = () => {
         minFemaleMembers: form.minFemaleMembers,
         minDomainExperts: form.minDomainExperts,
         registrationOpen:   form.registrationOpen,
+        teamFormationOpen:  form.teamFormationOpen,
         leaderboardVisible: form.leaderboardVisible,
         showMarks:          form.showMarks,
       };
@@ -91,8 +92,9 @@ export const AdminRulesPage = () => {
             </FormField>
           </div>
 
-          <div className="grid grid-cols-1 gap-3 border-t border-white/10 pt-4 sm:grid-cols-3">
+          <div className="grid grid-cols-1 gap-3 border-t border-white/10 pt-4 sm:grid-cols-2">
             <Toggle label="Registration open" value={form.registrationOpen} onChange={set('registrationOpen')} />
+            <Toggle label="Team formation open" value={form.teamFormationOpen} onChange={set('teamFormationOpen')} />
             <Toggle label="Leaderboard visible" value={form.leaderboardVisible} onChange={set('leaderboardVisible')} />
             <Toggle label="Show marks" value={form.showMarks} onChange={set('showMarks')} />
           </div>

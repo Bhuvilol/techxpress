@@ -18,6 +18,16 @@ const safeEmit = (room, event, payload) => {
   }
 };
 
+// ── session control
+// Drop every open socket for a user (e.g. right after their access is revoked).
+export const disconnectUser = (userId) => {
+  try {
+    getIO().in(`user:${userId}`).disconnectSockets(true);
+  } catch (err) {
+    logger.debug('realtime.disconnect_skipped', { userId, reason: err.message });
+  }
+};
+
 // ── global
 export const emitBroadcastNew = (broadcast) =>
   safeEmit('global', 'broadcast:new', { broadcast });

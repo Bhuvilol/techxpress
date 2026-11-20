@@ -74,6 +74,7 @@ export const AdminOverviewPage = () => {
                 <Line label="Min female"    value={rules.data?.rules?.minFemaleMembers} />
                 <Line label="Min experts"   value={rules.data?.rules?.minDomainExperts} />
                 <Line label="Registration"  value={rules.data?.rules?.registrationOpen ? 'OPEN' : 'CLOSED'} />
+                <Line label="Team formation" value={rules.data?.rules?.teamFormationOpen ? 'OPEN' : 'CLOSED'} />
                 <Line label="Leaderboard"   value={rules.data?.rules?.leaderboardVisible ? 'VISIBLE' : 'HIDDEN'} />
               </dl>
             </section>

@@ -9,7 +9,7 @@ import { ScrambleText } from '../../components/ui/ScrambleText.jsx';
 import { homePathForRole } from '../../utils/authHome.js';
 
 export const LoginPage = () => {
-  const { login, bypassLogin } = useAuth();
+  const { login } = useAuth();
   const toast = useToast();
   const nav = useNavigate();
   const loc = useLocation();
@@ -28,13 +28,15 @@ export const LoginPage = () => {
       const dest = loc.state?.from ?? homePathForRole(u.role);
       nav(dest, { replace: true });
     } catch (apiErr) {
-      setErr(apiErr.message);
-      if (apiErr.code === 'ACCOUNT_PENDING')
-        setErr('Your account is awaiting campus or organizer verification.');
-      if (apiErr.code === 'ACCOUNT_REJECTED')
-        setErr('Your registration was not approved.');
-      if (apiErr.code === 'ACCOUNT_REVOKED')
-        setErr('Your access has been revoked. Contact organizers.');
+      // Account-status codes arrive in details.code (top-level code is FORBIDDEN).
+      const code = apiErr.details?.code ?? apiErr.code;
+      const messages = {
+        ACCOUNT_PENDING: 'Your account is awaiting campus or organizer verification.',
+        ACCOUNT_REJECTED: 'Your registration was not approved.',
+        ACCOUNT_REVOKED: 'Your access has been revoked. Contact organizers.',
+        RATE_LIMITED: 'Too many failed attempts. Please wait 15 minutes and try again.',
+      };
+      setErr(messages[code] ?? apiErr.message);
     } finally {
       setBusy(false);
     }
