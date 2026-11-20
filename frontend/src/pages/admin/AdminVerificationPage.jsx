@@ -61,7 +61,7 @@ export const AdminVerificationPage = () => {
       const res = await api.post(`/api/admin/verification/students/${u.id}/approve`);
       toast.success(`Approved ${u.fullName}.`);
       // Surface the freshly-issued password to the admin one-shot.
-      if (res?.password) setCredential({ user: res.user ?? u, password: res.password, label: 'Approved' });
+      if (res?.password) setCredential({ user: res.user ?? u, password: res.password, label: 'Approved', emailDelivered: res.emailDelivered });
       refresh();
     } catch (e) { toast.error(e.message); }
   };
@@ -84,13 +84,13 @@ export const AdminVerificationPage = () => {
     const ok = await confirm({
       title: `Reveal credentials for ${u.fullName}?`,
       message:
-        'The current password is hashed and unrecoverable. To show a usable code, the system will REISSUE a new 6-digit password — replacing the current one. Share it with the user manually; admin actions do not send email.',
+        'The current password is hashed and unrecoverable. To show a usable code, the system will REISSUE a new 6-digit password — replacing the current one. The new password is emailed to the student and also shown to you once.',
       confirmLabel: 'Reissue & reveal',
     });
     if (!ok) return;
     try {
       const res = await api.post(`/api/admin/verification/students/${u.id}/reissue-password`);
-      if (res?.password) setCredential({ user: res.user ?? u, password: res.password, label: 'Reissued' });
+      if (res?.password) setCredential({ user: res.user ?? u, password: res.password, label: 'Reissued', emailDelivered: res.emailDelivered });
       toast.success('New password issued.');
     } catch (e) { toast.error(e.message); }
   };
@@ -98,13 +98,13 @@ export const AdminVerificationPage = () => {
   const restore = async (u) => {
     const ok = await confirm({
       title: `Undo revoke for ${u.fullName}?`,
-      message: 'This restores login access and issues a fresh 6-digit password. Share it with the student manually; admin actions do not send email.',
+      message: 'This restores login access and issues a fresh 6-digit password. It is emailed to the student and also shown to you once.',
       confirmLabel: 'Undo revoke',
     });
     if (!ok) return;
     try {
       const res = await api.post(`/api/admin/verification/students/${u.id}/restore`);
-      if (res?.password) setCredential({ user: res.user ?? u, password: res.password, label: 'Restored' });
+      if (res?.password) setCredential({ user: res.user ?? u, password: res.password, label: 'Restored', emailDelivered: res.emailDelivered });
       toast.success('Access restored.');
       refresh();
     } catch (e) { toast.error(e.message); }
@@ -115,7 +115,7 @@ export const AdminVerificationPage = () => {
       <PageHeader
         kicker="VERIFICATION QUEUE"
         title="OPERATIVE REVIEW"
-        description="Approve or reject self-registered students. Approving issues a 6-digit password shown once on this screen — share it with the student manually. Coordinator approvals send the email; admin approvals do not."
+        description="Approve or reject self-registered students. Approving issues a 6-digit password that is emailed to the student and also shown to you once on this screen as a backup."
       />
 
       <div className="relative mb-8 w-full">
@@ -293,8 +293,17 @@ const CredentialModal = ({ cred, onClose }) => {
       }
     >
       <div className="space-y-4">
+        {cred.emailDelivered ? (
+          <div className="rounded-none border border-status-live/40 bg-status-live/5 p-3 font-mono text-[12px] leading-relaxed text-status-live">
+            ✓ Credentials emailed to the student. The copy below is your backup.
+          </div>
+        ) : (
+          <div className="rounded-none border border-status-warn/40 bg-status-warn/5 p-3 font-mono text-[12px] leading-relaxed text-status-warn">
+            ⚠ Email not sent — share these credentials with the student manually.
+          </div>
+        )}
         <div className="rounded-none border border-white/20 bg-white/5 p-3 font-mono text-[11px] leading-relaxed text-white/60">
-          One-shot reveal. The plaintext password is not stored — only its bcrypt hash. Copy or share now; closing this modal discards it from the UI.
+          One-shot reveal. The plaintext password is not stored — only its bcrypt hash. Closing this modal discards it from the UI.
         </div>
 
         <CredRow

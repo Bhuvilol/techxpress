@@ -48,8 +48,12 @@ export const CoordinatorVerificationPage = () => {
 
   const approve = async (student) => {
     try {
-      await api.post(`/api/coordinator/verification/students/${student.id}/approve`);
-      toast.success(`Approved ${student.fullName}. Credentials emailed to the student.`);
+      const res = await api.post(`/api/coordinator/verification/students/${student.id}/approve`);
+      if (res?.emailDelivered) {
+        toast.success(`Approved ${student.fullName}. Credentials emailed to the student.`);
+      } else {
+        toast.warn(`Approved ${student.fullName}, but the email could not be sent. Ask an organizer to reissue the password.`, { ttl: 9000 });
+      }
       refresh();
     } catch (err) {
       toast.error(err.message);

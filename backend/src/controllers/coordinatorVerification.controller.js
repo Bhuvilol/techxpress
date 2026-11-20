@@ -34,7 +34,7 @@ export const approve = async (req, res) => {
   const institutionId = requireCoordinatorInstitutionId(req);
   const { user, plaintextPassword } = await userService.approveStudent(req.params.id, { institutionId });
 
-  await sendVerificationApprovedMail({
+  const mail = await sendVerificationApprovedMail({
     to: user.email,
     fullName: user.fullName,
     password: plaintextPassword,
@@ -45,14 +45,18 @@ export const approve = async (req, res) => {
     action: 'USER_VERIFIED',
     entityType: 'User',
     entityId: user.id,
-    details: { email: user.email, via: 'COORDINATOR' },
+    details: { email: user.email, via: 'COORDINATOR', emailDelivered: mail.delivered },
   });
 
   // Coordinators must NEVER see the plaintext password — they only confirm
-  // identity. The password is delivered exclusively to the student by email.
+  // identity. The password is delivered exclusively to the student by email;
+  // if delivery fails, an admin can reissue it (which also shows it once).
   res.json({
-    message: 'User verified and credentials emailed',
+    message: mail.delivered
+      ? 'User verified and credentials emailed'
+      : 'User verified, but the email could not be sent — ask an organizer to reissue the password',
     user,
+    emailDelivered: mail.delivered,
   });
 };
 

@@ -1,12 +1,17 @@
 import { userService } from '../services/user.service.js';
 import { registryService } from '../services/registry.service.js';
 import { auditService } from '../services/audit.service.js';
-import { sendVerificationRejectedMail } from '../utils/mail.js';
+import {
+  sendVerificationApprovedMail,
+  sendVerificationRejectedMail,
+  sendAccessRestoredMail,
+  sendPasswordReissuedMail,
+} from '../utils/mail.js';
 
-// Admin-initiated credential operations (approve, restore, reissue) intentionally
-// do NOT send emails. The plaintext password is surfaced in the response body for
-// the admin to copy and relay manually. Email-on-approve is reserved for the
-// coordinator flow, where the campus contact verifies the student.
+// Admin-initiated credential operations (approve, restore, reissue) email the
+// new password to the student AND return it once in the response, so the admin
+// has a backup if the email doesn't arrive. `emailDelivered` tells the UI which
+// case it is. The plaintext password is never stored — only its bcrypt hash.
 
 // All handlers below require requireAuth + requireRole('ADMIN') at the route layer.
 
@@ -44,22 +49,29 @@ export const lookupByRegistrationNo = async (req, res) => {
 export const approve = async (req, res) => {
   const { user, plaintextPassword } = await userService.approveStudent(req.params.id);
 
+  const mail = await sendVerificationApprovedMail({
+    to: user.email,
+    fullName: user.fullName,
+    password: plaintextPassword,
+  });
+
   auditService.record({
     actorId: req.user.id,
     action: 'USER_VERIFIED',
     entityType: 'User',
     entityId: user.id,
-    details: { email: user.email },
+    details: { email: user.email, emailDelivered: mail.delivered },
   });
 
-  // Surface the plaintext password to the admin UI ONLY. This response
-  // never leaves the ADMIN-gated route. Treat it as a one-shot reveal —
-  // the database stores only the bcrypt hash, so once this response is
-  // discarded the password is unrecoverable except via reissue().
+  // One-shot reveal for the admin (ADMIN-gated route only). The database
+  // stores only the bcrypt hash; after this the password can only be reissued.
   res.json({
-    message: 'User verified — share the password manually',
+    message: mail.delivered
+      ? 'User verified — credentials emailed'
+      : 'User verified — email not sent, share the password manually',
     user,
     password: plaintextPassword,
+    emailDelivered: mail.delivered,
   });
 };
 
@@ -99,35 +111,53 @@ export const revoke = async (req, res) => {
 export const restore = async (req, res) => {
   const { user, plaintextPassword } = await userService.restoreRevokedStudent(req.params.id);
 
+  const mail = await sendAccessRestoredMail({
+    to: user.email,
+    fullName: user.fullName,
+    password: plaintextPassword,
+  });
+
   auditService.record({
     actorId: req.user.id,
     action: 'USER_VERIFIED',
     entityType: 'User',
     entityId: user.id,
-    details: { restored: true },
+    details: { restored: true, emailDelivered: mail.delivered },
   });
 
   res.json({
-    message: 'Access restored — share the password manually',
+    message: mail.delivered
+      ? 'Access restored — credentials emailed'
+      : 'Access restored — email not sent, share the password manually',
     user,
     password: plaintextPassword,
+    emailDelivered: mail.delivered,
   });
 };
 
 export const reissue = async (req, res) => {
   const { user, plaintextPassword } = await userService.reissuePassword(req.params.id);
 
+  const mail = await sendPasswordReissuedMail({
+    to: user.email,
+    fullName: user.fullName,
+    password: plaintextPassword,
+  });
+
   auditService.record({
     actorId: req.user.id,
     action: 'USER_VERIFIED',
     entityType: 'User',
     entityId: user.id,
-    details: { reissue: true },
+    details: { reissue: true, emailDelivered: mail.delivered },
   });
 
   res.json({
-    message: 'New password issued — share it manually',
+    message: mail.delivered
+      ? 'New password issued — credentials emailed'
+      : 'New password issued — email not sent, share it manually',
     password: plaintextPassword,
     user,
+    emailDelivered: mail.delivered,
   });
 };

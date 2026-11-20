@@ -1,20 +1,37 @@
-import { Resend } from 'resend';
+import { SESv2Client, SendEmailCommand } from '@aws-sdk/client-sesv2';
 import { logger } from './logger.js';
 
-const apiKey = process.env.RESEND_API_KEY;
-const resend = apiKey ? new Resend(apiKey) : null;
+// Transactional email via Amazon SES (v2 API).
+//
+// Credentials come from the default AWS provider chain — on EC2 that's the
+// instance role (no keys in env). Sending is enabled only when MAIL_FROM is
+// set, e.g. "Vortex <noreply@your-domain>" on an SES-verified domain. Without
+// it, mail is logged and skipped so local dev and pre-domain staging still work.
+//
+// Every helper resolves to { delivered: boolean, ... } and never throws, so a
+// mail outage can't break the business action that triggered it.
 
-const FROM = process.env.MAIL_FROM ?? 'Vortex <onboarding@resend.dev>';
+const FROM = process.env.MAIL_FROM;
 const REPLY_TO = process.env.MAIL_REPLY_TO;
+const REGION = process.env.SES_REGION ?? 'ap-south-1';
 
-if (!resend) {
-  if (process.env.NODE_ENV === 'production') {
-    logger.error('mail.disabled — RESEND_API_KEY is missing in production. Verification emails will NOT be sent.');
-  } else {
-    logger.warn('mail.disabled — set RESEND_API_KEY to enable outgoing email; falling back to log-only mode');
-  }
+const ses = FROM ? new SESv2Client({ region: REGION }) : null;
+
+if (!ses) {
+  const msg = 'mail.disabled — MAIL_FROM is not set; emails will be logged and skipped';
+  if (process.env.NODE_ENV === 'production') logger.error(msg);
+  else logger.warn(msg);
 }
 
+// User-supplied values (names, rejection reasons) must never be interpreted
+// as HTML inside the email body.
+const escapeHtml = (value) =>
+  String(value ?? '').replace(/[&<>"']/g, (c) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+  }[c]));
+
+// heading/intro/footer are trusted template strings; callers escape any
+// user-supplied parts before passing them in.
 const wrapHtml = ({ heading, intro, body, footer }) => `<!doctype html>
 <html lang="en">
   <head>
@@ -56,33 +73,35 @@ const wrapHtml = ({ heading, intro, body, footer }) => `<!doctype html>
 
 const credBlock = ({ email, password }) => `
   <div style="margin:16px 0 20px 0;padding:16px 18px;background:#0a0a0a;border:1px solid #2a2a2a;border-radius:4px;font-family:'Courier New',Courier,monospace;font-size:13px;color:#f5f5f5;">
-    <div style="margin-bottom:8px;"><span style="color:#666;">Email&nbsp;&nbsp;&nbsp;&nbsp;</span> ${email}</div>
-    <div><span style="color:#666;">Password</span> <span style="color:#22d3ee;font-weight:bold;">${password}</span></div>
+    <div style="margin-bottom:8px;"><span style="color:#666;">Email&nbsp;&nbsp;&nbsp;&nbsp;</span> ${escapeHtml(email)}</div>
+    <div><span style="color:#666;">Password</span> <span style="color:#22d3ee;font-weight:bold;">${escapeHtml(password)}</span></div>
   </div>
 `;
 
 export const sendMail = async ({ to, subject, text, html }) => {
-  if (!resend) {
-    logger.warn('mail.skipped — no RESEND_API_KEY', { to, subject });
-    return { delivered: false, reason: 'no-key' };
+  if (!ses) {
+    logger.warn('mail.skipped — MAIL_FROM not set', { to, subject });
+    return { delivered: false, reason: 'not-configured' };
   }
   try {
-    const result = await resend.emails.send({
-      from: FROM,
-      to,
-      subject,
-      text,
-      ...(html ? { html } : {}),
-      ...(REPLY_TO ? { replyTo: REPLY_TO } : {}),
-    });
-    if (result.error) {
-      logger.error('mail.failed', { to, subject, err: result.error.message ?? String(result.error) });
-      return { delivered: false, error: result.error.message ?? String(result.error) };
-    }
-    logger.info('mail.sent', { to, subject, id: result.data?.id });
-    return { delivered: true, id: result.data?.id };
+    const out = await ses.send(new SendEmailCommand({
+      FromEmailAddress: FROM,
+      Destination: { ToAddresses: [to] },
+      ...(REPLY_TO ? { ReplyToAddresses: [REPLY_TO] } : {}),
+      Content: {
+        Simple: {
+          Subject: { Data: subject, Charset: 'UTF-8' },
+          Body: {
+            Text: { Data: text, Charset: 'UTF-8' },
+            ...(html ? { Html: { Data: html, Charset: 'UTF-8' } } : {}),
+          },
+        },
+      },
+    }));
+    logger.info('mail.sent', { to, subject, id: out.MessageId });
+    return { delivered: true, id: out.MessageId };
   } catch (err) {
-    logger.error('mail.failed', { to, subject, err: err.message });
+    logger.error('mail.failed', { to, subject, err: `${err.name}: ${err.message}` });
     return { delivered: false, error: err.message };
   }
 };
@@ -93,15 +112,15 @@ export const sendVerificationApprovedMail = ({ to, fullName, password }) =>
     subject: 'Your Vortex account is verified',
     text:
       `Hi ${fullName},\n\n` +
-      `Your registration has been approved by your campus coordinator.\n` +
+      `Your registration has been verified.\n` +
       `Use the credentials below to log in:\n\n` +
       `  Email:    ${to}\n` +
       `  Password: ${password}\n\n` +
       `Keep this password safe — it is your only credential.\n` +
       `If you lose it, contact the organizers to reissue.\n`,
     html: wrapHtml({
-      heading: `Welcome, ${fullName}.`,
-      intro: 'Your campus coordinator has verified your registration. You can now log in to Vortex with the credentials below.',
+      heading: `Welcome, ${escapeHtml(fullName)}.`,
+      intro: 'Your registration has been verified. You can now log in to Vortex with the credentials below.',
       body: credBlock({ email: to, password }),
       footer: 'Keep this password safe — it is your only login credential. If you lose it, contact the organizers to reissue a new one.',
     }),
@@ -118,16 +137,32 @@ export const sendVerificationRejectedMail = ({ to, fullName, reason }) =>
       `Reach out to the organizers if you believe this is an error.\n`,
     html: wrapHtml({
       heading: 'Registration not approved',
-      intro: `Hi ${fullName}, your Vortex registration was not approved.`,
+      intro: `Hi ${escapeHtml(fullName)}, your Vortex registration was not approved.`,
       body: reason
-        ? `<div style="margin:8px 0 16px 0;padding:14px 16px;background:#0a0a0a;border:1px solid #2a2a2a;border-radius:4px;font-size:13px;color:#f5f5f5;"><strong style="color:#fbbf24;">Reason:</strong> ${reason}</div>`
+        ? `<div style="margin:8px 0 16px 0;padding:14px 16px;background:#0a0a0a;border:1px solid #2a2a2a;border-radius:4px;font-size:13px;color:#f5f5f5;"><strong style="color:#fbbf24;">Reason:</strong> ${escapeHtml(reason)}</div>`
         : '',
       footer: 'Reach out to the organizers if you believe this is an error.',
     }),
   });
 
-// Kept for compatibility; admin flows no longer call these but coordinator
-// flows or future workflows may.
+export const sendPasswordReissuedMail = ({ to, fullName, password }) =>
+  sendMail({
+    to,
+    subject: 'Your new Vortex password',
+    text:
+      `Hi ${fullName},\n\n` +
+      `An organizer issued you a new password for Vortex.\n\n` +
+      `  Email:    ${to}\n` +
+      `  Password: ${password}\n\n` +
+      `Your previous password no longer works.\n`,
+    html: wrapHtml({
+      heading: 'New password issued',
+      intro: `Hi ${escapeHtml(fullName)}, an organizer issued you a new password. Use the credentials below to log in.`,
+      body: credBlock({ email: to, password }),
+      footer: 'Your previous password no longer works — use this new one to log in.',
+    }),
+  });
+
 export const sendAccessRevokedMail = ({ to, fullName }) =>
   sendMail({
     to,
@@ -138,7 +173,7 @@ export const sendAccessRevokedMail = ({ to, fullName }) =>
       `Contact the team if you have questions.\n`,
     html: wrapHtml({
       heading: 'Access revoked',
-      intro: `Hi ${fullName}, your Vortex access has been revoked by an organizer.`,
+      intro: `Hi ${escapeHtml(fullName)}, your Vortex access has been revoked by an organizer.`,
       body: '',
       footer: 'Contact the organizers if you have questions or believe this is in error.',
     }),
@@ -157,7 +192,7 @@ export const sendAccessRestoredMail = ({ to, fullName, password }) =>
       `Your previous revoked password no longer works.\n`,
     html: wrapHtml({
       heading: 'Access restored',
-      intro: `Hi ${fullName}, an organizer restored your access. Use the credentials below to log back in.`,
+      intro: `Hi ${escapeHtml(fullName)}, an organizer restored your access. Use the credentials below to log back in.`,
       body: credBlock({ email: to, password }),
       footer: 'Your previous password no longer works — use this new one to log in.',
     }),

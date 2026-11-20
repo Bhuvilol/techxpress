@@ -23,12 +23,12 @@ const schema = z.object({
   JURY_SEED_PASSWORD: z.string().min(7).optional(),
   COORDINATOR_SEED_PASSWORD: z.string().min(7).optional(),
 
-  // Resend (transactional email). Optional — when absent, mail.js logs and skips.
-  // MAIL_FROM must use a verified domain in Resend, e.g. "Vortex <noreply@yourdomain.com>".
-  // Defaults to Resend's sandbox sender, which can ONLY deliver to your own Resend
-  // account email — useless for real users, fine for dev smoke tests.
-  RESEND_API_KEY: z.string().min(1).optional().or(z.literal('').transform(() => undefined)),
+  // Amazon SES (transactional email). Optional — when MAIL_FROM is absent,
+  // mail.js logs and skips. MAIL_FROM must be on an SES-verified domain, e.g.
+  // "Vortex <noreply@yourdomain.com>". Credentials come from the AWS default
+  // provider chain (EC2 instance role in staging/production).
   MAIL_FROM: z.string().min(1).optional().or(z.literal('').transform(() => undefined)),
+  SES_REGION: z.string().min(1).default('ap-south-1'),
   MAIL_REPLY_TO: z.string().email().optional().or(z.literal('').transform(() => undefined)),
 });
 
