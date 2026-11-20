@@ -123,6 +123,7 @@ const EMPTY = {
   bio: '',
   achievements: '',
   hackathonExperience: '',
+  website: '', // honeypot — hidden from humans; must stay empty
 };
 
 const sanitizePayload = (form) =>
@@ -288,6 +289,15 @@ export const RegistrationPage = () => {
       )}
 
       <form onSubmit={submit} className="glass-card mt-12 space-y-12 border-white/10 bg-[#050505] p-5 sm:p-6 md:mt-14 md:space-y-14 md:p-8 xl:p-10">
+        {/* Honeypot: off-screen, skipped by keyboard and screen readers.
+            Bots that fill every input get silently discarded server-side. */}
+        <div aria-hidden="true" style={{ position: 'absolute', left: '-10000px', top: 'auto', width: 1, height: 1, overflow: 'hidden' }}>
+          <label>
+            Website
+            <input type="text" name="website" tabIndex={-1} autoComplete="off" value={form.website} onChange={set('website')} />
+          </label>
+        </div>
+
         <Section number="01" title="Identity">
           <div className="grid grid-cols-1 gap-5 md:grid-cols-2 md:gap-6">
             <FormField label={requiredLabel('Name')} error={errors.fullName}>

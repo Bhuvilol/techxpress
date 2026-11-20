@@ -59,7 +59,7 @@ export const ToastProvider = ({ children }) => {
             <div
               key={t.id}
               className={cn(
-                'fade-in flex items-start gap-3 rounded-[4px] border bg-bg-surface p-3 pr-2 shadow-lg',
+                'fade-in flex items-start gap-3 rounded-[4px] border bg-bg-surface-2 p-3 pr-2 shadow-lg',
                 TONE[t.tone],
               )}
               role="status"

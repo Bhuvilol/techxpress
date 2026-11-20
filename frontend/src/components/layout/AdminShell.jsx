@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { NavLink, Outlet, Link, useLocation } from 'react-router-dom';
 import {
   Infinity, Users, ShieldCheck, Settings, Lock, Megaphone,
-  History, Layers, ListChecks, LogOut, Menu, X, FlaskConical
+  History, Layers, ListChecks, LogOut, Menu, X, FlaskConical, Database
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext.jsx';
 import { cn } from '../../utils/cn.js';
@@ -10,6 +10,7 @@ import { cn } from '../../utils/cn.js';
 const NAV = [
   { to: '/admin',                end: true, label: 'Overview',     icon: Layers   },
   { to: '/admin/verification',              label: 'Verification', icon: ShieldCheck },
+  { to: '/admin/registry',                  label: 'Registry',     icon: Database  },
   { to: '/admin/teams',                     label: 'Teams',        icon: Users     },
   { to: '/admin/rules',                     label: 'Rules',        icon: Settings  },
   { to: '/admin/rounds',                    label: 'Rounds',       icon: Lock      },

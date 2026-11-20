@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Plus, Trash2, Edit3, ListChecks } from 'lucide-react';
 import { api } from '../../lib/api.js';
 import { useApi } from '../../hooks/useApi.js';
@@ -153,12 +153,14 @@ const PSEditor = ({ open, target, domains, onClose, onDone }) => {
   const [domainId, setDomainId] = useState(target?.domain?.id ?? '');
   const [busy, setBusy] = useState(false);
 
-  // Reset on target change.
-  useState(() => {
+  // Load the selected statement (or blank fields for "new") every time the
+  // editor opens. The component stays mounted, so initial state alone isn't enough.
+  useEffect(() => {
+    if (!open) return;
     setTitle(target?.title ?? '');
     setDescription(target?.description ?? '');
     setDomainId(target?.domain?.id ?? '');
-  }, [target?.id]);
+  }, [open, target]);
 
   const submit = async (e) => {
     e.preventDefault();

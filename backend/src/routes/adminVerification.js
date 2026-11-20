@@ -6,10 +6,12 @@ import {
   userIdParamSchema,
   rejectBodySchema,
   listStudentsQuerySchema,
+  lookupByRegistrationNoQuerySchema,
 } from '../validators/admin.schema.js';
 import {
   listPending,
   listStudents,
+  lookupByRegistrationNo,
   approve,
   reject,
   revoke,
@@ -23,6 +25,8 @@ router.use(requireAuth, requireRole('ADMIN'));
 
 router.get('/pending', validate({ query: listStudentsQuerySchema }), ah(listPending));
 router.get('/students', validate({ query: listStudentsQuerySchema }), ah(listStudents));
+// Resolve a registration number to a user (admin force add/remove member).
+router.get('/lookup', validate({ query: lookupByRegistrationNoQuerySchema }), ah(lookupByRegistrationNo));
 
 router.post('/students/:id/approve',
   validate({ params: userIdParamSchema }), ah(approve));
