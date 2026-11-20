@@ -1,4 +1,4 @@
-import { useRef, useLayoutEffect, useState, useCallback, useEffect } from 'react';
+import { useRef, useState, useCallback, useEffect } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import './TrainScene.css';
@@ -35,13 +35,11 @@ const ASSETS = {
   platform: '/assets/platform_wbg.png',
   ttMaster: '/assets/TT_master_wbg.png',
   cloud: '/assets/cloud_wbg.png',
-  interiorVideo: '/assets/train_bg.mp4',
-  interiorMask: '/assets/train_interior_pov_masked1.png',
 };
 
 const STATION_MASTER_DIALOGUE = [
   {
-    text: "Hi! I am Rajesh Sharma, your station master.\nWelcome to the journey.\nclick, then scroll to continue"
+    text: "Hi! I am Rajesh Sharma, your station master.\nWelcome to the TechXpress journey!"
   }
 ];
 
@@ -61,13 +59,44 @@ export default function TrainScene({ onComplete }) {
   const blackoutRef = useRef(null);
   const backgroundSharpRef = useRef(null); // Base sharp layer
   const backgroundBlurRef = useRef(null); // Blurred layer for performance
-  const ttMasterRef = useRef(null);
-  const cloudRef = useRef(null);
   const pivotMarkerRef = useRef(null); // Added ref for visual debugging
-  const lastTapRef = useRef(0); // For mobile double-tap detection
 
-  // Dialogue state
+  // Dialogue & Navigation state
   const [dialogueStep, setDialogueStep] = useState(0); // 0: hidden, 1: showing, 2: finished
+  const [showInstruction, setShowInstruction] = useState(false);
+  const isNavigatingRef = useRef(false);
+  const completeTriggeredRef = useRef(false);
+  const hasArrivedRef = useRef(false);
+
+  // Responsive Viewport Tracking (Resize & Orientation)
+  const [windowDimensions, setWindowDimensions] = useState({
+    width: typeof window !== 'undefined' ? window.innerWidth : 1200,
+    height: typeof window !== 'undefined' ? window.innerHeight : 800,
+  });
+
+  useEffect(() => {
+    let resizeTimer = null;
+    const handleResize = () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        if (!isNavigatingRef.current) {
+          setWindowDimensions({
+            width: window.innerWidth,
+            height: window.innerHeight,
+          });
+          ScrollTrigger.refresh();
+        }
+      }, 150);
+    };
+
+    window.addEventListener('resize', handleResize);
+    window.addEventListener('orientationchange', handleResize);
+    return () => {
+      clearTimeout(resizeTimer);
+      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('orientationchange', handleResize);
+    };
+  }, []);
 
   // Store GSAP objects for cleanup
   const tlRef = useRef(null);
@@ -76,7 +105,7 @@ export default function TrainScene({ onComplete }) {
   /* loading gate */
   const [loaded, setLoaded] = useState(false);
   const loadCount = useRef(0);
-  const TOTAL_IMAGES = 10; // BG-sharp, BG-blur, tracks, train-closed, train-open, platform, ttMaster, cloud + interiorVideo, interiorMask
+  const TOTAL_IMAGES = 8; // BG-sharp, BG-blur, tracks, train-closed, train-open, platform, ttMaster, cloud
 
   const handleImgReady = useCallback(() => {
     loadCount.current += 1;
@@ -84,6 +113,120 @@ export default function TrainScene({ onComplete }) {
       setLoaded(true);
     }
   }, []);
+
+  /* ── Defer non-essential interior assets: preload in background AFTER landing is ready ── */
+  useEffect(() => {
+    if (!loaded) return;
+    const idleTimer = setTimeout(() => {
+      const img = new Image();
+      img.src = '/assets/train_interior_pov_masked1.png';
+      const video = document.createElement('video');
+      video.src = '/assets/train_bg.mp4';
+      video.preload = 'auto';
+    }, 800);
+    return () => clearTimeout(idleTimer);
+  }, [loaded]);
+
+  /* ── Smooth Navigation to Train Interior ── */
+  const triggerEnterTrain = useCallback(() => {
+    if (isNavigatingRef.current || completeTriggeredRef.current) return;
+    isNavigatingRef.current = true;
+
+    // Fade out instruction immediately
+    setShowInstruction(false);
+
+    // Dismiss dialogue if still active
+    setDialogueStep(2);
+
+    const scrollTl = tlRef.current?.scrollTl;
+    if (!scrollTl) {
+      if (!completeTriggeredRef.current && onComplete) {
+        completeTriggeredRef.current = true;
+        onComplete();
+      }
+      return;
+    }
+
+    // Disable ScrollTrigger scrubbing so manual scroll doesn't conflict
+    if (stRef.current) {
+      stRef.current.disable(false);
+    }
+
+    const currentProgress = scrollTl.progress();
+    const remaining = 1 - currentProgress;
+    const duration = Math.max(0.65, 1.5 * remaining);
+
+    gsap.to(scrollTl, {
+      progress: 1,
+      duration,
+      ease: 'power2.inOut',
+      onComplete: () => {
+        if (!completeTriggeredRef.current && onComplete) {
+          completeTriggeredRef.current = true;
+          window.scrollTo(0, 0);
+          setTimeout(onComplete, 120);
+        }
+      }
+    });
+  }, [onComplete]);
+
+  /* ── Double-Click (Desktop) & Double-Tap (Mobile) Listeners ── */
+  useEffect(() => {
+    if (!loaded) return;
+
+    // Desktop double click
+    const handleDblClick = (e) => {
+      if (e.target.tagName === 'INPUT') return;
+      triggerEnterTrain();
+    };
+
+    // Mobile double tap tracking
+    const touchStartPos = { x: 0, y: 0, time: 0 };
+    const lastTap = { x: 0, y: 0, time: 0 };
+
+    const handleTouchStart = (e) => {
+      if (e.touches.length === 1) {
+        touchStartPos.x = e.touches[0].clientX;
+        touchStartPos.y = e.touches[0].clientY;
+        touchStartPos.time = Date.now();
+      }
+    };
+
+    const handleTouchEnd = (e) => {
+      if (e.changedTouches.length !== 1) return;
+      if (e.target.tagName === 'INPUT') return;
+
+      const touch = e.changedTouches[0];
+      const moveDist = Math.hypot(touch.clientX - touchStartPos.x, touch.clientY - touchStartPos.y);
+
+      // Distinguish tap from swipe / manual scroll (> 15px is a scroll)
+      if (moveDist > 15) return;
+
+      const now = Date.now();
+      const timeSinceLastTap = now - lastTap.time;
+      const tapDist = Math.hypot(touch.clientX - lastTap.x, touch.clientY - lastTap.y);
+
+      if (timeSinceLastTap > 40 && timeSinceLastTap < 350 && tapDist < 35) {
+        // Confirmed double-tap
+        lastTap.time = 0;
+        triggerEnterTrain();
+      } else {
+        lastTap.x = touch.clientX;
+        lastTap.y = touch.clientY;
+        lastTap.time = now;
+      }
+    };
+
+    window.addEventListener('dblclick', handleDblClick);
+    window.addEventListener('touchstart', handleTouchStart, { passive: true });
+    window.addEventListener('touchend', handleTouchEnd, { passive: true });
+
+    return () => {
+      window.removeEventListener('dblclick', handleDblClick);
+      window.removeEventListener('touchstart', handleTouchStart);
+      window.removeEventListener('touchend', handleTouchEnd);
+    };
+  }, [loaded, triggerEnterTrain]);
 
   /* ── Build animation after images load ── */
   useEffect(() => {
@@ -144,29 +287,45 @@ export default function TrainScene({ onComplete }) {
     // Reset positions
     gsap.set(tracksImg, { x: 0 });
     gsap.set(closedImg, { opacity: 0 });
-    gsap.set(openImg, {
-      x: startingX,
-      opacity: 1,
-      scale: baseScale,
-      transformOrigin: originStr
-    });
     gsap.set(blackout, { opacity: 0 });
     gsap.set(masterContainer, { scale: 1, x: 0, y: 0 });
 
-    /* ═══ Auto-play: Arrival ═══ */
-    const trainEntry = gsap.timeline({ delay: 1 });
-    trainEntry.to(openImg, {
-      x: trainFinalX,
-      ease: 'power3.out',
-      duration: 3.5,
-      onComplete: () => {
-        // Trigger the Station Master arrival 2 seconds after the train stops
-        gsap.delayedCall(2, () => {
-          const skipGuides = window.SKIP_GUIDES === true;
-          setDialogueStep(skipGuides ? 2 : 1);
-        });
-      }
-    }, 0);
+    let trainEntry = null;
+
+    if (hasArrivedRef.current) {
+      // Train has already arrived: maintain docked alignment at newly calculated responsive coordinates
+      gsap.set(openImg, {
+        x: trainFinalX,
+        opacity: 1,
+        scale: baseScale,
+        transformOrigin: originStr
+      });
+    } else {
+      // First arrival animation
+      gsap.set(openImg, {
+        x: startingX,
+        opacity: 1,
+        scale: baseScale,
+        transformOrigin: originStr
+      });
+
+      /* ═══ Auto-play: Arrival (Cinematic, Smooth & Natural) ═══ */
+      trainEntry = gsap.timeline({ delay: 0.15 });
+      trainEntry.to(openImg, {
+        x: trainFinalX,
+        ease: 'power3.out',
+        duration: 1.8,
+        onComplete: () => {
+          hasArrivedRef.current = true;
+          // Trigger the Station Master arrival gracefully after train halts
+          gsap.delayedCall(0.25, () => {
+            const skipGuides = window.SKIP_GUIDES === true;
+            setDialogueStep(skipGuides ? 2 : 1);
+            setShowInstruction(true);
+          });
+        }
+      }, 0);
+    }
 
     /* ═══ Scroll-driven: Boarding ═══ */
     const scrollTl = gsap.timeline({ paused: true });
@@ -209,24 +368,26 @@ export default function TrainScene({ onComplete }) {
       duration: 0.15,
     }, 0.85);
 
-      let completeTriggered = false;
-
-      /* ── ScrollTrigger scrubs the zoom timeline ── */
-      const st = ScrollTrigger.create({
-        trigger: spacer,
-        start: 'top top',
-        end: 'bottom bottom',
-        animation: scrollTl,
-        scrub: 1.5, // smoother scrubbing
-        onUpdate: (self) => {
-          // Lenis smooth scroll sometimes stops at 0.999 progress
-          if (self.progress > 0.99 && !completeTriggered && onComplete) {
-            completeTriggered = true;
-            // Short delay for cinematic feel
-            setTimeout(onComplete, 200);
-          }
-        },
-      });
+    /* ── ScrollTrigger scrubs the zoom timeline ── */
+    const st = ScrollTrigger.create({
+      trigger: spacer,
+      start: 'top top',
+      end: 'bottom bottom',
+      animation: scrollTl,
+      scrub: 1.5, // smoother scrubbing
+      onUpdate: (self) => {
+        if (self.progress > 0.05 && !isNavigatingRef.current) {
+          setShowInstruction(false);
+        }
+        // Lenis smooth scroll sometimes stops at 0.999 progress
+        if (self.progress > 0.99 && !completeTriggeredRef.current && onComplete) {
+          completeTriggeredRef.current = true;
+          window.scrollTo(0, 0);
+          // Short delay for cinematic feel
+          setTimeout(onComplete, 200);
+        }
+      },
+    });
 
     // Positioning the pivot marker (debug only)
     const marker = pivotMarkerRef.current;
@@ -245,7 +406,7 @@ export default function TrainScene({ onComplete }) {
         tlRef.current.scrollTl?.kill();
       }
     };
-  }, [loaded, onComplete]); // Re-run when loaded or window size fluctuates
+  }, [loaded, onComplete, windowDimensions]); // Re-run when loaded or window size fluctuates
 
   return (
     <>
@@ -255,6 +416,21 @@ export default function TrainScene({ onComplete }) {
           <div className="loading-spinner">Arriving…</div>
         </div>
       )}
+
+      {/* On-Screen Double-Tap Instruction */}
+      <div
+        className={`enter-instruction ${showInstruction ? 'visible' : 'hidden'}`}
+        onDoubleClick={triggerEnterTrain}
+        role="button"
+        tabIndex={0}
+        aria-label="Double tap to enter the train"
+      >
+        <span className="instruction-badge">
+          <span className="instruction-ripple" />
+          <span className="instruction-dot" />
+        </span>
+        <span className="instruction-text">Double Tap to Go Inside the Train</span>
+      </div>
 
       {/* Fixed scene viewport */}
       <div 
@@ -320,26 +496,6 @@ export default function TrainScene({ onComplete }) {
               onLoad={handleImgReady}
               onError={handleImgReady}
               draggable={false}
-              style={{ pointerEvents: 'auto' }}
-              onTouchStart={(e) => {
-                // Double tap detection exclusively for mobile on the train door
-                if (window.innerWidth > 768) return;
-                
-                const now = Date.now();
-                if (now - lastTapRef.current < 300) {
-                  // If dialogue is active, skip it first
-                  if (dialogueStep === 1) {
-                    setDialogueStep(2);
-                  }
-                  
-                  // Programmatically scroll to the end to trigger the boarding
-                  window.scrollTo({
-                    top: document.body.scrollHeight,
-                    behavior: 'smooth'
-                  });
-                }
-                lastTapRef.current = now;
-              }}
             />
           </div>
         </div>
@@ -361,23 +517,15 @@ export default function TrainScene({ onComplete }) {
         {/* --- Station Master Guide (Rajesh Sharma) --- */}
         <StationMaster
           isVisible={dialogueStep === 1}
-          dialogues={[
-            {
-              text: `Hi! I am Rajesh Sharma, your station master.\nWelcome to the journey.\n${
-                window.innerWidth <= 768 ? 'click, then double tap train to enter' : 'click, then scroll to continue'
-              }`
-            }
-          ]}
+          dialogues={STATION_MASTER_DIALOGUE}
           assets={ASSETS}
           onComplete={() => setDialogueStep(2)}
         />
 
-        {/* Hidden pre-loaders to prevent deadlock & pre-load Phase 3 assets */}
+        {/* Hidden pre-loaders for essential character guide assets */}
         <div style={{ display: 'none' }}>
            <img src={ASSETS.ttMaster} onLoad={handleImgReady} alt="" />
            <img src={ASSETS.cloud} onLoad={handleImgReady} alt="" />
-           <img src={ASSETS.interiorMask} onLoad={handleImgReady} alt="" />
-           <video src={ASSETS.interiorVideo} onCanPlayThrough={handleImgReady} muted />
         </div>
       </div>
 

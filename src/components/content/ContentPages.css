@@ -5,14 +5,27 @@
   width: 100vw;
   height: 100vh;
   z-index: 1000;
-  background: rgba(0, 0, 0, 0.4);
-  backdrop-filter: blur(20px);
+  background: rgba(10, 12, 16, 0.75);
+  backdrop-filter: blur(25px);
+  -webkit-backdrop-filter: blur(25px);
   display: flex;
   flex-direction: column;
   color: #fff;
   padding: 4vw;
   box-sizing: border-box;
   overflow-y: auto;
+  animation: contentPageReveal 0.38s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+
+@keyframes contentPageReveal {
+  from {
+    opacity: 0;
+    transform: translateY(22px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .back-btn {
@@ -241,42 +254,59 @@
    ═══════════════════════════════════════════════════════════ */
 @media (max-width: 768px) {
   .content-page {
-    padding: 6vw;
-    padding-top: 20vw; /* Make room for back button */
+    padding: 5vw;
+    padding-top: 65px; /* Clean spacing below fixed back button */
   }
 
   .back-btn {
-    top: 5vw;
-    left: 5vw;
-    font-size: 0.9rem;
+    top: 14px;
+    left: 14px;
+    font-size: 0.82rem;
+    padding: 7px 14px;
   }
 
   .page-header h1 {
-    font-size: 2.5rem;
+    font-size: clamp(1.8rem, 6.5vw, 2.5rem);
+    line-height: 1.1;
   }
 
   .page-header h1 span {
-    font-size: 1rem;
-    letter-spacing: 0.3em;
+    font-size: clamp(0.85rem, 3.5vw, 1.1rem);
+    letter-spacing: 0.25em;
+    margin-top: -2px;
   }
 
   .subtitle {
-    font-size: 1rem;
+    font-size: clamp(0.85rem, 3vw, 1rem);
+    margin-top: 6px;
   }
 
   .about-grid {
     grid-template-columns: 1fr;
-    gap: 5vw;
+    gap: 16px;
+    margin-top: 20px;
+  }
+
+  .about-card {
+    padding: 18px;
+    border-radius: 16px;
   }
 
   .chat-interface-container {
     flex-direction: column;
     height: auto;
-    min-height: 70vh;
+    min-height: 60vh;
+    margin-top: 16px;
+    gap: 12px;
   }
 
   .rajesh-sidebar {
-    flex: 0 0 25vh;
+    display: none; /* Hide large graphic so chat window takes full screen space on mobile */
+  }
+
+  .chat-window-box {
+    padding: 16px;
+    border-radius: 20px;
   }
 
   .form-header h2 {
@@ -284,7 +314,50 @@
   }
 
   .register-form-box {
-    margin: 5vh auto;
-    padding: 6vw;
+    margin: 15px auto;
+    padding: 20px;
+    width: 100%;
+    box-sizing: border-box;
+    border-radius: 20px;
+  }
+
+  .premium-form {
+    gap: 14px;
+    margin-top: 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .content-page {
+    padding: 12px;
+    padding-top: 56px;
+  }
+
+  .back-btn {
+    top: 10px;
+    left: 10px;
+    padding: 5px 10px;
+    font-size: 0.75rem;
+  }
+
+  .chat-bubble {
+    max-width: 90%;
+    padding: 10px 14px;
+    font-size: 0.88rem;
+  }
+
+  .chat-input-area {
+    margin-top: 10px;
+    gap: 6px;
+  }
+
+  .chat-input-area input {
+    padding: 10px 12px;
+    font-size: 0.82rem;
+  }
+
+  .send-btn {
+    padding: 8px 14px;
+    font-size: 0.82rem;
   }
 }
