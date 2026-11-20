@@ -1,0 +1,139 @@
+name: Deploy backend (staging)
+
+# Builds the backend image, pushes it to ECR, and deploys it to the staging
+# EC2 host over SSM (no SSH, no stored AWS keys — GitHub OIDC → IAM role).
+#
+# Runs automatically on pushes to main that touch the backend or deploy files.
+# Run manually from the Actions tab ("Run workflow") to redeploy, or with
+# "seed" ticked to run the idempotent seed after migrations (first deploy only;
+# the seed also prunes taxonomy rows it doesn't know about, so don't run it
+# routinely once organizers start editing domains / problem statements).
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "backend/**"
+      - "deploy/**"
+      - ".github/workflows/deploy-backend.yml"
+  workflow_dispatch:
+    inputs:
+      seed:
+        description: "Run the seed script after migrating (first deploy only)"
+        type: boolean
+        default: false
+
+concurrency:
+  group: deploy-staging
+  cancel-in-progress: false
+
+permissions:
+  id-token: write # GitHub OIDC token for AWS
+  contents: read
+
+env:
+  AWS_REGION: ap-south-1
+  ROLE_ARN: arn:aws:iam::820539072886:role/vortex-github-deploy
+  ECR_REGISTRY: 820539072886.dkr.ecr.ap-south-1.amazonaws.com
+  ECR_REPO: vortex-backend
+  INSTANCE_ID: i-046ce4ff2d0e7bfe0
+  VORTEX_ENV: staging
+  API_URL: https://api.3-6-239-100.sslip.io
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Log in to ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build and push image
+        uses: docker/build-push-action@v6
+        with:
+          context: backend
+          platforms: linux/amd64
+          push: true
+          tags: |
+            ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPO }}:${{ github.sha }}
+            ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPO }}:${{ env.VORTEX_ENV }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Deploy on server (SSM Run Command)
+        env:
+          IMAGE: ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPO }}:${{ github.sha }}
+          SEED: ${{ inputs.seed || false }}
+        run: |
+          set -euo pipefail
+          COMPOSE_B64=$(base64 -w0 deploy/docker-compose.yml)
+          CADDY_B64=$(base64 -w0 deploy/Caddyfile)
+
+          # Script executed on the server as root. Never echoes secret values.
+          cat > remote.sh <<EOF
+          set -euo pipefail
+          cd /opt/vortex
+          echo "$COMPOSE_B64" | base64 -d > docker-compose.yml
+          echo "$CADDY_B64" | base64 -d > Caddyfile
+
+          # Render .env from SSM Parameter Store (/vortex/$VORTEX_ENV/*).
+          TMP=\$(mktemp)
+          aws ssm get-parameters-by-path --region $AWS_REGION --path /vortex/$VORTEX_ENV/ \
+            --with-decryption --query 'Parameters[].[Name,Value]' --output text \
+          | while IFS=\$'\t' read -r name value; do
+              key=\${name##*/}
+              case "\$value" in *"'"*) echo "value of \$key contains a single quote" >&2; exit 1;; esac
+              printf "%s='%s'\n" "\$key" "\$value"
+            done > "\$TMP"
+          echo "BACKEND_IMAGE='$IMAGE'" >> "\$TMP"
+          install -m 600 "\$TMP" .env && rm -f "\$TMP"
+          echo "rendered .env with \$(wc -l < .env) settings"
+
+          aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REGISTRY >/dev/null
+          docker compose pull --quiet
+          echo "--- migrate"
+          docker compose run --rm --no-deps backend npx prisma migrate deploy
+          if [ "$SEED" = "true" ]; then
+            echo "--- seed"
+            docker compose run --rm --no-deps backend npm run db:seed
+          fi
+          echo "--- start"
+          docker compose up -d --remove-orphans --wait --wait-timeout 180
+          docker image prune -f >/dev/null
+          docker compose ps
+          EOF
+
+          jq -n --rawfile s remote.sh '{commands: [$s], executionTimeout: ["900"]}' > params.json
+          CID=$(aws ssm send-command --instance-ids "$INSTANCE_ID" \
+            --document-name AWS-RunShellScript --comment "deploy ${GITHUB_SHA::7}" \
+            --parameters file://params.json --timeout-seconds 900 \
+            --query Command.CommandId --output text)
+          echo "SSM command: $CID"
+
+          for i in $(seq 1 180); do
+            STATUS=$(aws ssm get-command-invocation --command-id "$CID" --instance-id "$INSTANCE_ID" \
+              --query Status --output text 2>/dev/null || echo Pending)
+            case "$STATUS" in Pending|InProgress|Delayed) sleep 5 ;; *) break ;; esac
+          done
+          echo "status: $STATUS"
+          aws ssm get-command-invocation --command-id "$CID" --instance-id "$INSTANCE_ID" \
+            --query '[StandardOutputContent,StandardErrorContent]' --output text
+          [ "$STATUS" = "Success" ]
+
+      - name: Smoke test
+        run: |
+          for i in $(seq 1 18); do
+            if curl -fsS --max-time 10 "$API_URL/api/health"; then echo; echo "healthy"; exit 0; fi
+            echo "waiting for $API_URL ($i/18)…"; sleep 10
+          done
+          echo "health check failed"; exit 1
