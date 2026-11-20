@@ -1,61 +1,215 @@
-import { useState, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import './SeatNavigation.css';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 /**
- * SeatNavigation Component
- * Pins a digital UI to the physical screen in the train's interior artwork.
+ * Central Cartoon-Style Hanging Information Board
  *
- * @param {boolean} isVisible - Whether the screen UI is active
+ * Prominently suspended in the upper central aisle of the cartoon train,
+ * featuring large readable options for ABOUT, REGISTER, and ASK PRICES
+ * with cartoon chains, playful cel-shaded materials, smooth bounce animation,
+ * and physical 3D unfolding transitions upon option selection.
+ *
+ * @param {boolean} isVisible - Whether the train interior is active
+ * @param {Function} onNavigate - Optional navigation callback
  */
 export default function SeatNavigation({ isVisible, onNavigate }) {
-  // Calibration Coordinates (Trial & Error starting points)
-  // These are % relative to the 8360x4705 image
-  const [coords, setCoords] = useState({
-    top: 34.5,
-    left: 35.2,
-    width: 17.5,
-    height: 22.0
-  });
+  const navigate = useNavigate();
 
-  const navButtons = [
-    { id: 'about', img: '/assets/about_wbg.png', path: '/about' },
-    { id: 'register', img: '/assets/register_wbg.png', path: '/register' },
-    { id: 'ask', img: '/assets/ask_rajesh_wbg.png', path: '/ask' }
-  ];
+  const [hasDropped, setHasDropped] = useState(false);
+  const [transitioningTo, setTransitioningTo] = useState(null);
+
+  useEffect(() => {
+    if (!isVisible) return;
+    const timer = setTimeout(() => {
+      setHasDropped(true);
+    }, 200);
+    return () => clearTimeout(timer);
+  }, [isVisible]);
 
   if (!isVisible) return null;
 
+  const handleOptionClick = (e, destination) => {
+    e.preventDefault();
+    if (transitioningTo) return; // Prevent duplicate triggers
+    setTransitioningTo(destination);
+
+    // Smooth, measured 3D unfolding animation sequence before route transition
+    setTimeout(() => {
+      if (onNavigate) {
+        onNavigate(destination);
+      } else {
+        navigate(`/${destination}`);
+      }
+    }, 420);
+  };
+
   return (
     <div className="seat-navigation-layer">
-      <div className="coordinate-match-system">
+      {/* Central Cartoon Hanging Information Board - Responsive Centered Layout */}
+      <div className="central-board-anchor-wrapper">
         <div
-          className="seat-screen-container"
-          style={{
-            top: `${coords.top}%`,
-            left: `${coords.left}%`,
-            width: `${coords.width}%`,
-            height: `${coords.height}%`
-          }}
+          className={`central-hanging-board-container ${hasDropped ? 'dropped' : 'stowed'} ${
+            transitioningTo ? 'board-transitioning' : ''
+          }`}
         >
-          {/* Digital Navigation Interface */}
-          <div className="seat-screen-ui image-nav">
-            <div className="screen-grid">
-              {navButtons.map(btn => (
-                <Link
-                  key={btn.id}
-                  to={btn.path}
-                  className="screen-btn"
-                  onClick={() => console.log(`[SeatNavigation] Link clicked: ${btn.id}`)}
-                  onMouseEnter={() => console.log(`[SeatNavigation] Hovering over: ${btn.id}`)}
-                >
-                  <img src={btn.img} alt={btn.id} />
-                </Link>
-              ))}
+          {/* Cartoon Suspension Chains hanging from the ceiling */}
+          <div className="cartoon-suspension-system">
+            <div className="chain-anchor chain-anchor-left">
+              <div className="ceiling-bracket" />
+              <div className="cartoon-chain">
+                <div className="chain-link link-1" />
+                <div className="chain-link link-2" />
+                <div className="chain-link link-3" />
+                <div className="chain-link link-4" />
+                <div className="chain-link link-5" />
+                <div className="chain-hook" />
+              </div>
+            </div>
+
+            <div className="chain-anchor chain-anchor-right">
+              <div className="ceiling-bracket" />
+              <div className="cartoon-chain">
+                <div className="chain-link link-1" />
+                <div className="chain-link link-2" />
+                <div className="chain-link link-3" />
+                <div className="chain-link link-4" />
+                <div className="chain-link link-5" />
+                <div className="chain-hook" />
+              </div>
+            </div>
+          </div>
+
+          {/* The Cartoon Cardboard Board with subtle gentle idle sway */}
+          <div className="cartoon-cardboard-board">
+            {/* Top Board Mount Loops */}
+            <div className="board-mount-loops">
+              <span className="mount-loop loop-left" />
+              <span className="mount-loop loop-right" />
+            </div>
+
+            {/* Cartoon Header Banner */}
+            <div className="board-header-banner">
+              <div className="banner-stitch" />
+              <div className="banner-content">
+                <span className="train-cartoon-icon">🚂</span>
+                <span className="banner-title">TECHXPRESS INFORMATION</span>
+                <span className="banner-sub">CARRIAGE № 4</span>
+              </div>
+            </div>
+
+            {/* The 3 Prominent Options */}
+            <div className="board-options-list">
+              
+              {/* Option 1: ABOUT */}
+              <div
+                role="button"
+                tabIndex={0}
+                className={`cartoon-option-card card-about ${
+                  transitioningTo === 'about' ? 'selected-transition' : ''
+                }`}
+                onClick={(e) => handleOptionClick(e, 'about')}
+              >
+                <div className="option-icon-box icon-about">
+                  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="10" />
+                    <line x1="12" y1="16" x2="12" y2="12" />
+                    <line x1="12" y1="8" x2="12.01" y2="8" />
+                  </svg>
+                </div>
+                <div className="option-text-box">
+                  <span className="option-title">ABOUT</span>
+                  <span className="option-sub">EXPEDITION & VISION</span>
+                </div>
+                <div className="option-action-btn btn-about">
+                  <span>{transitioningTo === 'about' ? 'OPENING...' : 'EXPLORE'}</span>
+                  <span className="btn-arrow">➔</span>
+                </div>
+              </div>
+
+              {/* Option 2: REGISTER */}
+              <div
+                role="button"
+                tabIndex={0}
+                className={`cartoon-option-card card-register ${
+                  transitioningTo === 'register' ? 'selected-transition' : ''
+                }`}
+                onClick={(e) => handleOptionClick(e, 'register')}
+              >
+                <div className="option-icon-box icon-register">
+                  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="2" y="4" width="20" height="16" rx="2" />
+                    <path d="M7 15h0M2 9.5h20" />
+                  </svg>
+                </div>
+                <div className="option-text-box">
+                  <span className="option-title">REGISTER</span>
+                  <span className="option-sub">PASSENGER CREDENTIALS</span>
+                </div>
+                <div className="option-action-btn btn-register">
+                  <span>{transitioningTo === 'register' ? 'OPENING...' : 'GET TICKET'}</span>
+                  <span className="btn-arrow">➔</span>
+                </div>
+              </div>
+
+              {/* Option 3: ASK PRICES */}
+              <div
+                role="button"
+                tabIndex={0}
+                className={`cartoon-option-card card-ask ${
+                  transitioningTo === 'ask' ? 'selected-transition' : ''
+                }`}
+                onClick={(e) => handleOptionClick(e, 'ask')}
+              >
+                <div className="option-icon-box icon-ask">
+                  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                  </svg>
+                </div>
+                <div className="option-text-box">
+                  <span className="option-title">ASK PRICES</span>
+                  <span className="option-sub">FARES & ASSISTANT</span>
+                </div>
+                <div className="option-action-btn btn-ask">
+                  <span>{transitioningTo === 'ask' ? 'OPENING...' : 'INQUIRE'}</span>
+                  <span className="btn-arrow">➔</span>
+                </div>
+              </div>
+
+            </div>
+
+            {/* Bottom Cardboard Tab / Corner Stitches */}
+            <div className="board-bottom-trim">
+              <span className="corner-stitch cs-left" />
+              <span className="bottom-tag-text">CLICK ANY OPTION TO PROCEED</span>
+              <span className="corner-stitch cs-right" />
+            </div>
+
+          </div>
+
+        </div>
+      </div>
+
+      {/* 3. Physical 3D Cartoon Unfolding Transition Curtain */}
+      {transitioningTo && (
+        <div className={`cartoon-unfolding-transition-curtain curtain-${transitioningTo}`}>
+          <div className="curtain-cardboard-sheet">
+            <div className="curtain-header-tab">
+              <span className="curtain-stitch" />
+              <span className="curtain-tab-title">
+                {transitioningTo === 'about' && '🚂 ABOUT TECHXPRESS'}
+                {transitioningTo === 'register' && '🎫 EXPEDITION REGISTRATION'}
+                {transitioningTo === 'ask' && '💬 FARES & ASSISTANT RAJESH'}
+              </span>
+              <span className="curtain-stitch" />
+            </div>
+            <div className="curtain-body">
+              <div className="curtain-spinner" />
+              <span className="curtain-loading-text">UNFOLDING COMPARTMENT...</span>
             </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
