@@ -60,3 +60,17 @@ export const emitTeamMemberLeft = (teamId, userId) =>
 
 export const emitTeamFinalized = (teamId, team) =>
   safeEmit(`team:${teamId}`, 'team:finalized', { team });
+
+// New chat message → everyone currently in the team's room (members only).
+export const emitTeamMessage = (teamId, message) =>
+  safeEmit(`team:${teamId}`, 'team:message', { message });
+
+// Pull a user's sockets out of a team room (after they leave / are removed),
+// so they stop receiving that team's live chat immediately.
+export const removeUserFromTeamRoom = (userId, teamId) => {
+  try {
+    getIO().in(`user:${userId}`).socketsLeave(`team:${teamId}`);
+  } catch (err) {
+    logger.debug('realtime.leave_skipped', { userId, teamId, reason: err.message });
+  }
+};

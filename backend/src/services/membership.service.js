@@ -1,5 +1,6 @@
 import { Conflict, Forbidden, NotFound } from '../utils/errors.js';
 import { rulesService } from './rules.service.js';
+import { removeUserFromTeamRoom } from '../realtime/emitter.js';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CENTRAL MEMBERSHIP WRITER
@@ -206,6 +207,10 @@ export const membershipService = {
     });
 
     await rulesService.recomputeTeamStatus(tx, teamId);
+
+    // Stop live team traffic (chat) to the removed member right away. The
+    // API itself already rejects them, since they're no longer a member.
+    removeUserFromTeamRoom(userId, teamId);
 
     return { disbanded: false };
   },

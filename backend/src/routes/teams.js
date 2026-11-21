@@ -15,13 +15,17 @@ import {
   leaveSchema,
   dismissSchema,
   transferLeadershipSchema,
+  listTeamMessagesQuerySchema,
+  postTeamMessageSchema,
 } from '../validators/team.schema.js';
+import { teamChatLimiter } from '../middleware/rateLimit.js';
 
 import * as team    from '../controllers/team.controller.js';
 import * as invite  from '../controllers/invite.controller.js';
 import * as join    from '../controllers/joinRequest.controller.js';
 import * as change  from '../controllers/membershipChange.controller.js';
 import * as evaluation from '../controllers/evaluation.controller.js';
+import * as chat from '../controllers/teamChat.controller.js';
 
 const router = Router();
 
@@ -92,6 +96,19 @@ router.post('/:id/join-requests',
 router.get('/:id/join-requests',
   validate({ params: teamIdParamSchema, query: listTeamRequestsQuerySchema }),
   ah(join.listForTeam),
+);
+
+// ── team chat (current members only — enforced in teamChat.service)
+router.get('/:id/messages',
+  requireRole('STUDENT'),
+  validate({ params: teamIdParamSchema, query: listTeamMessagesQuerySchema }),
+  ah(chat.list),
+);
+router.post('/:id/messages',
+  requireRole('STUDENT'),
+  teamChatLimiter,
+  validate({ params: teamIdParamSchema, body: postTeamMessageSchema }),
+  ah(chat.post),
 );
 
 // ── membership changes scoped to a team

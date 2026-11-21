@@ -75,3 +75,13 @@ export const forceRemoveSchema = z.object({
 export const setStatusSchema = z.object({
   status: z.enum(['FORMING', 'QUALIFIED', 'FINALIZED', 'DISQUALIFIED']),
 });
+
+// team chat
+export const listTeamMessagesQuerySchema = z.object({
+  before: z.coerce.date().optional(),
+  limit: z.coerce.number().int().min(1).max(100).optional(),
+});
+
+export const postTeamMessageSchema = z.object({
+  body: z.string().trim().min(1, 'Message is empty').max(1000),
+});

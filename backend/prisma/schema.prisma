@@ -157,6 +157,7 @@ model User {
   juryAssignments     JuryAssignment[]
   broadcastsSent      Broadcast[]
   auditEntries        AuditLog[]
+  teamMessages        TeamMessage[]
 
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
@@ -240,6 +241,7 @@ model Team {
   evaluations     Evaluation[]
   juryAssignments JuryAssignment[]
   leaderboard     LeaderboardEntry?
+  messages        TeamMessage[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -306,6 +308,20 @@ model MembershipChangeRequest {
 
   @@index([teamId, status])
   @@index([targetUserId, status])
+}
+
+// Intra-team chat. Readable/writable only by current members of the team
+// (enforced in teamChat.service). Deleted with the team.
+model TeamMessage {
+  id        String   @id @default(cuid())
+  teamId    String
+  team      Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  senderId  String
+  sender    User     @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  body      String   @db.VarChar(1000)
+  createdAt DateTime @default(now())
+
+  @@index([teamId, createdAt])
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

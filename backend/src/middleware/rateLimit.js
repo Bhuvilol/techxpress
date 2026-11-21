@@ -59,3 +59,18 @@ export const registrationLimiter = rateLimit({
   limit: 60,
   handler: limited('registration_ip'),
 });
+
+// Team chat: per user, to stop message floods.
+export const teamChatLimiter = rateLimit({
+  ...common,
+  windowMs: MINUTE,
+  limit: 30,
+  keyGenerator: (req) => `chat:${req.user?.id ?? req.ip}`,
+  handler: (req, res, _next, options) => {
+    logger.warn('rate_limited', { limiter: 'team_chat', userId: req.user?.id });
+    res.status(options.statusCode).json({
+      error: 'You are sending messages too quickly. Please slow down.',
+      code: 'RATE_LIMITED',
+    });
+  },
+});

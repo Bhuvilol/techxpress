@@ -17,6 +17,7 @@ import { FormField } from '../../components/ui/FormField.jsx';
 import { Spinner } from '../../components/ui/Spinner.jsx';
 import { confirm } from '../../components/ui/Confirm.jsx';
 import { issueLabel } from '../../utils/format.js';
+import { TeamChat } from '../../components/team/TeamChat.jsx';
 
 // ── Status banner derived from rules engine evaluation ─────────────────────
 const StatusBanner = ({ status, issues }) => {
@@ -728,6 +729,8 @@ const MyTeamView = ({ team, evaluation, onMutate }) => {
           })}
         </div>
       </section>
+
+      <TeamChat key={team.id} teamId={team.id} />
 
       {isLeader && !isFinalized && !teamDisbandPending && (
         <div className="grid gap-6 lg:grid-cols-2">
