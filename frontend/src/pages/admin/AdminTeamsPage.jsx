@@ -46,6 +46,10 @@ export const AdminTeamsPage = () => {
     [debouncedSearch, status, page, limit],
   );
 
+  // Disbanding the last team on the last page empties it — step back.
+  const lastPage = teams.data?.totalPages ?? 1;
+  if (teams.data && page > lastPage) setPage(lastPage);
+
   const handleStatusChange = (e) => {
     setStatus(e.target.value);
     setPage(1);
