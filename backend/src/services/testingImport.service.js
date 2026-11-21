@@ -77,6 +77,11 @@ export const testingImportService = {
         if (!bio) throw new Error('Missing bio');
         if (contributionAreas.length === 0) throw new Error('contributionAreas is required (use | to separate values)');
 
+        const rawPassword = cleanString(row.plainPassword, 120);
+        if (rawPassword && rawPassword.length < 6) {
+          throw new Error('plainPassword must be at least 6 characters');
+        }
+
         const institution = institutionByName.get(institutionName.toLowerCase());
         if (!institution) throw new Error(`Unknown institution: "${institutionName}"`);
 
@@ -100,7 +105,7 @@ export const testingImportService = {
           throw new Error(`Duplicate ${field}`);
         }
 
-        const plainPassword = cleanString(row.plainPassword, 120) ?? generateSixDigitCode();
+        const plainPassword = rawPassword ?? generateSixDigitCode();
         const passwordHash = await hashPassword(plainPassword);
 
         const data = {
