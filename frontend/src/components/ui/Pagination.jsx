@@ -11,6 +11,7 @@ export const Pagination = ({
   onLimitChange,
   limits = [10, 20, 50],
   itemLabel = 'items',
+  customSummary,
   className,
 }) => {
   const safePage = Math.max(1, Math.min(page, totalPages || 1));
@@ -44,10 +45,14 @@ export const Pagination = ({
       )}
     >
       <div className="flex items-center gap-3 font-mono text-[11px] text-text-secondary">
-        <span>
-          Showing <strong className="font-bold text-text-primary">{from}–{to}</strong> of{' '}
-          <strong className="font-bold text-text-primary">{total}</strong> {itemLabel}
-        </span>
+        {customSummary ? (
+          <span>{customSummary}</span>
+        ) : (
+          <span>
+            Showing <strong className="font-bold text-text-primary">{from}–{to}</strong> of{' '}
+            <strong className="font-bold text-text-primary">{total}</strong> {itemLabel}
+          </span>
+        )}
 
         {onLimitChange && (
           <div className="flex items-center gap-1.5 pl-2 border-l border-white/10">
