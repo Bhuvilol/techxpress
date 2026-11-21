@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Users, Search, Trash2, RefreshCw, ShieldCheck, UserMinus, UserPlus, Settings, Lock, Unlock, Ban, RotateCcw } from 'lucide-react';
 import { api } from '../../lib/api.js';
 import { useApi } from '../../hooks/useApi.js';
@@ -10,6 +10,7 @@ import { CardSkeleton } from '../../components/ui/Skeleton.jsx';
 import { Modal } from '../../components/ui/Modal.jsx';
 import { FormField } from '../../components/ui/FormField.jsx';
 import { Spinner } from '../../components/ui/Spinner.jsx';
+import { Pagination } from '../../components/ui/Pagination.jsx';
 import { confirm } from '../../components/ui/Confirm.jsx';
 import { issueLabel } from '../../utils/format.js';
 
@@ -18,13 +19,41 @@ const STATUS_TONE = { FORMING: 'warn', QUALIFIED: 'live', FINALIZED: 'cyan', DIS
 export const AdminTeamsPage = () => {
   const toast = useToast();
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [status, setStatus] = useState('');
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(20);
   const [active, setActive] = useState(null);
 
+  // Debounce search input to avoid flood on each keystroke
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+      setPage(1);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [search]);
+
   const teams = useApi(
-    () => api.get('/api/teams', { query: { search, status: status || undefined } }),
-    [search, status],
+    () => api.get('/api/teams', {
+      query: {
+        search: debouncedSearch.trim() || undefined,
+        status: status || undefined,
+        page,
+        limit,
+      },
+    }),
+    [debouncedSearch, status, page, limit],
   );
+
+  const handleStatusChange = (e) => {
+    setStatus(e.target.value);
+    setPage(1);
+  };
+
+  const handleSearchChange = (e) => {
+    setSearch(e.target.value);
+  };
 
   // Read the global lockdown switch alongside teams so the toggle button
   // reflects current state without an extra round-trip.
@@ -73,7 +102,7 @@ export const AdminTeamsPage = () => {
                 : locked ? <Unlock size={12} /> : <Lock size={12} />}
               {locked ? 'Unlock all teams' : 'Lock all teams'}
             </button>
-            <select className="select-glass w-full md:!w-auto" value={status} onChange={(e) => setStatus(e.target.value)}>
+            <select className="select-glass w-full md:!w-auto" value={status} onChange={handleStatusChange}>
               <option value="">All statuses</option>
               <option value="FORMING">Forming</option>
               <option value="QUALIFIED">Qualified</option>
@@ -82,7 +111,7 @@ export const AdminTeamsPage = () => {
             </select>
             <div className="relative w-full md:w-64">
               <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-text-dim" />
-              <input className="input-glass !pl-10" placeholder="Search…" value={search} onChange={(e) => setSearch(e.target.value)} />
+              <input className="input-glass !pl-10" placeholder="Search…" value={search} onChange={handleSearchChange} />
             </div>
           </div>
         }
@@ -130,7 +159,23 @@ export const AdminTeamsPage = () => {
         ))}
       </div>
 
-      <ManageModal team={active} onClose={() => setActive(null)} onDone={refresh} />
+      {teams.data?.teams?.length > 0 && (
+        <Pagination
+          page={page}
+          totalPages={teams.data?.totalPages ?? 1}
+          total={teams.data?.total ?? 0}
+          limit={limit}
+          onPageChange={setPage}
+          onLimitChange={(l) => {
+            setLimit(l);
+            setPage(1);
+          }}
+          limits={[10, 20, 50]}
+          itemLabel="teams"
+        />
+      )}
+
+      <ManageModal key={active?.id ?? 'none'} team={active} onClose={() => setActive(null)} onDone={refresh} />
     </>
   );
 };

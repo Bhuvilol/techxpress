@@ -15,7 +15,9 @@ export const listTeamsQuerySchema = z.object({
   status: z.enum(['FORMING', 'QUALIFIED', 'FINALIZED', 'DISQUALIFIED']).optional(),
   domainId: cuid.optional(),
   psId: cuid.optional(),
-  search: z.string().trim().min(1).max(120).optional(),
+  search: z.string().trim().max(120).optional().transform((v) => v || undefined),
+  page: z.coerce.number().int().min(1).optional(),
+  limit: z.coerce.number().int().min(1).max(100).optional(),
 });
 
 export const listJoinableQuerySchema = z.object({
@@ -23,7 +25,7 @@ export const listJoinableQuerySchema = z.object({
 });
 
 export const listExploreMembersQuerySchema = z.object({
-  search: z.string().trim().min(1).max(120).optional(),
+  search: z.string().trim().max(120).optional().transform((v) => v || undefined),
   matchActorDomains: z.coerce.boolean().optional(),
   // Paging for the Explore panel (infinite scroll). Omit `limit` to get the
   // whole list (used by the invite-by-registration-number lookup).

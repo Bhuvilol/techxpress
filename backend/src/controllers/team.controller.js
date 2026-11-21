@@ -43,8 +43,18 @@ export const mine = async (req, res) => {
 };
 
 export const list = async (req, res) => {
-  const teams = await teamService.list(req.query);
-  res.json({ count: teams.length, teams });
+  const result = await teamService.list(req.query);
+  if (Array.isArray(result)) {
+    return res.json({ count: result.length, total: result.length, teams: result });
+  }
+  res.json({
+    count: result.teams.length,
+    total: result.total,
+    page: result.page,
+    limit: result.limit,
+    totalPages: result.totalPages,
+    teams: result.teams,
+  });
 };
 
 export const listJoinable = async (req, res) => {

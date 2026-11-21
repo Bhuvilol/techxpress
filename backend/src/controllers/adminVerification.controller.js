@@ -1,7 +1,7 @@
 import { userService } from '../services/user.service.js';
-import { registryService } from '../services/registry.service.js';
 import { auditService } from '../services/audit.service.js';
 import { disconnectUser, emitLeaderboardChanged } from '../realtime/emitter.js';
+import { prisma } from '../config/db.js';
 import {
   sendVerificationApprovedMail,
   sendVerificationRejectedMail,
@@ -16,27 +16,77 @@ import {
 
 // All handlers below require requireAuth + requireRole('ADMIN') at the route layer.
 
-export const listPending = async (req, res) => {
-  const users = await userService.listPending({ search: req.query.search });
+export const stats = async (_req, res) => {
+  const data = await userService.getVerificationStats();
+  res.json({ stats: data });
+};
 
-  // Annotate each with registry-match info so the admin UI can highlight
-  // exact matches vs. unknowns. Done in a loop to avoid an N+1 — registry
-  // lookups are unique-key reads, very cheap.
-  const annotated = await Promise.all(
-    users.map(async (u) => ({
+export const listPending = async (req, res) => {
+  const result = await userService.listPending({
+    search: req.query.search,
+    page: req.query.page,
+    limit: req.query.limit,
+  });
+
+  const isPaginated = !Array.isArray(result);
+  const users = isPaginated ? result.users : result;
+
+  // Batch query college registry to eliminate N+1 database queries
+  const regNos = users.map((u) => u.registrationNo).filter(Boolean);
+  const matchedEntries = regNos.length
+    ? await prisma.collegeRegistry.findMany({
+        where: { registrationNo: { in: regNos } },
+        include: { institution: { select: { id: true, name: true } } },
+      })
+    : [];
+
+  const registryByRegNo = new Map(matchedEntries.map((e) => [e.registrationNo, e]));
+
+  const annotated = users.map((u) => {
+    const entry = u.registrationNo ? registryByRegNo.get(u.registrationNo) : null;
+    return {
       ...u,
-      registryMatch: await registryService.matchUser({
-        registrationNo: u.registrationNo,
-        email: u.email,
-      }),
-    })),
-  );
-  res.json({ count: annotated.length, users: annotated });
+      registryMatch: entry
+        ? {
+            matched: true,
+            entry: {
+              ...entry,
+              emailMatches: entry.email?.toLowerCase() === u.email?.toLowerCase(),
+            },
+          }
+        : { matched: false },
+    };
+  });
+
+  if (!isPaginated) {
+    return res.json({ count: annotated.length, total: annotated.length, users: annotated });
+  }
+
+  res.json({
+    count: annotated.length,
+    total: result.total,
+    page: result.page,
+    limit: result.limit,
+    totalPages: result.totalPages,
+    users: annotated,
+  });
 };
 
 export const listStudents = async (req, res) => {
-  const users = await userService.listStudents(req.query);
-  res.json({ count: users.length, users });
+  const result = await userService.listStudents(req.query);
+
+  if (Array.isArray(result)) {
+    return res.json({ count: result.length, total: result.length, users: result });
+  }
+
+  res.json({
+    count: result.users.length,
+    total: result.total,
+    page: result.page,
+    limit: result.limit,
+    totalPages: result.totalPages,
+    users: result.users,
+  });
 };
 
 // Resolve a registration number to its underlying User. Used by admin
