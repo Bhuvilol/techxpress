@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Users, Search, Building2, Layers, UserCheck, UserPlus, ChevronDown, Award, X,
 } from 'lucide-react';
@@ -40,6 +40,16 @@ export const DirectoryPage = () => {
   const [domainId, setDomainId] = useState('');
   const [teamFilter, setTeamFilter] = useState('all');
   const [collapsed, setCollapsed] = useState(() => new Set());
+  const isFirstMount = useRef(true);
+
+  // Automatically scroll back to top when switching pages
+  useEffect(() => {
+    if (isFirstMount.current) {
+      isFirstMount.current = false;
+      return;
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [page]);
 
   // Debounce search input to avoid request flooding on keystrokes
   useEffect(() => {
@@ -222,10 +232,14 @@ export const DirectoryPage = () => {
                 totalPages={data.totalPages}
                 total={data.total}
                 limit={limit}
-                onPageChange={setPage}
+                onPageChange={(nextPage) => {
+                  setPage(nextPage);
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
                 onLimitChange={(newLimit) => {
                   setLimit(newLimit);
                   setPage(1);
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
                 }}
                 limits={[12, 24, 48, 96]}
                 itemLabel="students"
