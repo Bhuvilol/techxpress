@@ -1,6 +1,8 @@
 import { evaluationService } from '../services/evaluation.service.js';
 import { auditService } from '../services/audit.service.js';
+import { rulesService } from '../services/rules.service.js';
 import { prisma } from '../config/db.js';
+import { Forbidden } from '../utils/errors.js';
 
 export const submit = async (req, res) => {
   const result = await evaluationService.submit({
@@ -22,8 +24,35 @@ export const submit = async (req, res) => {
   res.status(201).json(result);
 };
 
+// Per-team score breakdown + jury feedback.
+//   ADMIN / JURY  → full detail (needed for judging)
+//   STUDENT       → own team only, only once the admin has turned on
+//                   "Show marks", and without the scoring juror's identity
+//   anyone else   → 403
 export const teamScores = async (req, res) => {
-  const evaluations = await evaluationService.listForTeam({ teamId: req.params.id });
+  const teamId = req.params.id;
+  const { role, id: userId } = req.user;
+
+  if (role === 'ADMIN' || role === 'JURY') {
+    const evaluations = await evaluationService.listForTeam({ teamId });
+    return res.json({ count: evaluations.length, evaluations });
+  }
+
+  if (role !== 'STUDENT') throw Forbidden('Not allowed to view team scores');
+
+  const member = await prisma.teamMember.findUnique({
+    where: { teamId_userId: { teamId, userId } },
+    select: { userId: true },
+  });
+  if (!member) throw Forbidden("You can only view your own team's scores");
+
+  const rules = await rulesService.get();
+  if (!rules.showMarks) {
+    throw Forbidden('Scores have not been released yet', { code: 'MARKS_HIDDEN' });
+  }
+
+  const evaluations = (await evaluationService.listForTeam({ teamId }))
+    .map(({ jury: _jury, juryId: _juryId, ...evaluation }) => evaluation);
   res.json({ count: evaluations.length, evaluations });
 };
 
