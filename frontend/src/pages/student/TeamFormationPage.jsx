@@ -16,7 +16,7 @@ import { Modal } from '../../components/ui/Modal.jsx';
 import { FormField } from '../../components/ui/FormField.jsx';
 import { Spinner } from '../../components/ui/Spinner.jsx';
 import { confirm } from '../../components/ui/Confirm.jsx';
-import { issueLabel } from '../../utils/format.js';
+import { issueLabel, formatRelative } from '../../utils/format.js';
 import { TeamChat } from '../../components/team/TeamChat.jsx';
 
 // ── Status banner derived from rules engine evaluation ─────────────────────
@@ -553,6 +553,55 @@ const MyTeamView = ({ team, evaluation, onMutate }) => {
 
   return (
     <div className="space-y-6">
+      {/* Most urgent: membership changes waiting on THIS viewer — a member's
+          leave request (leader decides) or a dismissal (the member acknowledges). */}
+      {!isFinalized && !teamDisbandPending && teamPendingForMe.length > 0 && (
+        <section className="border border-status-warn/60 bg-status-warn/[0.07] shadow-[0_0_0_1px_rgba(251,191,36,0.08),0_0_32px_-12px_rgba(251,191,36,0.45)]">
+          <header className="flex items-center justify-between gap-3 border-b border-status-warn/30 px-4 py-3">
+            <div className="flex items-center gap-2">
+              <span className="relative flex h-2.5 w-2.5">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-status-warn opacity-60" />
+                <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-status-warn" />
+              </span>
+              <AlertTriangle size={15} className="text-status-warn" />
+              <h3 className="font-sans text-[13px] font-black uppercase tracking-[0.16em] text-status-warn">Action needed</h3>
+            </div>
+            <Badge tone="warn">{teamPendingForMe.length}</Badge>
+          </header>
+          <div className="divide-y divide-status-warn/15">
+            {teamPendingForMe.map((c) => {
+              const isLeave = c.kind === 'LEAVE';
+              return (
+                <div key={c.id} className="flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="min-w-0">
+                    <div className="font-sans text-[14px] font-bold text-text-primary">
+                      {isLeave
+                        ? <>{c.target?.fullName} wants to leave the team</>
+                        : <>Your team leader wants to remove you from {team.name}</>}
+                    </div>
+                    <div className="mt-0.5 font-mono text-[11px] text-text-secondary">
+                      {isLeave
+                        ? 'Approve to remove them now, or deny to keep them in the team.'
+                        : 'Accept to leave the team, or decline to stay.'}
+                      {' · '}{formatRelative(c.createdAt)}
+                    </div>
+                    {c.reason && <div className="mt-1.5 font-mono text-[12px] text-white/70">“{c.reason}”</div>}
+                  </div>
+                  <div className="flex shrink-0 justify-end gap-2">
+                    <button className={`ghost-button ${COMPACT_BTN}`} onClick={() => denyChange(c.id, c.kind)}>
+                      <XCircle size={12} /> {isLeave ? 'Keep in team' : 'Decline'}
+                    </button>
+                    <button className={`danger-button ${COMPACT_BTN}`} onClick={() => approveChange(c.id, c.kind)}>
+                      <CheckCircle2 size={12} /> {isLeave ? 'Approve leave' : 'Accept removal'}
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
       <header className="glass-card space-y-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
@@ -711,7 +760,7 @@ const MyTeamView = ({ team, evaluation, onMutate }) => {
                   <Badge tone={isThisLeader ? 'cyan' : 'dim'}>{m.role}</Badge>
                   {isLeader && !isThisLeader && !isFinalized && !teamDisbandPending && (
                     memberHasOpenChange ? (
-                      <Badge tone="warn">Awaiting your decision ↓</Badge>
+                      <Badge tone="warn">Awaiting your decision ↑</Badge>
                     ) : (
                       <div className="flex gap-1">
                         <button className="ghost-button text-[10px]" onClick={() => transferLeader(m.user.id, m.user.fullName)}>
@@ -796,37 +845,6 @@ const MyTeamView = ({ team, evaluation, onMutate }) => {
 
       <TeamChat key={team.id} teamId={team.id} />
 
-      {isLeader && !isFinalized && !teamDisbandPending && teamPendingForMe.length > 0 && (
-        <section className="space-y-3">
-          <h3 className="section-label">Membership changes awaiting your approval</h3>
-          <div className="grid gap-3 md:grid-cols-2">
-            {teamPendingForMe.map((c) => (
-              <div key={c.id} className="glass-card flat space-y-2">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <div className="font-sans text-[13px] font-bold">{c.target?.fullName}</div>
-                    <div className="font-mono text-[11px] text-text-secondary">
-                      {c.kind === 'LEAVE' ? 'wants to leave the team' : `is being dismissed`}
-                    </div>
-                    {c.reason && (
-                      <div className="mt-1 font-mono text-[11px] text-text-dim">"{c.reason}"</div>
-                    )}
-                  </div>
-                  <Badge tone="warn">{c.kind}</Badge>
-                </div>
-                <div className="flex justify-end gap-2">
-                  <button className={`ghost-button ${COMPACT_BTN}`} onClick={() => denyChange(c.id, c.kind)}>
-                    <XCircle size={12}/> Deny
-                  </button>
-                  <button className={`danger-button ${COMPACT_BTN}`} onClick={() => approveChange(c.id, c.kind)}>
-                    <CheckCircle2 size={12}/> Approve
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
 
       <InviteModal open={inviteOpen} onClose={() => setInviteOpen(false)} teamId={team.id} onSent={onMutate} />
     </div>
