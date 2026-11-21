@@ -1,209 +1,253 @@
-# Known Issues
+# Known Issues — status as of 21 Nov 2026
 
-Findings from a full read-through of the codebase (2026-11-20). Each item
-says what is wrong, where, and what goes wrong for the user. Nothing here has
-been fixed yet.
+This list comes from a full re-audit of the code, staging infrastructure and
+dependencies after the 20–21 Nov work. Open items are ordered by **when they
+must be done**:
+1. Before registration opens (**24 Nov**)
+2. Before team formation
+3. Before judging
+4. Hardening / quality
+5. Documentation
 
-Severity: **High** = a core flow is broken or data is exposed ·
-**Medium** = wrong behaviour in a secondary flow · **Low** = cosmetic or housekeeping.
+Each item has a severity:
+- **High** — blocks a flow or exposes data
+- **Medium** — wrong behaviour or operational risk
+- **Low** — cosmetic or housekeeping
 
----
-
-## 1. Functional bugs
-
-### 1.1 No team can qualify through the normal flow — High
-- **Where:** `isDomainExpert` in [backend/prisma/schema.prisma](backend/prisma/schema.prisma);
-  counted in [backend/src/services/membership.service.js:61](backend/src/services/membership.service.js#L61)
-- **Problem:** The default rules require `minDomainExperts = 1`, but nothing a
-  student or admin can do sets `User.isDomainExpert`. Registration doesn't ask
-  for it, and no admin screen edits it. Only the Testing bulk import
-  ([testingImport.service.js](backend/src/services/testingImport.service.js)) sets it.
-- **Effect:** Every team made of normally registered students stays `FORMING`
-  forever and can't be finalized, so juries never see it. The only ways out are
-  setting `minDomainExperts` to 0 or using admin force-finalize.
-- **Also:** A member only counts as an expert if their *primary* domain matches
-  the team's domain, but team creation lets the leader pick any domain.
-
-### 1.2 Admin "Force add / Force remove member" always fails — High
-- **Where:** [frontend/src/pages/admin/AdminTeamsPage.jsx:162](frontend/src/pages/admin/AdminTeamsPage.jsx#L162)
-  calls `GET /api/admin/verification/lookup`. That route is not registered in
-  [backend/src/routes/adminVerification.js](backend/src/routes/adminVerification.js).
-- **Problem:** The handler `lookupByRegistrationNo` exists in
-  [adminVerification.controller.js:39](backend/src/controllers/adminVerification.controller.js#L39)
-  and its validator `lookupByRegistrationNoQuerySchema` exists in
-  [admin.schema.js](backend/src/validators/admin.schema.js), but the route was never added.
-- **Effect:** Both buttons show "Route not found". Admins can't add or remove
-  members by hand.
-
-### 1.3 The leaderboard doesn't update in real time — Medium
-- **Where:** `emitLeaderboardChanged` in [backend/src/realtime/emitter.js](backend/src/realtime/emitter.js)
-  is never called. [LeaderboardPage.jsx](frontend/src/pages/public/LeaderboardPage.jsx)
-  listens for `leaderboard:changed`.
-- **Effect:** New scores only appear after a manual refresh or when the window
-  regains focus. The README and the page text both promise real-time updates.
-- **Also:** Only 2 of the 10 emit helpers are used (broadcasts and
-  invite-received). Join requests, membership changes, member joined/left and
-  team finalized all have helpers but are never emitted, so the student pages
-  rely on 5-second polling instead.
-- **Also:** The leaderboard socket only connects for logged-in users, because
-  sockets require a JWT. Anonymous visitors can never get live updates.
-
-### 1.4 Editing a problem statement opens an empty form — Medium
-- **Where:** [frontend/src/pages/admin/AdminTaxonomyPage.jsx:157](frontend/src/pages/admin/AdminTaxonomyPage.jsx#L157)
-- **Problem:** `useState(() => {...}, [target?.id])` is used where a `useEffect`
-  was intended. `PSEditor` stays mounted, so its state is set only once (to
-  empty, when nothing is being edited) and never resets.
-- **Effect:** Clicking Edit shows blank fields. Saving sends an empty title and
-  domain, which the server rejects.
-
-### 1.5 The "Registration open" switch doesn't stop registration — Medium
-- **Where:** checked only in [backend/src/services/team.service.js:115](backend/src/services/team.service.js#L115);
-  `createPendingStudent` in [user.service.js:74](backend/src/services/user.service.js#L74) ignores it.
-- **Effect:** Turning it off blocks *team creation* but still lets new students
-  register. The admin label doesn't match what the switch does.
-
-### 1.6 The Registry page can't be reached — Medium
-- **Where:** [frontend/src/pages/admin/AdminRegistryPage.jsx](frontend/src/pages/admin/AdminRegistryPage.jsx)
-  is not in [App.jsx](frontend/src/App.jsx) or the [AdminShell](frontend/src/components/layout/AdminShell.jsx) sidebar.
-- **Effect:** Admins can't upload or manage the college registry, so the
-  "Matched / No match" badges on the verification queue only work for the 8
-  seeded rows. The README tells admins to use this tab.
-
-### 1.7 Explore "match my domains" filter can't be turned off — Low
-- **Where:** [backend/src/validators/team.schema.js:27](backend/src/validators/team.schema.js#L27)
-- **Problem:** `z.coerce.boolean()` turns the string `"false"` into `true`.
-- **Effect:** `?matchActorDomains=false` still filters. No UI sends `false`
-  today, so this is latent.
-
-### 1.8 Toasts have a transparent background — Low
-- **Where:** [frontend/src/contexts/ToastContext.jsx:62](frontend/src/contexts/ToastContext.jsx#L62)
-  uses `bg-bg-surface`, which isn't defined in [tailwind.config.js](frontend/tailwind.config.js)
-  (only `bg-surface-1/2/3` exist).
-- **Effect:** Toast text sits directly on top of the page content.
-
-### 1.9 Smaller frontend issues — Low
-- [StatTile.jsx](frontend/src/components/ui/StatTile.jsx) builds `group-hover:${iconTone}`
-  at runtime. Tailwind can't detect dynamic class names, so the hover colour never applies.
-- [LoginPage.jsx:12](frontend/src/pages/public/LoginPage.jsx#L12) destructures
-  `bypassLogin`, which `AuthContext` doesn't provide. Harmless, but dead code.
-- The AdminVerificationPage revoke dialog says the user "will be signed out".
-  They aren't (see 2.1).
-
-### 1.10 Dead code: jury assignments — Low
-- **Where:** [juryAssignment.service.js](backend/src/services/juryAssignment.service.js),
-  `/api/admin/jury-assignments`, `/api/jury/assignments`
-- **Problem:** Scoring moved to "first jury owns the slot", so assignments no
-  longer gate anything and no UI uses them. `assertAssigned` is never called.
+Fixed items are listed at the end for reference.
 
 ---
 
-## 2. Security and privacy
+## A. Before registration opens (24 Nov)
 
-### 2.1 Revoking a user doesn't end their session — High
-- **Where:** [backend/src/middleware/auth.js:42](backend/src/middleware/auth.js#L42) (`requireAuth`),
-  and the socket handshake in [realtime/io.js](backend/src/realtime/io.js)
-- **Problem:** The JWT is checked by signature only. The user's current
-  `verificationStatus` is never re-read, and `/api/auth/me` returns the user
-  even when they're revoked.
-- **Effect:** A revoked student keeps full API and socket access until the
-  token expires (`ACCESS_TOKEN_EXPIRY`, 2h by default; DEPLOY.md suggests 8h).
+### A1. No production environment yet — High
+Only staging exists: EC2 `t3.small`, free Supabase, temporary URLs. Still needed:
+- prod EC2 server
+- Supabase Pro (Mumbai)
+- prod secrets in SSM under `/vortex/production/*`
+- a production deploy workflow or job, plus prod CORS / API domain
+- a prod Cloudflare frontend or environment
+- seeding the real data
 
-### 2.2 Every student's personal data is visible to any logged-in user — High
-- **Where:** [backend/src/routes/teams.js:34](backend/src/routes/teams.js#L34) → `listAvailableMembers`
-  in [team.service.js](backend/src/services/team.service.js) (`EXPLORE_MEMBER_FIELDS`)
-- **Problem:** The route only requires a login, not a role, and the query has
-  no verification-status filter.
-- **Effect:** Any account — jury and coordinators included — can download every
-  student's email, phone, Discord ID, registration number, bio and links.
-  That includes `PENDING`, `REJECTED` and `REVOKED` students.
+### A2. Domain + email not live — High
+Without a domain, SES can't verify a sender and stays in sandbox mode. Approval
+emails can't reach students, so approvals must wait or be shared by hand.
 
-### 2.3 Team invites, join requests and scores have no ownership check — Medium
-- **Where:** [backend/src/routes/teams.js](backend/src/routes/teams.js):
-  `GET /:id/invites` (line 81), `GET /:id/join-requests` (line 92), `GET /:id/scores` (line 52)
-- **Effect:** Any logged-in user can list another team's invitees and
-  requesters (with emails). They can also read that team's full scores and
-  jury feedback, even when the admin has hidden marks (`showMarks = false`) or
-  the leaderboard.
+Steps:
+1. Buy the domain and move its DNS to Cloudflare.
+2. Verify the domain in SES (DKIM / custom MAIL FROM).
+3. Request SES production access.
+4. Set `MAIL_FROM` in SSM.
 
-### 2.4 Teams can go over the maximum size — Medium
-- **Where:** `loadTeamForUpdate` in [membership.service.js:27](backend/src/services/membership.service.js#L27);
-  capacity check at [line 132](backend/src/services/membership.service.js#L132)
-- **Problem:** The code comment admits the row isn't actually locked
-  (`SELECT … FOR UPDATE` isn't used). Under Postgres's default READ COMMITTED
-  isolation, two accepts or approvals running at the same moment both see the
-  old `memberCount`.
-- **Effect:** Two members can join when only one slot is left.
+### A3. Testing bulk import is always enabled — High
+- **Where:** `routes/adminTesting.js`, `AdminTestingPage.jsx`
+- **Problem:** Admin → Testing creates **VERIFIED** students with known
+  passwords, skipping verification. Its results export also contains
+  plaintext passwords.
+- **Fix:** Disable it in production (an env flag such as `ENABLE_TESTING_IMPORT`,
+  hiding the page) or remove it.
 
-### 2.5 User text is inserted into email HTML without escaping — Medium
-- **Where:** [backend/src/utils/mail.js](backend/src/utils/mail.js) (`wrapHtml`, rejection `reason`)
-- **Problem:** `fullName` (chosen by the student at registration) and the
-  rejection reason are placed into the HTML as-is.
-- **Effect:** A crafted name can inject HTML or links into official-looking
-  emails sent from the organizer's domain.
+### A4. Staff accounts are hard-coded in the seed — High
+- **Where:** `backend/prisma/seed.js`
+- **Problem:** Jury and coordinator accounts are fixed `@vortex.com`
+  addresses that all share one password. There's **no admin screen** to
+  create, rename or disable staff accounts or reset their passwords: the
+  verification page lists students only.
+- **Effect:** Production can't run with shared passwords and placeholder
+  emails for 10 coordinators and the jury.
 
-### 2.6 Registration reveals registry data to anonymous visitors — Low
-- **Where:** [registration.controller.js](backend/src/controllers/registration.controller.js)
-- **Effect:** When a registration number matches, the public response includes
-  the matched registry row (real name, email, institution). Someone guessing
-  registration numbers can collect this data.
+### A5. Seed script is unsafe for production re-runs — Medium
+- **Where:** `backend/prisma/seed.js`
+- **Problems:**
+  - It **prints** the jury and coordinator passwords to the deploy logs
+    (lines 321, 354).
+  - It **deletes** domains and problem statements that aren't in its
+    hard-coded list, unless a team uses them. Re-running it on production
+    after organizers have edited the taxonomy silently removes their work.
 
-### 2.7 Missing hardening — Medium
-- No rate limiting on `/api/auth/login`. Passwords are 6 digits (900,000
-  combinations), so brute force is feasible without it.
-- No rate limiting or CAPTCHA on public `/api/registration`.
-- The JWT is stored in `localStorage`, where any XSS can read it.
-- `express.json` accepts 10 MB bodies "for base64 photos", but photo upload
-  was removed, so the limit is unnecessarily large.
+### A6. Vulnerable dependencies — High
+`npm audit` (production dependencies):
+- **Backend:** 2 critical, 15 high, 5 moderate.
+  - **`proxy-addr` (critical):** IP spoofing via IPv4-mapped IPv6. It
+    affects the client IP that rate limiting relies on.
+  - **`body-parser`, `ws`, `engine.io` and `socket.io-parser` (high):**
+    denial-of-service bugs.
+  - `tar` (critical): only used at install time.
+  - Prisma CLI transitive dependencies (hono, mysql2, effect…).
+- **Frontend:** 5 high (react-router, socket.io-parser, ws).
+- **Fix:** almost everything is fixable with `npm audit fix` (lockfile
+  updates). Re-test after updating.
+- **Exception:** `xlsx` 0.18.5 has **no npm fix** (prototype pollution,
+  ReDoS). It's used for admin-only Excel import/export. Replace it with the
+  SheetJS CDN build (0.20.x) or `exceljs`.
 
----
-
-## 3. Data and rule integrity
-
-- **Domain rule isn't enforced.** The spec in [react_vite_context.md](react_vite_context.md)
-  says all members must share a domain. Nothing checks this.
-- **Disqualified teams stay ranked.** `reRankAll` in
-  [leaderboard.service.js:47](backend/src/services/leaderboard.service.js#L47)
-  ranks every leaderboard row regardless of team status. Admin `setStatus → DISQUALIFIED`
-  leaves the team on the leaderboard and eligible for awards.
-- **Rankings aren't refreshed after a disband.** Deleting a team cascades its
-  leaderboard row but doesn't re-rank, which can leave gaps until the next score.
-- **Lockdown has gaps.** Approving a `DISBAND` request isn't blocked by
-  `teamLockdown`, so a team can still dissolve while teams are locked.
-- **Admin `setStatus` skips cleanup.** Setting `FINALIZED` doesn't cancel
-  pending invites and requests the way leader-finalize and force-finalize do.
-- **`reissuePassword` doesn't check role.** It works on admin, jury or
-  coordinator accounts too. This may be intended, but it isn't documented.
+### A7. No backups, monitoring or alerts — Medium
+Checked on 21 Nov:
+- **Backups:** the S3 backup bucket is empty (no nightly `pg_dump` cron), and
+  free Supabase has no backups.
+- **Alarms:** no CloudWatch alarms (CPU, status check / auto-recover, disk).
+- **Uptime:** no uptime monitor on `/api/health`.
+- **Logs:** log groups `/vortex/staging/*` keep logs forever (no retention set).
+- **Recovery:** no AMI snapshot or rebuild runbook.
 
 ---
 
-## 4. Operations
+## B. Before team formation opens
 
-- **Schema push on every boot.** [backend/Dockerfile:40](backend/Dockerfile#L40)
-  runs `prisma db push --accept-data-loss`. Any schema change that drops a
-  column silently deletes production data. The Makefile `migrate` / `launch`
-  targets do the same.
-- **The Makefile is out of sync.** `.PHONY` lists `seed`, but the target is
-  named `seed-full`. The Makefile also omits `-p vortex`, so its container
-  names differ from the README's.
-- **Secrets are committed.** [docker-compose.yml](docker-compose.yml) hard-codes
-  the JWT secret and default passwords. That's fine for local dev only.
-- **No tests** anywhere in the repo.
-- **Not a git repository**, so there's no history or rollback.
+### B1. No team can qualify through the normal flow — High
+- **Where:** `User.isDomainExpert`
+- **Problem:** The default rules require 1 domain expert, but nothing a
+  student or admin can do sets `isDomainExpert`. Registration doesn't ask
+  for it and no admin screen edits it; only the Testing import sets it.
+- **Effect:** Every team stays FORMING. Juries only see FINALIZED teams.
+- **Decision needed:** a registration field, an admin toggle, or
+  `minDomainExperts = 0`.
+
+### B2. A team's problem statement can't be set or changed after creation — Medium
+- **Problem:** The team-create form says the PS is "optional, can be set
+  later by admins", but there's **no endpoint or UI** to set it later, for
+  leaders or admins. The original spec also says teams can edit their PS
+  within their domain.
+
+### B3. Polling load at event scale — Medium
+- **Where:** `TeamFormationPage.jsx`
+- **Problem:** My Team polls **3 endpoints every 5 s** per open tab, plus a
+  refetch on every window focus.
+- **Effect:** With ~1,000 students on that page, that's up to ~600 requests
+  per second on one `t3.small`.
+- **Fix:** use the existing socket emit helpers (join requests, membership
+  changes, member joined/left) and poll every 30–60 s as a fallback.
+
+### B4. Team size can be exceeded under concurrency — Medium
+- **Where:** `membership.service.js` → `loadTeamForUpdate`
+- **Problem:** It doesn't lock the row (no `SELECT … FOR UPDATE`), so two
+  simultaneous approvals or accepts into the last slot can both succeed.
+
+### B5. Domain rule not enforced — Medium (decision)
+- **Problem:** The original spec requires every member to share the team's
+  domain. Nothing checks it.
+- **Related:** a student may create a team in **any** domain. Experts only
+  count when their primary domain matches the team's.
+
+### B6. Invite search fires a request per keystroke — Low
+- **Where:** `TeamFormationPage.jsx` → `InviteModal`
+- **Problem:** The search has no debounce, so every keystroke queries the
+  server.
+- **Also:** Explore and Directory download every verified student in one
+  response (fine at ~100; heavier at 1,000+).
 
 ---
 
-## 5. Documentation drift
+## C. Before judging starts
 
-- [README.md](README.md) says admin approval emails the password. It doesn't —
-  admins see the password on screen, and only coordinator approvals send email.
-- The README lists a "Registry" admin tab that isn't reachable (see 1.6) and
-  doesn't mention the Coordinator role, the Testing page or team lockdown.
-- The README says the license is **MIT**, but [LICENSE](LICENSE) is **AGPL-3.0**.
-- [frontend/README.md](frontend/README.md) is the unmodified Vite template.
-- [react_vite_context.md](react_vite_context.md) describes a light "Tech Xpress /
-  Vande Bharat" design. The shipped UI is a black/cyan "Vortex" theme.
-- [DEPLOY.md](DEPLOY.md) step 4 says to replace the mail stub. Resend is
-  already integrated in [mail.js](backend/src/utils/mail.js).
-- The root [.gitignore](.gitignore) ignores `*.md` except README, DEPLOY and
-  CREDENTIALS. Add `!KNOWN_ISSUES.md` if this file should be committed once
-  the repo is under git.
+### C1. Leaderboard isn't live — Medium
+- **Problem:** `emitLeaderboardChanged` is never called.
+- **Effect:** The leaderboard only refreshes on window focus, and anonymous
+  visitors have no socket at all.
+- **Fix:** emit the event after each score is saved, and add polling for
+  logged-out visitors.
+
+### C2. Disqualified teams still ranked and eligible for awards — Medium
+- **Where:** `leaderboard.service.js` (`reRankAll`), `awards.service.js`
+- **Problems:**
+  - Both ignore team status, so disqualified teams still get ranked and
+    can win awards.
+  - Disbanding a scored team doesn't re-rank, which leaves gaps in the ranks.
+
+### C3. Load test and dry run not done — Medium
+- **Load test:** around 1,000 concurrent logins, team-page traffic and score
+  submissions on staging.
+- **Dry run:** a full rehearsal with the real jury and coordinators.
+
+---
+
+## D. Hardening / quality
+
+| # | Issue | Severity |
+|---|---|---|
+| D1 | Approving a **DISBAND** request skips the team-lockdown check (`membershipChange.service.js`) | Low |
+| D2 | Admin `setStatus → FINALIZED` doesn't cancel pending invites and requests, unlike leader and force finalize | Low |
+| D3 | `reissue-password` works on any verified account (staff included) through the API; undocumented | Low |
+| D4 | `express.json` limit is still 10 MB (`index.js:57`), but photo upload was removed; reduce to ~100 KB | Low |
+| D5 | JWT stored in `localStorage` (readable by any XSS) | Low |
+| D6 | Backend container runs as **root** (no `USER` in Dockerfile) | Low |
+| D7 | Staging security group allows 80/443 from the whole internet; restrict to Cloudflare IPs once the domain is proxied. Then set `TRUST_PROXY_HOPS=2` | Medium (when domain arrives) |
+| D8 | Open browser tabs keep running old code after a deploy; no "new version — refresh" banner | Medium |
+| D9 | 24 frontend lint errors: unused imports, `Infinity` icon shadowing the global, setState-in-effect patterns, a global reassigned in `Confirm.jsx`. CI doesn't run lint or tests, and **there are no tests** | Low |
+| D10 | GitHub Actions use Node-20-based action versions (deprecation warnings); bump to current majors | Low |
+| D11 | Dead code: jury-assignment service and routes still mounted but unused (scoring is first-come) | Low |
+| D12 | `matchActorDomains` uses `z.coerce.boolean()`, so the string `"false"` reads as true (unused by the UI today) | Low |
+| D13 | `StatTile` builds a Tailwind class at runtime (`group-hover:${…}`), so the hover colour never applies | Low |
+| D14 | `backend/pnpm-lock.yaml` is stale (still lists `resend`); npm is the real package manager | Low |
+| D15 | A member with a pending dismissal can still click "Request to leave" (409) | Low |
+| D16 | No self-service "forgot password"; students must ask an admin to reissue (emailed once SES is live) | Low |
+
+---
+
+## E. Documentation & housekeeping
+
+- **`README.md`:** describes the old setup. It doesn't cover AWS, the
+  Directory, team chat, coordinators or migrations-only workflow details,
+  and says the license is MIT while `LICENSE` is **AGPL-3.0**.
+- **`DEPLOY.md`:** still the Render / Neon / Resend guide. Rewrite it for
+  Cloudflare Workers + EC2 + Supabase + SES + GitHub Actions (OIDC).
+- **`CREDENTIALS.md`:** lists dev defaults that no longer match staging. Keep
+  real staging and production passwords out of the repo.
+- **`frontend/README.md`:** still the unmodified Vite template.
+- **`react_vite_context.md`:** describes a design that isn't used.
+- **The old public `Bhuvilol/TechExpress` repo:** still public, with older
+  code and default credentials. Archive it or make it private.
+- **Old deployments:** the old Cloudflare Worker `vortex` and any old Render
+  or Neon services may still be running. Decommission them.
+
+---
+
+## Fixed (20–21 Nov)
+
+Registration & accounts:
+- Registration switch now blocks sign-ups; team formation has its own switch.
+- Revoked users lose API and socket access immediately (status check + cache
+  invalidation + socket disconnect).
+- Rate limiting on login (per account and per IP) and registration; honeypot
+  field on the registration form.
+- The public registration response no longer exposes registry matches.
+
+Privacy:
+- Explore shows only verified students, to students only, without
+  email / phone / Discord / gender / resume / reg #.
+- Team details hide emails from outsiders.
+- Team invites / join requests are restricted to members and admins.
+- Team scores are restricted (admin / jury; own team only after "Show marks";
+  no juror identity).
+
+Email:
+- Sent through SES using the server's IAM role; user text escaped in email
+  HTML.
+- Admin approve / reissue / restore email the student and show the password
+  once.
+
+Admin & database:
+- Admin lookup route restored (force add / remove).
+- Registry page routed.
+- Problem-statement editor loads its data.
+- Toast background fixed.
+- `prisma db push --accept-data-loss` replaced with versioned migrations.
+
+UI:
+- Login page error messages display.
+- Open teams show "Request sent".
+- Leader queues refresh after actions and appear only when something is
+  pending.
+- "Action needed" alert for leave and dismissal requests (dismissed members
+  can now respond).
+- Explore scroll panels; problem statements grouped by theme.
+
+New features:
+- Participant Directory.
+- Private team chat (members only).
+
+Infrastructure:
+- AWS staging (EC2, ECR, SSM secrets, IAM least privilege).
+- GitHub OIDC deploy pipeline.
+- Cloudflare Workers frontend.
+- Supabase staging.
