@@ -47,6 +47,7 @@
 | **STU-01** | Form URL Inputs Silently Reject Plain Links Without `https://` | **Medium** | **Resolved** | UX / Registration | [frontend/src/pages/public/RegistrationPage.jsx:457](frontend/src/pages/public/RegistrationPage.jsx#L457) |
 | **STU-02** | 1500px Registration Form Fails to Scroll to Validation Errors | **Medium** | **Resolved** | UX / Accessibility | [frontend/src/pages/public/RegistrationPage.jsx:230](frontend/src/pages/public/RegistrationPage.jsx#L230) |
 | **STU-03** | Registration Page Renders Active Form When Registration is Disabled | **Medium** | **Partially Resolved** | UX / Rules Engine | [frontend/src/pages/public/RegistrationPage.jsx:428](frontend/src/pages/public/RegistrationPage.jsx#L428) |
+| **STU-04** | Dashboard: Accepting Invite in Inbox Fails to Refresh Team State in Explore (Issue #17) | **Medium** | **Resolved in `rohit-jain`** | UX / State Sync | [frontend/src/pages/student/DashboardPage.jsx:156](frontend/src/pages/student/DashboardPage.jsx#L156) |
 | **ADM-01** | Admin & Coordinator Navigation Bars Lack Links to Public Pages | **Medium** | Open | UX / Navigation | [frontend/src/components/layout/TopAppBar.jsx:33](frontend/src/components/layout/TopAppBar.jsx#L33) |
 | **ADM-02** | "Qualified Teams" Dashboard Counter Counts Down as Teams Finalize | **Medium** | Open | UI / Metrics Display | [frontend/src/pages/admin/AdminOverviewPage.jsx:21](frontend/src/pages/admin/AdminOverviewPage.jsx#L21) |
 | **COORD-01**| Filter Search Inputs Mutate Campus Verification Aggregate Stats | **Medium** | Open | UI / Data Binding | [frontend/src/pages/coordinator/CoordinatorVerificationPage.jsx:36](frontend/src/pages/coordinator/CoordinatorVerificationPage.jsx#L36) |
@@ -411,6 +412,19 @@
   When organizers close registration, prospective participants still see the full, active registration form. They can spend 15 minutes filling in personal, academic, domain, and project details, only to be rejected upon pressing submit.
 - **Remediation:**
   Fetch the public event rules on mount. If `registrationOpen === false`, render a prominent "Registration is currently closed" banner and disable form fields.
+
+---
+
+### STU-04: Dashboard: Accepting Invite in Inbox Fails to Refresh Team State in Explore (Issue #17)
+- **Location:** [frontend/src/pages/student/DashboardPage.jsx:156](frontend/src/pages/student/DashboardPage.jsx#L156) & [frontend/src/pages/student/DashboardPage.jsx:315](frontend/src/pages/student/DashboardPage.jsx#L315)
+- **Severity:** **Medium**
+- **Category:** UX / State Synchronization
+- **Problem:**
+  When a student accepts a team invite in the Inbox tab, their team membership state (`myTeam`) in `DashboardPage` was not invalidated or refetched. Navigating to Explore still presented team creation / join options or stale team lists until a hard browser refresh.
+- **Evidence & Real-World User Impact:**
+  GitHub Issue #17: Students accepting team invitations had to reload the page to see their new team in the Explore tab and profile summary.
+- **Remediation:**
+  Add `onTeamChanged` callback to `InboxTab` invoked on successful invite acceptance, which triggers `refetchTeam()` and `refetchMe()`. In addition, wire `[myTeam?.id]` into `ExploreTab` dependency arrays so the member list, joinable teams, and outgoing requests instantly re-query and reflect the new membership state.
 
 ---
 
