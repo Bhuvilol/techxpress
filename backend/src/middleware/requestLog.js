@@ -1,9 +1,9 @@
 import { logger } from '../utils/logger.js';
 
 // One log line per request, emitted on response finish. Keeps logs cheap and
-// structured. Skips the noisy /api/health probe.
+// structured. Skips the noisy /api/health and /api/health/live probes.
 export const requestLog = (req, res, next) => {
-  if (req.path === '/api/health') return next();
+  if (req.path === '/api/health' || req.path.startsWith('/api/health/')) return next();
   const start = process.hrtime.bigint();
 
   res.on('finish', () => {

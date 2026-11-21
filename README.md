@@ -154,7 +154,7 @@ Open <http://localhost>. Local accounts are listed in
 | Service | URL | Notes |
 |---|---|---|
 | Frontend (nginx) | <http://localhost> | proxies `/api` and `/socket.io` to the backend |
-| Backend | <http://localhost:3001> | `GET /api/health` → `{"status":"ok"}` |
+| Backend | <http://localhost:3001> | `GET /api/health` → `{"status":"ok","db":"ok"}` (503 if the database is unreachable); `GET /api/health/live` → process up |
 | Postgres | `localhost:5432` | `vortex_user` / `vortex_password` / `vortex_db` |
 
 Email isn't configured locally (`MAIL_FROM` unset). Emails are logged instead

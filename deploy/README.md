@@ -33,7 +33,7 @@ docker compose pull
 docker compose run --rm --no-deps backend npx prisma migrate deploy   # schema changes first
 # docker compose run --rm --no-deps backend npm run db:seed           # only when "seed" is ticked
 docker compose up -d --remove-orphans --wait --wait-timeout 180       # then the new app
-curl -fsS https://$API_DOMAIN/api/health                              # smoke check (from CI)
+curl -fsS https://$API_DOMAIN/api/health                              # smoke check (from CI): 503 if the database is down
 ```
 
 To redeploy manually, use GitHub → Actions → *Deploy backend (staging)* →
