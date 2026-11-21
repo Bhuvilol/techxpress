@@ -140,19 +140,7 @@ Checked on 21 Nov:
 
 ## C. Before judging starts
 
-### C1. Leaderboard isn't live — Medium
-- **Problem:** `emitLeaderboardChanged` is never called.
-- **Effect:** The leaderboard only refreshes on window focus, and anonymous
-  visitors have no socket at all.
-- **Fix:** emit the event after each score is saved, and add polling for
-  logged-out visitors.
-
-### C2. Disqualified teams still ranked and eligible for awards — Medium
-- **Where:** `leaderboard.service.js` (`reRankAll`), `awards.service.js`
-- **Problems:**
-  - Both ignore team status, so disqualified teams still get ranked and
-    can win awards.
-  - Disbanding a scored team doesn't re-rank, which leaves gaps in the ranks.
+*C1 (live leaderboard) and C2 (disqualified teams ranked) are fixed — see the Fixed section.*
 
 ### C3. Load test and dry run not done — Medium
 - **Load test:** around 1,000 concurrent logins, team-page traffic and score
@@ -204,6 +192,17 @@ Checked on 21 Nov:
 
 ## Fixed (20–21 Nov)
 
+Leaderboard & teams (latest round):
+- Leaderboard and awards include only FINALIZED teams; ranks recompute on
+  disqualify / reinstate / status change / disband (was C2).
+- Live leaderboard: updates after each score and admin team change, and
+  logged-out visitors poll every 30 s (was C1).
+- Admin Disqualify / Reinstate (scores kept).
+- Revoking a student removes them from their team, with leader handover.
+- Registration form shows a clear per-field error and jumps to the first
+  problem.
+
+
 Registration & accounts:
 - Registration switch now blocks sign-ups; team formation has its own switch.
 - Revoked users lose API and socket access immediately (status check + cache
@@ -251,3 +250,8 @@ Infrastructure:
 - GitHub OIDC deploy pipeline.
 - Cloudflare Workers frontend.
 - Supabase staging.
+
+---
+
+Deeper production-level findings (flows, races, missing screens, ops) are
+tracked separately in [GITHUB_ISSUES.md](GITHUB_ISSUES.md).
