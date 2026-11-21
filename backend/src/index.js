@@ -29,6 +29,7 @@ import adminAuditRoutes from './routes/adminAudit.js';
 import adminTestingRoutes from './routes/adminTesting.js';
 import { publicRouter as taxonomyPublicRouter, adminRouter as taxonomyAdminRouter } from './routes/taxonomy.js';
 import awardsRoutes from './routes/awards.js';
+import studentsRoutes from './routes/students.js';
 
 import { initIO, closeIO } from './realtime/io.js';
 
@@ -83,6 +84,7 @@ app.use('/api/admin/testing', adminTestingRoutes);
 app.use('/api/taxonomy', taxonomyPublicRouter);
 app.use('/api/admin/taxonomy', taxonomyAdminRouter);
 app.use('/api/awards', awardsRoutes);
+app.use('/api/students', studentsRoutes);
 
 app.use(notFoundHandler);
 app.use(errorHandler);

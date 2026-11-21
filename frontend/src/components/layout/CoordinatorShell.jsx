@@ -1,13 +1,14 @@
 import { useState } from 'react';
 import { NavLink, Outlet, Link, useLocation } from 'react-router-dom';
 import {
-  Infinity, ShieldCheck, LogOut, Menu,
+  Infinity, ShieldCheck, LogOut, Menu, IdCard,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext.jsx';
 import { cn } from '../../utils/cn.js';
 
 const NAV = [
   { to: '/coordinator', end: true, label: 'Student Review', icon: ShieldCheck },
+  { to: '/directory', label: 'Directory', icon: IdCard },
 ];
 
 export const CoordinatorShell = () => {

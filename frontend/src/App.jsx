@@ -15,6 +15,7 @@ import { DashboardPage }       from './pages/student/DashboardPage.jsx';
 import { TeamFormationPage }   from './pages/student/TeamFormationPage.jsx';
 
 import { JuryDashboardPage }   from './pages/jury/JuryDashboardPage.jsx';
+import { DirectoryPage }       from './pages/shared/DirectoryPage.jsx';
 
 import { AdminOverviewPage }     from './pages/admin/AdminOverviewPage.jsx';
 import { AdminVerificationPage } from './pages/admin/AdminVerificationPage.jsx';
@@ -43,6 +44,7 @@ export const App = () => (
       <Route path="/dashboard" element={<RequireAuth role="STUDENT"><DashboardPage /></RequireAuth>} />
       <Route path="/teams"     element={<RequireAuth role="STUDENT"><TeamFormationPage /></RequireAuth>} />
       <Route path="/jury"      element={<RequireAuth role="JURY"><JuryDashboardPage /></RequireAuth>} />
+      <Route path="/directory" element={<RequireAuth><DirectoryPage /></RequireAuth>} />
     </Route>
 
     <Route element={<RequireAuth role="ADMIN"><AdminShell /></RequireAuth>}>
