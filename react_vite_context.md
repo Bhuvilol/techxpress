@@ -1,3 +1,11 @@
+> **Historical design brief: not the current design.**
+> This was the original "Tech Xpress / Vande Bharat" concept (light theme,
+> sharp machined cards). The shipped app is **Vortex**, with a black/cyan
+> "mission control" theme defined in `frontend/tailwind.config.js` and
+> `frontend/src/index.css`. Routes and features have also changed (for example
+> `/crew` became `/teams`). The current product is described in
+> [README.md](README.md); this file is kept only for reference.
+
 # React + Vite Context for Tech Xpress (SOA University Railways Division)
 
 ## 1. Project Overview

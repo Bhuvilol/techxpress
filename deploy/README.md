@@ -22,15 +22,22 @@ The frontend is a Cloudflare Worker and is deployed separately.
 
 ## Deploy sequence
 
-CI runs these steps on the server through SSM Run Command:
+The GitHub Actions workflow (`.github/workflows/deploy-backend.yml`) runs these
+steps on the server through SSM Run Command, on every push to `main` that
+touches `backend/` or `deploy/`:
 
 ```bash
 cd /opt/vortex
+# docker-compose.yml + Caddyfile written from the repo; .env rendered from SSM
 docker compose pull
-docker compose run --rm backend npx prisma migrate deploy   # schema changes first
-docker compose up -d --remove-orphans                       # then the new app
-curl -fsS https://$API_DOMAIN/api/health                    # smoke check
+docker compose run --rm --no-deps backend npx prisma migrate deploy   # schema changes first
+# docker compose run --rm --no-deps backend npm run db:seed           # only when "seed" is ticked
+docker compose up -d --remove-orphans --wait --wait-timeout 180       # then the new app
+curl -fsS https://$API_DOMAIN/api/health                              # smoke check (from CI)
 ```
+
+To redeploy manually, use GitHub → Actions → *Deploy backend (staging)* →
+**Run workflow**. Rollback steps are in [DEPLOY.md → Releasing](../DEPLOY.md#4-releasing).
 
 ## Day-to-day operations
 
@@ -57,7 +64,8 @@ docker compose run --rm backend npx prisma migrate status
   of 1 blocks containers from reaching it.
 - **TLS certificates** are stored in the `caddy_data` volume. Don't delete it,
   or Let's Encrypt rate limits may apply when Caddy re-requests them.
-- **When the real domain is ready:**
-  1. Change `API_DOMAIN` and `CORS_ORIGIN` in SSM.
-  2. Redeploy.
-  3. Point `api.<domain>` at the instance in Cloudflare DNS.
+- **Each deploy restarts the backend container:** a few seconds of downtime,
+  and live sockets reconnect. Avoid deploying during live event moments.
+- **When the real domain is ready:** follow
+  [DEPLOY.md → Switching to the real domain](../DEPLOY.md#7-switching-to-the-real-domain)
+  (`API_DOMAIN`, `CORS_ORIGIN`, `TRUST_PROXY_HOPS`, DNS, SES).

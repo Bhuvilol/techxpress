@@ -1,637 +1,331 @@
-# Deploying Vortex on Render Free + Cloudflare Pages
+# Deploying Vortex
 
-A step-by-step guide for putting Vortex on the internet with a $0/month
-stack:
-
-- Backend: Render Free Web Service
-- Frontend: Cloudflare Pages
-- Database: Neon Postgres Free
-- Email: Resend Free
-- Monitoring: UptimeRobot Free
-
-Optional extra cost:
-
-- Custom domain: about $10/year
-
-Estimated first deploy time: 2-3 hours
+How Vortex is hosted, how releases happen, where secrets live, and what's
+left before production. For day-to-day server operations (logs, restarts),
+see [deploy/README.md](deploy/README.md).
 
 ---
 
-## Important tradeoff
+## Contents
 
-As of May 3, 2026, Render still offers a free web service, but it is not
-always-on:
-
-- It spins down after 15 minutes without inbound traffic.
-- The next request or WebSocket connection can take about 1 minute to wake it.
-- Free web services do not provide shell access or one-off jobs.
-
-That means this setup is good for demos, hobby projects, internal tools,
-and hackathon/event usage if you accept cold starts or keep it warm with a
-monitor. It is not the right choice if you need zero-cold-start behavior.
-
----
-
-## Why this stack
-
-This repo is a split app:
-
-- `backend/` is an Express + Prisma + Socket.IO service
-- `frontend/` is a Vite-built SPA
-- the frontend must talk to a public backend URL in production
-
-Render is a good fit for the backend because it supports Node web services
-and WebSockets on the free tier. Cloudflare Pages is still the best fit for
-the frontend because it handles static SPA hosting cleanly and cheaply.
-
-Neon stays in the plan instead of Render Postgres because Render's free
-Postgres expires after 30 days, while Neon Free is not time-limited.
+1. [Stack overview](#1-stack-overview)
+2. [Accounts and access](#2-accounts-and-access)
+3. [What's already set up (staging)](#3-whats-already-set-up-staging)
+4. [Releasing](#4-releasing)
+5. [Secrets and configuration](#5-secrets-and-configuration)
+6. [Database and migrations](#6-database-and-migrations)
+7. [Switching to the real domain](#7-switching-to-the-real-domain)
+8. [Production checklist](#8-production-checklist)
+9. [Costs](#9-costs)
+10. [Troubleshooting](#10-troubleshooting)
 
 ---
 
-## Architecture
+## 1. Stack overview
 
-```text
-GitHub repo
-  |- Render Free Web Service     -> backend API + Socket.IO
-  |- Cloudflare Pages            -> frontend SPA
-  |- Neon Postgres              <- Prisma database
-  |- Resend                     <- transactional email
+| Layer | Service | Notes |
+|---|---|---|
+| Frontend | **Cloudflare Workers** (Workers Paid), Worker `vortex-app` | Static Vite build with SPA fallback (`frontend/wrangler.jsonc`). Workers Builds deploys `main` from `frontend/` |
+| Backend | **AWS EC2** in **Mumbai `ap-south-1`**, Docker Compose: backend + **Caddy** | Caddy terminates HTTPS (Let's Encrypt) and proxies REST + WebSockets |
+| Images | **AWS ECR** `vortex-backend` | Scanned on push; keeps the last 20 |
+| Database | **Supabase Postgres**, Mumbai | Transaction pooler for the app, session pooler for migrations |
+| Email | **Amazon SES** (Mumbai) via the EC2 IAM role | Sending is enabled only when `MAIL_FROM` is set |
+| Secrets | **AWS SSM Parameter Store** `/vortex/<env>/*` | Rendered into `/opt/vortex/.env` at deploy time |
+| CI/CD | **GitHub Actions** + GitHub **OIDC** → IAM role | No long-lived AWS keys |
+| Logs | **CloudWatch Logs** `/vortex/<env>/backend` and `/caddy` | Docker `awslogs` driver |
+| DNS / edge | **Cloudflare** (once the domain is bought) | Domain stays registered at Hostinger; nameservers point at Cloudflare |
+
+```
+push to main ─┬─► Cloudflare Workers Builds ─► frontend (vortex-app.*.workers.dev)
+              └─► GitHub Actions (backend/ or deploy/ changed)
+                    1. OIDC → assume vortex-github-deploy
+                    2. docker build → ECR (:<sha>, :staging)
+                    3. SSM Run Command on EC2:
+                         write compose + Caddyfile, render .env from SSM,
+                         docker compose pull,
+                         prisma migrate deploy, (optional seed),
+                         docker compose up -d --wait
+                    4. smoke test GET https://<api>/api/health
 ```
 
-Browser flow:
-
-1. User opens the Cloudflare Pages frontend
-2. Frontend calls the Render backend using `VITE_API_URL`
-3. Backend talks to Neon
-4. Backend sends email through Resend
-
 ---
 
-## Repo-specific deployment facts
+## 2. Accounts and access
 
-These matter for this repo:
+### AWS
+AWS uses the "new AWS experience" with **advanced features** turned on, so it
+runs as an AWS Organization.
 
-- The frontend uses `VITE_API_URL` in production:
-  [frontend/src/lib/api.js](./frontend/src/lib/api.js)
-- Socket.IO also uses `VITE_API_URL`:
-  [frontend/src/lib/socket.js](./frontend/src/lib/socket.js)
-- The backend currently uses a mail stub:
-  [backend/src/utils/mail.js](./backend/src/utils/mail.js)
-- Prisma CLI is already wired to prefer `DIRECT_URL` when present:
-  [backend/prisma.config.js](./backend/prisma.config.js)
+| Account | ID | Purpose |
+|---|---|---|
+| Management | `674033097575` | Billing and the **$100 Free Tier credit** (expires 20 Nov 2027). Holds the org policies |
+| **vortex** project | `820539072886` | **All Vortex resources** |
+| Building Things | `162952062410` | Unrelated older project |
 
-That last point matters on Neon:
+- The org-wide policy `AdvancedModeRegionRestrictionSecurityControlPolicy`
+  allows only listed regions. **`ap-south-1` was added** to its `RegionFloor`
+  list. If you see "explicit deny in a service control policy", check that
+  list.
+- A **budget alert** is set in the management account, with credits excluded.
 
-- `DATABASE_URL` should be the pooled connection for the running app
-- `DIRECT_URL` should be the direct connection for `prisma db push`
-
----
-
-## Step 1 - Push the repo to GitHub
-
-Skip this if your repo is already on GitHub and current.
-
-If needed:
-
+### CLI login
 ```bash
-git remote remove origin
-git remote add origin https://github.com/YOU/vortex.git
-git branch -M main
-git push -u origin main
+aws login --profile vortex --region ap-southeast-2   # pick the "vortex" project in the browser
+aws configure set region ap-southeast-2 --profile vortex
 ```
-
-Completion check:
-
-- your repo is on GitHub
-- branch `main` contains your latest code
-
----
-
-## Step 2 - Create the Neon database
-
-1. Sign up at <https://neon.com>
-2. Create a project named `vortex`
-3. Choose a region close to your Render backend region
-4. Open the connection details in Neon
-
-Copy and save both of these:
-
-- `DATABASE_URL`: pooled connection
-- `DIRECT_URL`: direct connection
-
-Example pooled connection:
-
-```text
-postgresql://user:pass@ep-...-pooler.us-east-2.aws.neon.tech/dbname?sslmode=require
-```
-
-Example direct connection:
-
-```text
-postgresql://user:pass@ep-....us-east-2.aws.neon.tech/dbname?sslmode=require
-```
-
-Do not remove `?sslmode=require`.
-
-Completion check:
-
-- you have both the pooled and direct Neon URLs saved
-
----
-
-## Step 3 - Set up Resend
-
-1. Sign up at <https://resend.com>
-2. Create an API key
-3. Save it as `RESEND_API_KEY`
-
-If you already own a domain:
-
-1. Add it in Resend
-2. complete the DNS verification
-3. plan to use something like `Vortex <noreply@yourdomain.com>`
-
-If you do not own a domain yet:
-
-- you can test with `onboarding@resend.dev`
-- that is fine for testing, not for a real public event
-
-Completion check:
-
-- you have a `RESEND_API_KEY`
-- optionally, your sender domain is verified
-
----
-
-## Step 4 - Replace the mail stub with Resend
-
-The current backend does not send real email. It only logs mail content.
-
-Install the SDK:
-
+Login and token refresh **only work through Sydney** (`ap-southeast-2`), the
+project's home region. Keep the profile default as Sydney, and pass
+`--region ap-south-1` explicitly on every real command:
 ```bash
-cd backend
-npm install resend
+export AWS_PROFILE=vortex
+aws sts get-caller-identity --region ap-southeast-2     # refresh the session
+aws ec2 describe-instances --region ap-south-1 ...
 ```
+In zsh, use `export AWS_PROFILE=vortex`; don't put `--profile vortex` inside a
+shell variable, because zsh won't split it into separate arguments.
 
-Replace `sendMail` in [backend/src/utils/mail.js](./backend/src/utils/mail.js)
-with this:
+### Other services
 
-```js
-import { Resend } from 'resend';
-import { logger } from './logger.js';
-
-const resend = process.env.RESEND_API_KEY
-  ? new Resend(process.env.RESEND_API_KEY)
-  : null;
-
-const FROM = process.env.MAIL_FROM ?? 'Vortex <onboarding@resend.dev>';
-
-export const sendMail = async ({ to, subject, text }) => {
-  if (!resend) {
-    logger.warn('mail.skipped - no RESEND_API_KEY', { to, subject, body: text });
-    return { delivered: false, reason: 'no-key' };
-  }
-
-  try {
-    const result = await resend.emails.send({ from: FROM, to, subject, text });
-    logger.info('mail.sent', { to, subject, id: result.data?.id });
-    return { delivered: true };
-  } catch (err) {
-    logger.error('mail.failed', { to, subject, err: err.message });
-    return { delivered: false, error: err.message };
-  }
-};
-```
-
-Leave the three higher-level mail helpers in that file unchanged.
-
-Commit and push:
-
-```bash
-cd ..
-git add backend/package.json backend/package-lock.json backend/src/utils/mail.js
-git commit -m "feat(mail): add Resend for production email"
-git push
-```
-
-If you skip this step, the app still works, but approved student passwords
-will only appear in backend logs.
-
-Completion check:
-
-- `resend` is installed in `backend/package.json`
-- `backend/src/utils/mail.js` uses `RESEND_API_KEY`
-- changes are pushed to GitHub
-
----
-
-## Step 5 - Deploy the backend on Render Free
-
-1. Sign up at <https://render.com>
-2. In Render, click `New` -> `Web Service`
-3. Connect your GitHub repo
-4. Select your repo
-
-Use these settings:
-
-| Field | Value |
+| Service | Account / notes |
 |---|---|
-| Name | `vortex-backend` |
-| Region | pick the same region family as Neon |
-| Branch | `main` |
-| Root Directory | `backend` |
-| Runtime | `Node` |
-| Build Command | `npm install` |
-| Start Command | `node src/index.js` |
-| Instance Type | `Free` |
-| Health Check Path | `/api/health` |
+| GitHub | `Bhuvilol/VORTEX` (private) |
+| Cloudflare | Worker `vortex-app` |
+| Supabase | Project `vortex-staging` (free, Mumbai) |
+| Domain registrar | Hostinger (domain not bought yet) |
 
-Set these environment variables in Render:
+---
 
-| Name | Value |
+## 3. What's already set up (staging)
+
+All in account `820539072886`, region `ap-south-1`:
+
+| Resource | Value |
 |---|---|
-| `NODE_ENV` | `production` |
-| `NODE_VERSION` | `20` |
-| `PORT` | `10000` |
-| `LOG_LEVEL` | `info` |
-| `DATABASE_URL` | your Neon pooled connection |
-| `DIRECT_URL` | your Neon direct connection |
-| `ACCESS_TOKEN_SECRET` | generate a strong secret, 32+ chars |
-| `ACCESS_TOKEN_EXPIRY` | `8h` |
-| `BCRYPT_ROUNDS` | `12` |
-| `CORS_ORIGIN` | `https://placeholder.invalid` |
-| `ADMIN_SEED_EMAIL` | your real admin email |
-| `ADMIN_SEED_PASSWORD` | generate a strong password |
-| `JURY_SEED_PASSWORD` | generate a strong password |
-| `RESEND_API_KEY` | your Resend API key |
-| `MAIL_FROM` | your verified sender, or `Vortex <onboarding@resend.dev>` |
+| EC2 | `i-046ce4ff2d0e7bfe0` `vortex-staging`, `t3.small`, Amazon Linux 2023, 30 GB gp3 (encrypted), IMDSv2 with **hop limit 2** (so containers can use the instance role), 2 GB swap, Docker + Compose |
+| Elastic IP | `3.6.239.100` → API host **`api.3-6-239-100.sslip.io`** |
+| Security group | `sg-0c05f654006c25193`: inbound 80/443 only, **no SSH** |
+| IAM role | `vortex-staging-ec2-role`: SSM core, ECR read, CloudWatch agent, `ses:SendEmail` (Mumbai), S3 put to `vortex-db-backups-…/staging/*`, SSM read `/vortex/staging/*` |
+| ECR | `820539072886.dkr.ecr.ap-south-1.amazonaws.com/vortex-backend` |
+| S3 | `vortex-db-backups-820539072886`: private, encrypted, 30-day expiry *(backup cron not set up yet)* |
+| SSM params | `/vortex/staging/*`, 13 values (see [§5](#5-secrets-and-configuration)) |
+| GitHub OIDC | provider `token.actions.githubusercontent.com` + role `vortex-github-deploy`. It can push to that ECR repo and run SSM commands on instances tagged `project=vortex` |
+| Frontend | <https://vortex-app.bhuvism003.workers.dev>, build variable `VITE_API_URL=https://api.3-6-239-100.sslip.io` |
 
-You can generate secrets with any password manager or token generator. If
-you already use `openssl`, these work:
-
-```bash
-openssl rand -base64 64
-openssl rand -base64 18
-openssl rand -base64 18
+**OIDC gotcha:** this repo uses GitHub's **immutable subject** format. The role
+trusts exactly:
 ```
-
-Deploy the service. When it becomes healthy, copy the backend URL:
-
-```text
-https://vortex-backend.onrender.com
+repo:Bhuvilol@147243844/VORTEX@1465589032:ref:refs/heads/main
 ```
-
-Test it:
-
-```bash
-curl https://vortex-backend.onrender.com/api/health
-```
-
-Expected response:
-
-```json
-{"status":"ok"}
-```
-
-Completion check:
-
-- Render backend is deployed
-- `/api/health` returns `{"status":"ok"}`
-- you saved the public backend URL
+A trust policy written as `repo:Bhuvilol/VORTEX:...` fails with "Not
+authorized to perform sts:AssumeRoleWithWebIdentity".
 
 ---
 
-## Step 6 - Deploy the frontend on Cloudflare Pages
+## 4. Releasing
 
-1. Sign up at <https://dash.cloudflare.com>
-2. Open `Workers & Pages`
-3. Create a new Pages project from Git
-4. Connect the same GitHub repo
+### Automatic
+Every push to `main`:
+- **Frontend:** Cloudflare rebuilds and redeploys in about 1 minute (any change).
+- **Backend:** runs `.github/workflows/deploy-backend.yml` when `backend/**`,
+  `deploy/**` or the workflow file changes. It takes about 3 minutes and ends
+  with a health check.
 
-Use these settings:
+Watch a backend deploy:
+```bash
+gh run list --repo Bhuvilol/VORTEX --workflow deploy-backend.yml --limit 3
+gh run watch <run-id> --repo Bhuvilol/VORTEX
+```
 
-| Field | Value |
+### Manual
+GitHub → **Actions** → *Deploy backend (staging)* → **Run workflow**:
+- Leave **seed** unticked to simply redeploy.
+- Tick **seed** only for a **fresh database**. The seed creates the
+  rules/rounds/taxonomy/staff accounts, but it also prunes taxonomy rows it
+  doesn't know about.
+
+### Things to know
+- **Each backend deploy restarts the single container.** That means a few
+  seconds of 502 errors, and every live socket reconnects. Avoid deploying
+  during live event moments: registration opening, judging rounds, results.
+- **Frontend and backend deploy separately.** Keep API changes
+  backward-compatible.
+- **Open browser tabs** keep the old frontend until they're hard-refreshed.
+
+### Rolling back
+- **Backend:** re-run the workflow from an older commit (`git revert`, then
+  push), or on the server set `BACKEND_IMAGE` to a previous `:<sha>` and run
+  `docker compose up -d`.
+- **Frontend:** Cloudflare dashboard → `vortex-app` → Deployments → roll back
+  to a previous version.
+- **Migrations aren't rolled back automatically.** Write a new migration that
+  reverses the change.
+
+---
+
+## 5. Secrets and configuration
+
+### Backend
+The backend config lives in SSM Parameter Store and is written to
+`/opt/vortex/.env` on every deploy. Never commit real values.
+
+| Parameter (`/vortex/staging/…`) | Type | Purpose |
+|---|---|---|
+| `VORTEX_ENV` | String | `staging`, used for the log-group name |
+| `API_DOMAIN` | String | Host Caddy serves and certifies (`api.3-6-239-100.sslip.io`) |
+| `CORS_ORIGIN` | String | Allowed frontend origin(s), comma-separated |
+| `LOG_LEVEL`, `ACCESS_TOKEN_EXPIRY`, `BCRYPT_ROUNDS` | String | Runtime settings (`info`, `8h`, `12`) |
+| `ADMIN_SEED_EMAIL` | String | Seeded admin login |
+| `DATABASE_URL` | SecureString | Supabase **transaction pooler** (port 6543) |
+| `DIRECT_URL` | SecureString | Supabase **session pooler** (port 5432), used for migrations |
+| `ACCESS_TOKEN_SECRET` | SecureString | JWT signing secret (64 random chars) |
+| `ADMIN_SEED_PASSWORD`, `JURY_SEED_PASSWORD`, `COORDINATOR_SEED_PASSWORD` | SecureString | Seed passwords |
+
+**Optional:**
+
+| Parameter | Purpose |
 |---|---|
-| Project name | `vortex` |
-| Production branch | `main` |
-| Framework preset | `Vite` |
-| Root directory | `frontend` |
-| Build command | `npm install && npm run build` |
-| Build output directory | `dist` |
+| `MAIL_FROM` | Turns on email, e.g. `Vortex <noreply@yourdomain>` |
+| `MAIL_REPLY_TO` | Reply-to address on outgoing email |
+| `SES_REGION` | SES region (default `ap-south-1`) |
+| `TRUST_PROXY_HOPS` | Proxies in front of the app: default `1`; set `2` behind Cloudflare |
 
-Set this production environment variable:
+The full list of server variables is in [`deploy/.env.example`](deploy/.env.example).
 
-| Name | Value |
+Read or change a value:
+```bash
+export AWS_PROFILE=vortex; aws sts get-caller-identity --region ap-southeast-2 >/dev/null
+aws ssm get-parameter --region ap-south-1 --name /vortex/staging/CORS_ORIGIN --query Parameter.Value --output text
+aws ssm put-parameter --region ap-south-1 --name /vortex/staging/CORS_ORIGIN \
+  --type String --value "https://vortex-app.bhuvism003.workers.dev" --overwrite
+```
+Changes apply on the **next deploy**: re-run the workflow, or push.
+
+### Frontend
+The frontend has one **build** variable in Cloudflare (Worker → Settings →
+Build → Variables): `VITE_API_URL`. It's baked into the bundle, so changing
+it requires a **Retry build** in Cloudflare's Deployments tab.
+
+---
+
+## 6. Database and migrations
+
+- **Migrations only.** Never run `prisma db push` against staging or
+  production; it can drop columns.
+- The deploy runs `npx prisma migrate deploy` **before** starting the new
+  container, so migrations must work with the *previous* app version too
+  (expand → migrate → contract).
+- **New migration:** see [README → Changing the database schema](README.md#changing-the-database-schema).
+- **Check status from the server:**
+  ```bash
+  docker compose run --rm backend npx prisma migrate status
+  ```
+- **Backups:**
+  - Supabase **Pro** keeps daily backups for 7 days. The free staging plan has
+    none.
+  - A nightly `pg_dump` to S3 is **planned but not set up**
+    ([KNOWN_ISSUES](KNOWN_ISSUES.md) A7).
+
+---
+
+## 7. Switching to the real domain
+
+Until the domain is bought, the frontend uses `*.workers.dev` and the API uses
+`sslip.io`. When the domain arrives, follow these steps.
+
+### Step 1: DNS
+1. Add the domain to **Cloudflare** (free plan).
+2. At **Hostinger**, replace the nameservers with Cloudflare's. Propagation
+   takes up to 24 hours.
+
+### Step 2: Frontend
+1. Worker `vortex-app` → **Domains** → add `<domain>` (or `app.<domain>`).
+2. Add a redirect from the `workers.dev` URL to the new domain.
+
+### Step 3: API
+1. In Cloudflare DNS, add `api.<domain>` as an **A record** → `3.6.239.100`.
+   **Proxied** (orange cloud) is recommended.
+2. With the proxy on, set SSL/TLS mode to **Full (strict)** and use a
+   Cloudflare **Origin Certificate** in Caddy. Alternatively, keep the record
+   DNS-only and let Caddy get Let's Encrypt certificates.
+3. Update SSM, then redeploy:
+   - `API_DOMAIN` = `api.<domain>`
+   - `CORS_ORIGIN` = `https://<domain>`
+   - `TRUST_PROXY_HOPS` = `2`, only if the API record is proxied.
+4. Change the Cloudflare build variable `VITE_API_URL` to
+   `https://api.<domain>`, then **Retry build**.
+5. Restrict the security group to Cloudflare's IP ranges (only if proxied).
+
+### Step 4: Email (SES)
+1. SES (Mumbai) → **Identities** → create the domain identity. Cloudflare can
+   add the DKIM and custom MAIL FROM records automatically.
+2. **Request production access.** It takes about a day. In sandbox mode, SES
+   only sends to verified addresses, at most 200 a day.
+3. Set `MAIL_FROM` = `Vortex <noreply@<domain>>` in SSM and redeploy.
+4. Optional: Cloudflare **Email Routing** for `support@<domain>` → team
+   inboxes.
+
+### Step 5: Smoke test
+Register → approve → the email arrives → log in.
+
+---
+
+## 8. Production checklist
+
+Production doesn't exist yet. The plan is the same shape as staging:
+
+**Infrastructure:**
+- [ ] Supabase **Pro** project in Mumbai, with its pooler and direct URLs.
+- [ ] Prod EC2 (`t3.medium`), its own Elastic IP and security group, and a
+      role `vortex-production-ec2-role` scoped to `/vortex/production/*`.
+- [ ] SSM `/vortex/production/*`, with **new** secrets: JWT secret and strong
+      staff passwords. Never reuse staging values.
+- [ ] A production deploy job: manual approval, or deploy-on-tag, so pushes to
+      `main` don't hit production directly.
+- [ ] A Cloudflare production frontend on the real domain, plus prod
+      `CORS_ORIGIN` / `VITE_API_URL`.
+
+**Before launch:**
+- [ ] SES domain verified and production access granted; `MAIL_FROM` set.
+- [ ] **Disable the Testing bulk import** in production (KNOWN_ISSUES A3).
+- [ ] Real institutions, domains and problem statements loaded. Staff
+      accounts with **individual** emails and passwords (A4).
+- [ ] Backups (nightly `pg_dump` → S3), CloudWatch alarms (CPU, status
+      check with auto-recover, disk), an uptime monitor, and log retention
+      (A7).
+- [ ] `npm audit fix` and a retest (A6).
+- [ ] Load test and a full dry run with real staff (C3).
+
+---
+
+## 9. Costs
+
+Approximate, per month:
+
+| Item | Paid by | Cost |
+|---|---|---|
+| Cloudflare Workers Paid | card | $5 |
+| Supabase Pro (production) | card | $25 |
+| EC2 staging `t3.small` + Elastic IP | AWS credits | ~$21 |
+| EC2 prod `t3.medium` + Elastic IP (planned) | AWS credits | ~$39 |
+| ECR, S3, CloudWatch, SES | AWS credits | a few dollars |
+
+**Totals:**
+- **Card:** about $30/month.
+- **AWS credits:** about $60/month once production exists. The $100 credit
+  covers roughly the event period, and the staging server can be stopped
+  after the event.
+
+---
+
+## 10. Troubleshooting
+
+| Symptom | Cause / fix |
 |---|---|
-| `VITE_API_URL` | your Render backend URL, no trailing slash |
-
-Deploy. When it finishes, save the Pages URL:
-
-```text
-https://vortex-xyz.pages.dev
-```
-
-Completion check:
-
-- frontend deploy succeeded
-- homepage loads from the Pages URL
-- you saved the Pages URL
-
----
-
-## Step 7 - Update backend CORS
-
-Go back to Render and change:
-
-```text
-CORS_ORIGIN=https://vortex-xyz.pages.dev
-```
-
-Use your actual Pages URL. No trailing slash.
-
-Save the environment change and let Render redeploy the backend.
-
-If you later attach a custom domain, you will update this again.
-
-Completion check:
-
-- backend has redeployed
-- `CORS_ORIGIN` matches the real frontend origin exactly
-
----
-
-## Step 8 - Apply the schema and seed from your local machine
-
-Free Render web services do not provide shell access or one-off jobs, so
-run Prisma locally against Neon.
-
-From the repo root:
-
-```bash
-cd backend
-npm install
-```
-
-### On Windows PowerShell
-
-```powershell
-$env:DATABASE_URL="YOUR_POOLED_NEON_URL"
-$env:DIRECT_URL="YOUR_DIRECT_NEON_URL"
-npx prisma db push
-npm run db:seed
-```
-
-### On macOS/Linux
-
-```bash
-export DATABASE_URL="YOUR_POOLED_NEON_URL"
-export DIRECT_URL="YOUR_DIRECT_NEON_URL"
-npx prisma db push
-npm run db:seed
-```
-
-Expected seed output includes lines like:
-
-```text
-[seed] Admin ready (...)
-[seed] Juries: 3 ensured (...)
-[seed] done
-```
-
-Now go to the frontend and sign in with:
-
-- the `ADMIN_SEED_EMAIL` you set on Render
-- the `ADMIN_SEED_PASSWORD` you set on Render
-
-Completion check:
-
-- `prisma db push` succeeded
-- `npm run db:seed` succeeded
-- you can sign in as admin from the deployed frontend
-
----
-
-## Step 9 - Verify the full flow
-
-At this point the deploy should be working end-to-end.
-
-Check these in order:
-
-1. Open the frontend Pages URL
-2. Sign in as admin
-3. Register a student account from `/register`
-4. Approve the student from the admin verification page
-5. Confirm the password arrives by email
-
-If you skipped the Resend integration in Step 4, check Render logs instead
-for the generated password.
-
-Completion check:
-
-- admin login works
-- student registration works
-- approval works
-- password delivery works, either by email or log output
-
----
-
-## Step 10 - Optional custom domain
-
-If you want `vortex.yourdomain.com` instead of `*.pages.dev`:
-
-1. Buy or use an existing domain
-2. Add the domain to Cloudflare
-3. In the Pages project, add a custom domain
-4. Wait for TLS to provision
-
-Then update Render:
-
-```text
-CORS_ORIGIN=https://vortex.yourdomain.com
-```
-
-If you verified the same domain in Resend, also update:
-
-```text
-MAIL_FROM=Vortex <noreply@yourdomain.com>
-```
-
-Completion check:
-
-- custom domain loads the frontend
-- admin login still works
-- CORS still works from the custom domain
-
----
-
-## Step 11 - Keep Render awake with UptimeRobot
-
-If you do nothing, Render Free will spin down after 15 minutes idle.
-
-To reduce cold starts:
-
-1. Sign up at <https://uptimerobot.com>
-2. Add an HTTP(s) monitor
-3. Use this URL:
-
-```text
-https://vortex-backend.onrender.com/api/health
-```
-
-4. Set the interval to 5 minutes
-
-This does two things:
-
-- monitors uptime
-- keeps the free backend from idling out
-
-With a single free web service, 24/7 uptime pings fit within Render's
-750 free instance hours in a normal month.
-
-Completion check:
-
-- UptimeRobot is successfully pinging `/api/health`
-- the backend no longer cold-starts during active use
-
----
-
-## Deploying updates
-
-Normal code updates:
-
-```bash
-git add .
-git commit -m "feat: your change"
-git push
-```
-
-Then:
-
-- Render auto-redeploys the backend from `main`
-- Cloudflare Pages auto-redeploys the frontend from `main`
-
-If you change only frontend code, only the Pages deploy really matters.
-If you change only backend code, only the Render deploy really matters.
-
-### If you change the Prisma schema
-
-After pushing your code, run this locally again:
-
-### On Windows PowerShell
-
-```powershell
-cd backend
-$env:DATABASE_URL="YOUR_POOLED_NEON_URL"
-$env:DIRECT_URL="YOUR_DIRECT_NEON_URL"
-npx prisma db push
-```
-
-### On macOS/Linux
-
-```bash
-cd backend
-export DATABASE_URL="YOUR_POOLED_NEON_URL"
-export DIRECT_URL="YOUR_DIRECT_NEON_URL"
-npx prisma db push
-```
-
-If the seed data itself changed and you want it applied:
-
-```bash
-npm run db:seed
-```
-
----
-
-## Free-tier limits that matter
-
-These are the important constraints in this stack:
-
-| Service | Current free-tier fact |
-|---|---|
-| Render Web Service | spins down after 15 minutes idle, ~1 minute cold start, 750 free instance hours/month, no shell access on free |
-| Neon | 0.5 GB storage/project, 100 CU-hours/month/project, scale-to-zero |
-| Cloudflare Pages | free static hosting with global CDN, 500 deployments/month on free plan |
-| Resend | 3,000 emails/month, 100/day |
-| Render Postgres | not used here because free databases expire after 30 days |
-
-The main operational limit is Render cold starts, not Neon.
-
----
-
-## Common problems
-
-### Browser shows a CORS error
-
-Check that `CORS_ORIGIN` on Render exactly matches your frontend origin:
-
-- correct protocol
-- no trailing slash
-- no wrong subdomain
-
-### Frontend loads but API calls fail
-
-Check `VITE_API_URL` in Cloudflare Pages production variables. It must point
-to the Render backend URL.
-
-### Backend crashes on Render immediately
-
-Check Render logs. The most common causes are:
-
-- missing env vars
-- wrong `DATABASE_URL`
-- too-short `ACCESS_TOKEN_SECRET`
-
-### `prisma db push` fails locally
-
-Usually one of these:
-
-- you used the pooled URL where a direct URL is expected
-- the Neon URLs lost `?sslmode=require`
-- local dependencies are not installed in `backend/`
-
-### Student approval works but no email arrives
-
-Either:
-
-- you did not replace the mail stub
-- `RESEND_API_KEY` is missing
-- `MAIL_FROM` uses an unverified sender/domain
-
-### First request is slow after inactivity
-
-That is expected on Render Free. Either:
-
-- accept the cold start
-- keep the backend warm with UptimeRobot
-- upgrade the backend to a paid Render plan
-
----
-
-## Billing safety
-
-If your goal is "no surprise bills", use this setup carefully:
-
-- Neon: free plan needs no card for normal free use
-- Cloudflare Pages: free plan works without a payment method
-- Resend: free plan works without a payment method
-- UptimeRobot: free plan works without a payment method
-- Render: safest path is to avoid adding a payment method unless you intend to upgrade
-
-Per Render's docs, if you do not add a payment method and exceed included
-bandwidth or build pipeline limits, Render suspends free services instead of
-billing you.
-
-If you buy a domain, remember that domain renewals are separate from hosting.
-
----
-
-## What to do next
-
-- Brand the UI in `frontend/src/index.css`
-- Replace the mail stub if you have not done it yet
-- Upload your real institution list in the admin Registry screen
-- Run a full student -> admin -> jury flow before the event day
-
+| `Unable to create or refresh login credentials … signin:CreateOAuth2Token` | The `vortex` profile's region isn't Sydney. Run `aws configure set region ap-southeast-2 --profile vortex` |
+| `… explicit deny in a service control policy` | The region isn't in the org's `RegionFloor` list (management account → Organizations → Policies) |
+| GitHub Actions: `Not authorized to perform sts:AssumeRoleWithWebIdentity` | Trust-policy `sub` mismatch; use the immutable subject from [§3](#3-whats-already-set-up-staging) |
+| Browser: CORS error | `CORS_ORIGIN` in SSM must match the frontend origin exactly (scheme, no trailing slash), then redeploy |
+| UI behaves like an old version | The tab has a stale bundle; hard-refresh (Cmd/Ctrl + Shift + R) |
+| Deploy smoke test fails right after an `API_DOMAIN` change | Caddy is still obtaining the new certificate; retry in a minute and check `docker compose logs caddy` |
+| Emails not arriving | `MAIL_FROM` unset, or SES still in sandbox. Backend logs show `mail.skipped` or `mail.failed` |
+| `P1001` / database connection errors | Check `DATABASE_URL` / `DIRECT_URL`: use the pooler hosts (Supabase's direct host is IPv6-only) |

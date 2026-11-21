@@ -1,479 +1,284 @@
 # Vortex
 
-A focused hackathon management platform — registration, team formation,
-multi-round jury evaluation, and a live leaderboard. Three roles
-(Admin, Jury, Student), one event, no ceremony.
+A hackathon management platform for one event: student registration and
+verification, team formation, private team chat, multi-round jury scoring,
+and a live leaderboard with awards.
 
-> **Stack:** React 19 · Vite · TailwindCSS · Express · Prisma 7 · PostgreSQL 15 · Socket.IO · Docker Compose
-
----
-
-## Table of Contents
-
-1. [What you'll need](#1-what-youll-need)
-2. [Quick start (5 minutes)](#2-quick-start-5-minutes)
-3. [Default credentials](#3-default-credentials)
-4. [What's running where](#4-whats-running-where)
-5. [Walking through the app](#5-walking-through-the-app)
-6. [Day-to-day commands](#6-day-to-day-commands)
-7. [Local dev without Docker](#7-local-dev-without-docker)
-8. [Troubleshooting](#8-troubleshooting)
-9. [Project layout](#9-project-layout)
-10. [Resetting everything](#10-resetting-everything)
+> **Stack:** React 19 · Vite · Tailwind · Express 4 · Prisma 7 · PostgreSQL ·
+> Socket.IO · Docker
+> **Hosting:** Cloudflare Workers (frontend) · AWS EC2 Mumbai (backend) ·
+> Supabase Postgres · Amazon SES · GitHub Actions
 
 ---
 
-## 1. What you'll need
+## Contents
 
-Install these once. Everything else runs inside Docker.
+1. [What it does](#1-what-it-does)
+2. [Architecture](#2-architecture)
+3. [Environments](#3-environments)
+4. [Run it locally](#4-run-it-locally)
+5. [Everyday development](#5-everyday-development)
+6. [Project layout](#6-project-layout)
+7. [Documentation index](#7-documentation-index)
+8. [License](#8-license)
 
-| Tool | Purpose | Get it |
-|---|---|---|
-| **Docker Desktop** | Runs the database, backend, and frontend in containers | <https://www.docker.com/products/docker-desktop/> |
-| **Git** | Clone the repository | <https://git-scm.com/downloads> |
+---
 
-That's it. You do **not** need Node.js, PostgreSQL, or anything else
-installed locally to run the project. (If you want to develop without
-Docker, see [§7](#7-local-dev-without-docker).)
+## 1. What it does
 
-> **Windows users:** Docker Desktop will prompt to enable WSL 2 the first
-> time you open it. Say yes — it's the supported mode. After install,
-> open Docker Desktop and wait for it to show "Engine running" before
-> running the commands below.
+### Roles
 
-Verify Docker is alive:
+| Role | What they do |
+|---|---|
+| **Student** | Registers, gets verified, browses the Directory, forms or joins a team, chats with teammates, sees results |
+| **Coordinator** | Verifies students from **their own institution** (the password is emailed to the student) |
+| **Jury** | Scores finalized teams per round (5 criteria × 0–10, plus feedback) |
+| **Admin** | Everything else: verification, registry, teams (force add/remove, finalize, **disqualify/reinstate**, disband), rules, rounds, taxonomy, broadcasts, audit log |
 
-```bash
-docker --version
-docker compose version
+### Flow
+
+1. **Registration** (`/register`). Public; can be switched off in Admin → Rules.
+   Per-field validation with clear messages. Protected by rate limiting and a
+   honeypot field.
+2. **Verification.**
+   - A coordinator (own institution) or an admin approves the student.
+   - Approval issues a **6-digit password** and emails it once email is
+     configured (Amazon SES).
+   - Admins also see the password once on screen, as a backup.
+3. **Team formation** (`/teams`, "My Team"). Students create a team or join one,
+   through invites and join requests.
+   - **Leaving, dismissing or dissolving** needs approval from both sides; the
+     person who must act sees an **"Action needed"** alert.
+   - A **rules engine** (team size, female members, domain experts) moves a
+     team between `FORMING` and `QUALIFIED`. The leader then **finalizes** it.
+   - Admins can freeze all team changes (**team lockdown**) or close team
+     formation separately from registration.
+4. **Team chat.** A private chat on My Team. Only **current members** can read
+   or post; leaving cuts access immediately.
+5. **Directory** (`/directory`). Every verified student, grouped by college or
+   domain, without contact details. Visible to all logged-in users.
+6. **Judging** (`/jury`). An admin unlocks a round; jurors score any finalized
+   team. The first juror to score a (team, round) owns that slot.
+7. **Leaderboard and awards** (`/leaderboard`, `/awards`).
+   - Live updates.
+   - Only finalized, non-disqualified teams are ranked.
+   - Admins control visibility ("Leaderboard visible") and whether numbers are
+     shown ("Show marks").
+
+### Security highlights
+
+- **Login:** JWT, with the account's status re-checked on every request.
+  **Revoking a student** logs them out instantly and removes them from their
+  team.
+- **Rate limiting:** login (per account and per IP), registration and team chat.
+- **Least-privilege data:** Explore and Directory never expose
+  email/phone/Discord; team emails, invites, requests and scores are visible
+  only to the team (and admins/jury as appropriate).
+- **Secrets:** in AWS SSM Parameter Store. AWS access uses IAM roles; there are
+  no static keys anywhere.
+
+---
+
+## 2. Architecture
+
+```
+            Browser
+               │
+   ┌───────────┴────────────┐
+   │                        │  REST + Socket.IO (HTTPS)
+Cloudflare Workers          ▼
+(static React SPA)   EC2 · Mumbai (ap-south-1)
+                     ┌──────────────────────────┐
+                     │ Caddy  ── auto HTTPS     │
+                     │   └─► backend (Node)     │──► Supabase Postgres (Mumbai)
+                     │       Express+Socket.IO  │──► Amazon SES (email)
+                     └──────────────────────────┘──► CloudWatch Logs
+                         ▲
+GitHub Actions (OIDC) ───┘  build image → ECR → deploy over SSM
 ```
 
-Both should print versions without errors.
+- **Frontend:** Cloudflare Worker `vortex-app`, built automatically from
+  `main` (root `frontend/`). The API URL is baked in at build time via
+  `VITE_API_URL`.
+- **Backend:** Docker Compose on EC2 (backend + Caddy), deployed by
+  `.github/workflows/deploy-backend.yml` on every push to `main` that touches
+  `backend/` or `deploy/`.
+- **Database:** Supabase Postgres.
+  - The app connects through the transaction pooler (`DATABASE_URL`,
+    port 6543).
+  - Migrations run through the session pooler (`DIRECT_URL`, port 5432).
+- **Schema changes:** **Prisma migrations only** (`backend/prisma/migrations`).
+  Never `prisma db push`.
+
+Details: [DEPLOY.md](DEPLOY.md) (infrastructure and releases) and
+[deploy/README.md](deploy/README.md) (operating the server).
 
 ---
 
-## 2. Quick start (5 minutes)
+## 3. Environments
 
-Open a terminal (PowerShell on Windows, Terminal on macOS / Linux) and:
+| | Frontend | API | Database |
+|---|---|---|---|
+| **Local** | <http://localhost> (Docker) or <http://localhost:5173> (Vite) | <http://localhost:3001> | Postgres container |
+| **Staging** | <https://vortex-app.bhuvism003.workers.dev> | <https://api.3-6-239-100.sslip.io> | Supabase (free, Mumbai) |
+| **Production** | *not created yet* | *on the event domain* | Supabase Pro (planned) |
+
+The staging URLs are **temporary** until the event domain is bought; see
+[DEPLOY.md → Switching to the real domain](DEPLOY.md#7-switching-to-the-real-domain).
+
+Login details for each environment: [CREDENTIALS.md](CREDENTIALS.md).
+
+---
+
+## 4. Run it locally
+
+You only need **Docker Desktop** and **Git**.
 
 ```bash
-# 1. Clone
-git clone https://github.com/Bhuvilol/TechExpress.git vortex
+git clone https://github.com/Bhuvilol/VORTEX.git vortex
 cd vortex
 
-# 2. Build images and start everything in the background
+# 1. Build and start Postgres + backend + frontend
 docker compose -p vortex up -d --build
 
-# 3. Apply the database schema (one-time, runs inside the backend container)
+# 2. Create the tables (versioned migrations)
 docker compose -p vortex exec backend npx prisma migrate deploy
 
-# 4. Seed admin / juries / hackathon rules / sample registry rows
+# 3. Seed rules, rounds, taxonomy, admin, jury, coordinators, sample registry
 docker compose -p vortex exec backend npm run db:seed
 ```
 
-**That's it.** Open <http://localhost> in your browser.
+Open <http://localhost>. Local accounts are listed in
+[CREDENTIALS.md](CREDENTIALS.md#local-development).
 
-The first build takes ~3-5 minutes (downloading Postgres + Node images
-and installing dependencies). Subsequent starts are seconds.
-
-> The `-p vortex` flag pins the Docker Compose project name. It's
-> optional but recommended — it keeps your containers named consistently
-> (`vortex-db-1`, `vortex-backend-1`, `vortex-frontend-1`) regardless of
-> what folder you cloned into.
-
----
-
-## 3. Default credentials
-
-Seeded by `npm run db:seed`. Change them via env vars before running the
-seed if you want different defaults (see [§6](#6-day-to-day-commands)).
-
-| Role | Email | Password |
+| Service | URL | Notes |
 |---|---|---|
-| **Admin** | `admin@vortex.com` | `admin123` |
-| **Jury (1)** | `jury.alpha@vortex.com` | `jury123` |
-| **Jury (2)** | `jury.bravo@vortex.com` | `jury123` |
-| **Jury (3)** | `jury.charlie@vortex.com` | `jury123` |
+| Frontend (nginx) | <http://localhost> | proxies `/api` and `/socket.io` to the backend |
+| Backend | <http://localhost:3001> | `GET /api/health` → `{"status":"ok"}` |
+| Postgres | `localhost:5432` | `vortex_user` / `vortex_password` / `vortex_db` |
 
-**Students are not seeded** — they self-register through `/register`
-and are then verified by an admin, which generates and emails a fresh
-6-digit password (currently logged to the backend container instead of
-emailed — see [§5](#5-walking-through-the-app) step 3).
+Email isn't configured locally (`MAIL_FROM` unset). Emails are logged instead
+of sent, and admins see issued passwords on screen.
 
----
-
-## 4. What's running where
-
-| Service | Container | URL | Purpose |
-|---|---|---|---|
-| Frontend (nginx + React build) | `vortex-frontend-1` | <http://localhost> | The UI |
-| Backend (Express API + Socket.IO) | `vortex-backend-1` | <http://localhost:3001> | REST + websockets |
-| Database (PostgreSQL 15) | `vortex-db-1` | `localhost:5432` | Persistent state |
-
-The frontend's nginx proxies `/api/*` and `/socket.io/*` to the backend
-on the internal Docker network, so you only ever need port `80` open in
-your browser.
-
-Verify everything is healthy:
+### Hot-reload development (without Docker for the apps)
 
 ```bash
-# All three should be 'running' / 'healthy'
-docker compose -p vortex ps
+docker compose -p vortex up -d db          # keep only Postgres in Docker
 
-# Health endpoint should return {"status":"ok"}
-curl http://localhost/api/health
-```
-
----
-
-## 5. Walking through the app
-
-To experience every flow end-to-end:
-
-### As Admin
-
-1. Open <http://localhost> → click **Sign in**.
-2. Use `admin@vortex.com` / `admin123`. You land in the admin shell.
-3. Skim the sidebar — Verification, Registry, Teams, Rules, Rounds,
-   Taxonomy, Broadcast, Audit Log.
-4. Visit **Rules** and confirm the defaults
-   (min 3 / max 5 members, 1 female, 1 domain expert).
-
-### As a brand-new student
-
-5. Open an incognito window → <http://localhost/register>.
-6. Fill the form. For the institution, pick any one (e.g. *ITER | SOA*).
-   For domain, pick any one (e.g. *Healthcare & Medical Technology*).
-   - **Tip:** to test the registry-match flag, use a registration number
-     from the seeded sample rows (`2026-VRTX-100` through `…-107`) with
-     its matching email — those are seeded in `CollegeRegistry` so the
-     admin sees a green "Matched" badge.
-7. Submit. You'll see "Awaiting organizer verification."
-
-### Back in admin
-
-8. **Verification** tab → find the pending row → **Approve**.
-9. A modal pops up showing the freshly-issued 6-digit password (it's
-   also written to the backend container's logs — `docker compose -p
-   vortex logs backend | grep mail`). **Copy it.**
-
-### Back in incognito
-
-10. <http://localhost/login> with the student email + that 6-digit code.
-11. Go to **Teams** → **Create a team**. Pick the same domain you
-    registered for. Become the leader.
-12. Open another incognito window, register a second student, get them
-    approved, log in, go to **Teams** → request to join the first team.
-13. As leader, **Approve** the request. Repeat until the team meets the
-    rules (min 3 members + 1 female + 1 domain expert).
-14. Once status flips to **QUALIFIED**, click **Finalize team**.
-
-### As Jury
-
-15. Sign in as `jury.alpha@vortex.com` / `jury123`.
-16. You'll see the finalized team in the scoring board.
-17. **Admin must unlock a round first**: go to admin → **Rounds** →
-    set Round 1 to **UNLOCKED**.
-18. Back as jury, click any **Open** round chip → submit scores.
-19. As admin, set **Rules → Leaderboard visible: ON** and visit
-    <http://localhost/leaderboard>. Scores appear in real time.
-
-### Real-time bonus
-
-20. With two browsers open, go admin → **Broadcast**, send a message.
-    The other window's toast fires within ~50ms.
-
----
-
-## 6. Day-to-day commands
-
-All of these assume you're in the project root.
-
-### Start / stop
-
-```bash
-# Start (or restart if already running)
-docker compose -p vortex up -d
-
-# Stop without losing data
-docker compose -p vortex stop
-
-# Stop and remove containers (keeps the database volume)
-docker compose -p vortex down
-
-# View live logs from all services
-docker compose -p vortex logs -f
-
-# Logs for one service
-docker compose -p vortex logs -f backend
-```
-
-### Rebuild after code changes
-
-The frontend bundle is baked into the image. After editing source you
-need to rebuild whichever service changed:
-
-```bash
-docker compose -p vortex up -d --build frontend   # after frontend edits
-docker compose -p vortex up -d --build backend    # after backend edits
-```
-
-### Re-seed without wiping data
-
-The seed is idempotent — running it twice doesn't change anything that
-was already correct.
-
-```bash
-docker compose -p vortex exec backend npm run db:seed
-```
-
-### Apply schema changes
-
-Schema changes go through **Prisma migrations** (versioned SQL files in
-`backend/prisma/migrations/`), never `prisma db push`.
-
-1. Edit `backend/prisma/schema.prisma`.
-2. Create a migration against your **local** database (run from `backend/`
-   with `.env` pointing at local Postgres):
-
-   ```bash
-   npx prisma migrate dev --name short_description
-   ```
-
-3. Review the generated `migration.sql`, commit it together with the schema
-   change, and open a PR.
-4. Deployments apply pending migrations automatically. To apply them to the
-   local Docker stack:
-
-   ```bash
-   docker compose -p vortex exec backend npx prisma migrate deploy
-   ```
-
-If a migration would drop or rewrite data (e.g. a new required column on a
-non-empty table), write it so it's safe — add the column as optional, backfill,
-then make it required in a second migration.
-
-### Customise admin / jury credentials before seeding
-
-Edit `docker-compose.yml` → `backend.environment`:
-
-```yaml
-ADMIN_SEED_EMAIL: you@yourdomain.com
-ADMIN_SEED_PASSWORD: your-strong-password
-JURY_SEED_PASSWORD: your-jury-password
-```
-
-Then rebuild and re-seed:
-
-```bash
-docker compose -p vortex up -d --build backend
-docker compose -p vortex exec backend npm run db:seed
-```
-
-> The seed never overwrites an existing user's password. If you want to
-> reset to the new defaults, you have to delete those user rows first
-> (or do a full reset — [§10](#10-resetting-everything)).
-
-### Open a database shell
-
-```bash
-docker compose -p vortex exec db psql -U vortex_user -d vortex_db
-# inside psql:
-\dt              -- list tables
-SELECT * FROM "User" LIMIT 5;
-\q               -- quit
-```
-
----
-
-## 7. Local dev without Docker
-
-For active development with hot-reload, run the frontend and backend
-directly on your machine while still using the Dockerized database.
-
-You'll need:
-- Node.js 20+ (<https://nodejs.org>)
-- The Postgres container running (`docker compose -p vortex up -d db`)
-
-### Backend
-
-```bash
 cd backend
-cp .env.example .env       # then open it and set values (see below)
+cp .env.example .env                        # defaults point at the local DB
 npm install
 npx prisma migrate deploy
 npm run db:seed
-npm run dev                # node --watch — restarts on file change
-```
+npm run dev                                 # http://localhost:3001
 
-Minimum `.env` for local dev:
-
-```env
-NODE_ENV=development
-PORT=3001
-LOG_LEVEL=info
-DATABASE_URL="postgresql://vortex_user:vortex_password@localhost:5432/vortex_db?schema=public"
-ACCESS_TOKEN_SECRET="dev-access-secret-please-rotate-32chars-min"
-ACCESS_TOKEN_EXPIRY="2h"
-BCRYPT_ROUNDS=12
-CORS_ORIGIN="http://localhost,http://localhost:5173,http://127.0.0.1"
-ADMIN_SEED_EMAIL="admin@vortex.com"
-ADMIN_SEED_PASSWORD="admin123"
-JURY_SEED_PASSWORD="jury123"
-```
-
-Backend now serves at <http://localhost:3001>.
-
-### Frontend
-
-```bash
-cd frontend
+cd ../frontend
 npm install
-npm run dev                # vite dev server with hot module reload
+npm run dev                                 # http://localhost:5173 (proxies /api)
 ```
 
-Frontend at <http://localhost:5173> with `/api` automatically proxied
-to the local backend (configured in `vite.config.js`).
+> **Install note:** newer npm versions skip install scripts by default. If
+> `bcrypt` fails to load, run `npm rebuild bcrypt` once in `backend/`.
 
 ---
 
-## 8. Troubleshooting
+## 5. Everyday development
 
-### "Port 80 / 3001 / 5432 is already in use"
+### Branching and deploys
+- Work happens on **`main`** (single-branch workflow for now).
+- **Every push to `main`:**
+  - redeploys the **frontend** (Cloudflare, about 1 minute);
+  - redeploys the **staging backend** if `backend/` or `deploy/` changed
+    (GitHub Actions, about 3 minutes, including migrations and a health check).
+- After a deploy, **hard-refresh** open tabs (Cmd/Ctrl + Shift + R). Open tabs
+  keep running the old bundle.
 
-Something else on your machine grabbed that port. Either stop it, or
-edit `docker-compose.yml` to map a different host port — for example
-`"8080:80"` instead of `"80:80"` and then visit <http://localhost:8080>.
+### Changing the database schema
+1. Edit `backend/prisma/schema.prisma`.
+2. Generate a migration. On the shared staging database, `migrate dev` can't
+   create a shadow DB, so generate the SQL against the current schema:
+   ```bash
+   cd backend
+   npx prisma migrate diff --from-config-datasource --to-schema prisma/schema.prisma --script \
+     > prisma/migrations/<YYYYMMDD>_<change>/migration.sql
+   ```
+   With a local Postgres, `npx prisma migrate dev --name <change>` also works.
+3. Review the SQL. Keep it backward-compatible: add first, remove in a later
+   release.
+4. Commit it with the schema change. The deploy pipeline runs
+   `prisma migrate deploy`.
 
-### Login returns `500 Internal Server Error`
-
-Check `docker compose -p vortex logs backend`. The most common cause is
-a CORS rejection (e.g. you're hitting the API from a host that's not
-in `CORS_ORIGIN`). Add your origin to the allow-list in
-`docker-compose.yml` and rebuild the backend.
-
-### Frontend shows blank page / CSS missing
-
-Hard-refresh (Ctrl+Shift+R / Cmd+Shift+R). Browser cached the old bundle.
-
-### Database container keeps restarting
-
+### Useful commands
 ```bash
-docker compose -p vortex logs db
+make migrate          # apply migrations in the local Docker stack
+make migrate-status   # show applied / pending migrations
+make seed-full        # (re)run the idempotent seed
+make db-shell         # psql into the local DB
+docker compose -p vortex logs -f backend
 ```
 
-If it complains about volume permissions (rare on Windows / macOS),
-try a clean reset — [§10](#10-resetting-everything).
+### Re-seeding
+The seed is **idempotent**: it upserts and never overwrites existing passwords
+or admin-tuned rules. **However:**
+- it deletes taxonomy rows that aren't in its list (unless a team uses them);
+- it prints the default staff passwords.
 
-### Backend fails with `Prisma schema validation` errors
-
-Schema and database drifted. Apply any pending migrations:
-
-```bash
-docker compose -p vortex exec backend npx prisma migrate deploy
-```
-
-If Prisma refuses because data exists, it's a destructive change — you
-need [§10](#10-resetting-everything).
-
-### `bcrypt invalid ELF header` inside the container
-
-Your host's `node_modules` ended up baked into the Linux container. The
-`.dockerignore` file in `backend/` prevents this — make sure it exists.
-Then rebuild without cache:
-
-```bash
-docker compose -p vortex build --no-cache backend
-docker compose -p vortex up -d backend
-```
-
-### "I forgot my admin password"
-
-Easiest path: reset everything ([§10](#10-resetting-everything)) and
-re-seed with the env defaults.
+Don't re-run it on production after organizers have edited the taxonomy (see
+[KNOWN_ISSUES.md](KNOWN_ISSUES.md) A5).
 
 ---
 
-## 9. Project layout
+## 6. Project layout
 
 ```
-TExDemo/
-├── backend/                    # Express + Prisma + Socket.IO
+.
+├── backend/                     Express + Prisma + Socket.IO API
 │   ├── prisma/
-│   │   ├── schema.prisma       # Single source of truth for the DB
-│   │   └── seed.js             # Idempotent seed
+│   │   ├── schema.prisma        data model (source of truth)
+│   │   ├── migrations/          versioned SQL migrations
+│   │   └── seed.js              idempotent seed
 │   ├── src/
-│   │   ├── config/             # env validation, Prisma client
-│   │   ├── middleware/         # auth, validate, error handler, round guard
-│   │   ├── services/           # all DB writes live here, never in controllers
-│   │   ├── controllers/        # thin orchestrators
-│   │   ├── routes/             # express routers
-│   │   ├── realtime/           # Socket.IO bootstrap + emitter helpers
-│   │   ├── validators/         # Zod schemas per endpoint
-│   │   ├── utils/              # logger, errors, crypto, mail stub
-│   │   └── index.js            # app entry
-│   ├── Dockerfile
-│   └── .dockerignore
-├── frontend/                   # React 19 + Vite + Tailwind
+│   │   ├── config/              env validation, Prisma client
+│   │   ├── middleware/          auth, rate limits, validation, errors, round guard
+│   │   ├── routes/              Express routers (mounted in index.js)
+│   │   ├── controllers/         thin request handlers
+│   │   ├── services/            business logic (all DB writes live here)
+│   │   ├── realtime/            Socket.IO server + emit helpers
+│   │   ├── validators/          Zod schemas
+│   │   └── utils/               logger, errors, crypto, SES mail, status cache
+│   └── Dockerfile
+├── frontend/                    React 19 + Vite + Tailwind SPA
 │   ├── src/
-│   │   ├── lib/                # api client, socket client, storage
-│   │   ├── contexts/           # Auth, Toast, Broadcast (real-time)
-│   │   ├── hooks/              # useApi, useSocketEvent
-│   │   ├── components/
-│   │   │   ├── ui/             # NeonBorderCard, Modal, Spinner, etc.
-│   │   │   └── layout/         # TopAppBar, AdminShell, RouteGuards
-│   │   ├── pages/
-│   │   │   ├── public/         # Home, Login, Register, Leaderboard, Awards
-│   │   │   ├── student/        # Dashboard, TeamFormation
-│   │   │   ├── jury/           # JuryDashboard
-│   │   │   └── admin/          # 9 admin pages
-│   │   ├── App.jsx             # router
-│   │   └── main.jsx            # mount + providers
-│   ├── nginx.conf              # serves the build + proxies /api + /socket.io
-│   ├── Dockerfile
-│   └── .dockerignore
-├── docker-compose.yml          # ties db + backend + frontend together
-├── CREDENTIALS.md              # seeded credentials reference
-└── README.md                   # this file
+│   │   ├── pages/               public · student · jury · coordinator · admin · shared
+│   │   ├── components/          ui · layout · team (chat)
+│   │   ├── contexts/            auth, toasts, broadcasts
+│   │   ├── hooks/ lib/ utils/   data fetching, API + socket clients, helpers
+│   │   └── App.jsx              routes
+│   ├── wrangler.jsonc           Cloudflare Worker (static assets, SPA fallback)
+│   ├── nginx.conf, Dockerfile   local Docker image
+│   └── README.md
+├── deploy/                      server stack: docker-compose.yml, Caddyfile, .env.example
+├── .github/workflows/           deploy-backend.yml (staging deploy via OIDC + SSM)
+├── docker-compose.yml           local stack (Postgres + backend + frontend)
+├── Makefile                     local shortcuts
+└── *.md                         documentation (see below)
 ```
 
 ---
 
-## 10. Resetting everything
+## 7. Documentation index
 
-Use this when you want a totally clean slate — fresh database, fresh
-seed, no leftover student accounts or teams.
-
-> **This deletes all data permanently.** It's safe for development, never
-> do it in production.
-
-```bash
-# Stop everything and remove the database volume
-docker compose -p vortex down -v
-
-# Bring everything back up from scratch
-docker compose -p vortex up -d --build
-
-# Reapply schema and seed
-docker compose -p vortex exec backend npx prisma migrate deploy
-docker compose -p vortex exec backend npm run db:seed
-```
-
-You're back to the default state with the credentials in [§3](#3-default-credentials).
+| File | What's in it |
+|---|---|
+| [DEPLOY.md](DEPLOY.md) | Infrastructure, releases, secrets, switching to the real domain, production checklist |
+| [deploy/README.md](deploy/README.md) | Operating the EC2 server: logs, restarts, migrations |
+| [CREDENTIALS.md](CREDENTIALS.md) | Accounts per environment and where secrets live |
+| [KNOWN_ISSUES.md](KNOWN_ISSUES.md) | Open issues by launch phase, plus a fixed log |
+| [GITHUB_ISSUES.md](GITHUB_ISSUES.md) | Deep-audit findings, formatted as GitHub issues |
+| [frontend/README.md](frontend/README.md) | Frontend specifics (routes, env, build) |
 
 ---
 
-## Deploying to production
+## 8. License
 
-Local dev is just step one. To put Vortex on the internet at your own
-domain — buying a server, setting up a real database, automatic HTTPS,
-real email, backups — see the deep walkthrough in **[DEPLOY.md](./DEPLOY.md)**.
-
-Estimated cost: ~$7/month for a small event, ~$64/month for a few
-thousand users.
-
----
-
-## License
-
-MIT — see [LICENSE](./LICENSE).
+GNU **AGPL-3.0**. See [LICENSE](LICENSE).

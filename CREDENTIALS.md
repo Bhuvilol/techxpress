@@ -1,137 +1,140 @@
-# Vortex - Seeded Credentials
+# Vortex — Accounts & Credentials
 
-The v2 seed (`backend/prisma/seed.js`) seeds privileged accounts:
-admin, jury, and campus coordinators. Students self-register through
-`/register` and are then verified by either a campus coordinator for
-their institution or by the admin, which generates and emails a fresh
-6-digit password.
-
-All passwords below are defaults sourced from environment variables
-(`ADMIN_SEED_PASSWORD`, `JURY_SEED_PASSWORD`, `COORDINATOR_SEED_PASSWORD`
-in `docker-compose.yml`). Override them before bringing up the stack.
-The seed is idempotent and never overwrites an existing `passwordHash`.
+Which accounts exist in each environment, and **where their passwords
+live**. Real staging and production passwords are **never written in this
+repo**. They're kept in AWS SSM Parameter Store; see below for how to read
+them.
 
 ---
 
-## Access URLs
+## Local development
 
-| What | URL |
-|---|---|
-| Frontend | <http://localhost> |
-| Backend API | <http://localhost:3001> (also reachable via the frontend `/api` proxy) |
-| Postgres | `localhost:5432` (`vortex_user` / `vortex_password` / `vortex_db`) |
+Defaults from `docker-compose.yml` / `backend/.env.example`. They apply after
+`npm run db:seed` on your machine. Change them before seeding if you like; the
+seed never overwrites an existing password.
 
----
-
-## Admin
-
-| Field | Value |
-|---|---|
-| Email | `admin@vortex.com` |
-| Password | `admin123` |
-| Role | `ADMIN` |
-
-Use this to test the global verification queue, taxonomy CRUD, hackathon
-rules, round control, jury assignments, team force-resolve, broadcasts,
-and the audit log.
-
----
-
-## Jury (3 seeded)
-
-All juries share the same default password.
-
-| Email | Password | Role |
+| Role | Email | Password |
 |---|---|---|
-| `jury.alpha@vortex.com`   | `jury123` | `JURY` |
-| `jury.bravo@vortex.com`   | `jury123` | `JURY` |
-| `jury.charlie@vortex.com` | `jury123` | `JURY` |
+| Admin | `admin@vortex.com` | `admin123` |
+| Jury (3) | `jury.alpha@vortex.com`, `jury.bravo@vortex.com`, `jury.charlie@vortex.com` | `jury123` |
+| Coordinators (10) | see [the list below](#coordinator-accounts) | `coord123` |
 
-A jury can only score teams an admin has assigned to them via
-`Admin -> Jury Assignments`, and only when the round is `UNLOCKED`.
+Local Postgres: `vortex_user` / `vortex_password` / database `vortex_db` on
+`localhost:5432`.
 
 ---
 
-## Campus Coordinators (10 seeded)
+## Staging
 
-All coordinators share the same default password.
+<https://vortex-app.bhuvism003.workers.dev>
 
-| Institution | Email | Password | Role |
-|---|---|---|---|
-| `ITER \| SOA` | `coordinator.iter@vortex.com` | `coord123` | `COORDINATOR` |
-| `SPS \| SOA` | `coordinator.sps@vortex.com` | `coord123` | `COORDINATOR` |
-| `SNC \| SOA` | `coordinator.snc@vortex.com` | `coord123` | `COORDINATOR` |
-| `IMS & SUM \| SOA` | `coordinator.ims@vortex.com` | `coord123` | `COORDINATOR` |
-| `IDS \| SOA` | `coordinator.ids@vortex.com` | `coord123` | `COORDINATOR` |
-| `SNIL \| SOA` | `coordinator.snil@vortex.com` | `coord123` | `COORDINATOR` |
-| `IAS \| SOA` | `coordinator.ias@vortex.com` | `coord123` | `COORDINATOR` |
-| `IVS & AH \| SOA` | `coordinator.ivs@vortex.com` | `coord123` | `COORDINATOR` |
-| `IBCS \| SOA` | `coordinator.ibcs@vortex.com` | `coord123` | `COORDINATOR` |
-| `SHM \| SOA` | `coordinator.shm@vortex.com` | `coord123` | `COORDINATOR` |
+| Role | Email | Password |
+|---|---|---|
+| Admin | `admin@vortex.test` | SSM `/vortex/staging/ADMIN_SEED_PASSWORD` |
+| Jury (3) | `jury.alpha@vortex.com`, `jury.bravo@vortex.com`, `jury.charlie@vortex.com` | SSM `/vortex/staging/JURY_SEED_PASSWORD` (shared) |
+| Coordinators (10) | see [the list below](#coordinator-accounts) | SSM `/vortex/staging/COORDINATOR_SEED_PASSWORD` (shared) |
 
-Each coordinator can only review `PENDING` students from their own
-institution. They can approve or reject from the coordinator portal.
-Only admin can revoke, restore, or reissue passwords.
+**How to read a staging password:**
+- **Console:** AWS Console → switch to the **vortex** project account
+  (`820539072886`), region **Mumbai** → **Systems Manager → Parameter Store**
+  → open the parameter → **Show decrypted value**.
+- **CLI:**
+  ```bash
+  export AWS_PROFILE=vortex
+  aws sts get-caller-identity --region ap-southeast-2 >/dev/null   # refresh login
+  aws ssm get-parameter --region ap-south-1 --with-decryption \
+    --name /vortex/staging/ADMIN_SEED_PASSWORD --query Parameter.Value --output text
+  ```
+
+**Other staging secrets** in the same place: database URLs, JWT secret
+(`/vortex/staging/*`). The Supabase connection strings are also in each
+developer's local `backend/.env`, which git ignores.
+
+> Staging passwords are deliberately simple for testing. The staging site is
+> public, so **don't reuse them anywhere else**, and never use them for
+> production.
+
+---
+
+## Production
+
+Not created yet. When it is:
+- **All secrets** go under `/vortex/production/*`, with **new, strong
+  values**: a fresh JWT secret, plus individual staff passwords. Nothing is
+  copied from staging.
+- **Staff accounts** should have **real email addresses and individual
+  passwords**. The seed currently creates shared-password placeholder
+  accounts, and there's no admin screen for staff accounts yet
+  ([KNOWN_ISSUES](KNOWN_ISSUES.md) A4).
+- **Only people who run the event** should have access to the vortex AWS
+  account.
 
 ---
 
 ## Students
 
-Not seeded. To test student flows:
+Students are **never seeded**:
+1. They register at `/register`.
+2. A **coordinator** (own institution) or the **admin** approves them.
+3. Approval issues a **6-digit password**.
+   - **Coordinator approval:** the password is emailed to the student.
+     Coordinators never see it.
+   - **Admin approval / reissue / restore:** the password is emailed **and**
+     shown once to the admin as a backup.
+   - **Until email is configured** (`MAIL_FROM` unset), nothing is sent, and
+     the admin's on-screen copy is the only way to hand it over.
+4. **Lost password:** an admin uses **Verification → Verified → Reveal**, which
+   issues a new password, emails it and shows it.
 
-1. Open <http://localhost/register> and submit the form.
-   - The seed includes 8 entries in `CollegeRegistry` (see below). Using
-     any of those `registrationNo` + `email` combinations triggers an
-     auto-match hint in the admin verification queue.
-2. Sign in either as the matching campus coordinator or as admin, open
-   the verification queue, find the pending registration, and click
-   **Approve**.
-3. Watch the backend container logs (`docker logs vortex-backend-1 -f`)
-   for the mail stub line if you are not using a real mail provider.
-4. Sign in at <http://localhost/login> with the registered email and the
-   issued 6-digit code.
+---
 
-### Sample registry entries
+## Coordinator accounts
 
-| Registration No | Full Name | Email | Institution |
+One per institution. A coordinator can only review students from their own
+institution.
+
+| Institution | Email |
+|---|---|
+| ITER \| SOA | `coordinator.iter@vortex.com` |
+| SPS \| SOA | `coordinator.sps@vortex.com` |
+| SNC \| SOA | `coordinator.snc@vortex.com` |
+| IMS & SUM \| SOA | `coordinator.ims@vortex.com` |
+| IDS \| SOA | `coordinator.ids@vortex.com` |
+| SNIL \| SOA | `coordinator.snil@vortex.com` |
+| IAS \| SOA | `coordinator.ias@vortex.com` |
+| IVS & AH \| SOA | `coordinator.ivs@vortex.com` |
+| IBCS \| SOA | `coordinator.ibcs@vortex.com` |
+| SHM \| SOA | `coordinator.shm@vortex.com` |
+
+These addresses are login IDs only; nothing is emailed to them.
+
+---
+
+## Sample registry rows (seeded)
+
+Registering with one of these registration numbers **and** its email shows a
+green **"Matched"** badge in the admin verification queue:
+
+| Registration No | Name | Email | Institution |
 |---|---|---|---|
-| `2026-VRTX-100` | Alice Vance  | `alice.vance@vortex.com`  | ITER \| SOA |
-| `2026-VRTX-101` | Bob Smith    | `bob.smith@vortex.com`    | SPS \| SOA |
+| `2026-VRTX-100` | Alice Vance | `alice.vance@vortex.com` | ITER \| SOA |
+| `2026-VRTX-101` | Bob Smith | `bob.smith@vortex.com` | SPS \| SOA |
 | `2026-VRTX-102` | Carla Mendes | `carla.mendes@vortex.com` | SNC \| SOA |
 | `2026-VRTX-103` | Devraj Patil | `devraj.patil@vortex.com` | IMS & SUM \| SOA |
-| `2026-VRTX-104` | Esha Nair    | `esha.nair@vortex.com`    | IDS \| SOA |
+| `2026-VRTX-104` | Esha Nair | `esha.nair@vortex.com` | IDS \| SOA |
 | `2026-VRTX-105` | Farhan Iqbal | `farhan.iqbal@vortex.com` | SNIL \| SOA |
-| `2026-VRTX-106` | Gita Roy     | `gita.roy@vortex.com`     | IAS \| SOA |
-| `2026-VRTX-107` | Hari Menon   | `hari.menon@vortex.com`   | IVS & AH \| SOA |
+| `2026-VRTX-106` | Gita Roy | `gita.roy@vortex.com` | IAS \| SOA |
+| `2026-VRTX-107` | Hari Menon | `hari.menon@vortex.com` | IVS & AH \| SOA |
+
+The real college list is uploaded in **Admin → Registry**.
 
 ---
 
-## Re-seeding
+## Changing passwords
 
-The seed is idempotent - every write is an `upsert` keyed on a stable
-identifier. Re-running converges to the same state without resetting
-admin-tweaked rules or rotating passwords.
-
-```bash
-cd backend && npm run db:seed
-```
-
-To wipe everything in development only:
-
-```bash
-cd backend && PRISMA_USER_CONSENT_FOR_DANGEROUS_AI_ACTION="<your-text>" npx prisma db push --force-reset
-npm run db:seed
-```
-
----
-
-## Production Note
-
-Before deploying anywhere real:
-
-- Set `ADMIN_SEED_EMAIL` / `ADMIN_SEED_PASSWORD` to non-defaults
-- Set `JURY_SEED_PASSWORD` to a non-default or remove the seed call
-- Set `COORDINATOR_SEED_PASSWORD` to a non-default
-- Rotate `ACCESS_TOKEN_SECRET` to a fresh 32+ char secret
-- Restrict `CORS_ORIGIN` to your real frontend origin only
-- Replace the mail stub in `backend/src/utils/mail.js` with a real provider
+| Account | How |
+|---|---|
+| **Student** | Admin → Verification → **Reveal** (issues a new one) |
+| **Staff (local)** | Change the seed env vars and re-seed. This only affects **new** accounts, since the seed never overwrites an existing password; delete the user row first if needed |
+| **Staff (staging)** | Update the SSM parameter. For an **existing** account, the password hash must be reset in the database (no admin screen yet, A4) |
+| **JWT secret** | Update `ACCESS_TOKEN_SECRET` in SSM and redeploy. **Everyone is logged out** |
