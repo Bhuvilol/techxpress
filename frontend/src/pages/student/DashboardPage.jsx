@@ -1,4 +1,4 @@
-import { Fragment, useMemo, useState } from 'react';
+import { Fragment, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   User, Users, Mail, ArrowRight, Inbox, Megaphone, ExternalLink,
@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { api } from '../../lib/api.js';
 import { useApi } from '../../hooks/useApi.js';
+import { useInfiniteList } from '../../hooks/useInfiniteList.js';
 import { useAuth } from '../../contexts/AuthContext.jsx';
 import { useToast } from '../../contexts/ToastContext.jsx';
 import { useBroadcasts } from '../../contexts/BroadcastContext.jsx';
@@ -421,10 +422,22 @@ const ExploreTab = ({ user, myTeam }) => {
   const [inviteingId, setInviteingId] = useState('');
   const [requestingTeamId, setRequestingTeamId] = useState('');
 
-  // Everyone, not just domain matches. The server already orders by match
-  // score, so students sharing domains come first; the UI adds a divider
-  // before the first student with no shared domain.
-  const members = useApi(() => api.get('/api/teams/explore/members'), []);
+  // Everyone, not just domain matches. The server orders by match score, so
+  // students sharing domains come first; the UI adds a divider before the
+  // first student with no shared domain. Loaded 20 at a time as the panel
+  // scrolls; search runs on the server (debounced).
+  const [memberSearch, setMemberSearch] = useState('');
+  useEffect(() => {
+    const t = setTimeout(() => setMemberSearch(memberFilter.trim()), 300);
+    return () => clearTimeout(t);
+  }, [memberFilter]);
+  const members = useInfiniteList(
+    ({ offset, limit }) => api.get('/api/teams/explore/members', {
+      query: { offset, limit, search: memberSearch || undefined },
+    }),
+    [memberSearch],
+    { pageSize: 20, itemsKey: 'users' },
+  );
   const teams = useApi(() => api.get('/api/teams'), []);
   const joinable = useApi(() => api.get('/api/teams/joinable'), []);
   const outgoingRequests = useApi(() => api.get('/api/join-requests/me'), []);
@@ -452,32 +465,13 @@ const ExploreTab = ({ user, myTeam }) => {
     [pendingInvites.data],
   );
 
-  const visibleMembers = useMemo(() => {
-    const all = members.data?.users ?? [];
-    const needle = memberFilter.trim().toLowerCase();
-    if (!needle) return all;
-    return all.filter((member) =>
-      [
-        member.fullName,
-        member.preferredTeamRole,
-        member.technicalSkills,
-        member.institution?.name,
-        member.domain?.name,
-        ...(member.preferredDomainDetails?.map((domain) => domain.name) ?? []),
-      ]
-        .filter(Boolean)
-        .some((value) => value.toLowerCase().includes(needle)),
-    );
-  }, [members.data, memberFilter]);
-
+  const { setRootEl: setMembersPanel, setSentinelEl: setMembersSentinel } = members;
+  const visibleMembers = members.items;
   // A "match" shares at least one domain with you (primary or preferred).
   // Matches always come first (server sort), so the rest start at one index.
-  const isDomainMatch = (member) =>
-    (member.sharedPreferredDomains?.length ?? 0) > 0 || member.primaryDomainMatched;
-  const matchCount = useMemo(
-    () => visibleMembers.filter(isDomainMatch).length,
-    [visibleMembers],
-  );
+  // Both counts come from the server — they cover pages not loaded yet.
+  const memberTotal = members.total;
+  const matchCount = members.extra.matchCount ?? 0;
 
   const visibleTeams = useMemo(() => {
     const all = (teams.data?.teams ?? []).filter((team) => team.id !== myTeam?.id);
@@ -598,14 +592,14 @@ const ExploreTab = ({ user, myTeam }) => {
 
         {!members.loading && visibleMembers.length > 0 && (
           <div className="font-mono text-[11px] uppercase tracking-[0.18em] text-white/40">
-            {visibleMembers.length} students · {matchCount} share your domains
+            {memberTotal} students · {matchCount} share your domains
           </div>
         )}
 
-        <div className="scroll-panel max-h-[75vh] space-y-4 overflow-y-auto overscroll-contain pr-2">
+        <div ref={setMembersPanel} className="scroll-panel max-h-[75vh] space-y-4 overflow-y-auto overscroll-contain pr-2">
           {visibleMembers.map((member, index) => {
             const action = memberActionState(member);
-            const startsOthers = index === matchCount && index < visibleMembers.length;
+            const startsOthers = index === matchCount && index > 0;
 
             return (
               <Fragment key={member.id}>
@@ -679,6 +673,26 @@ const ExploreTab = ({ user, myTeam }) => {
               </Fragment>
             );
           })}
+
+          {/* Scrolling this into view loads the next page. */}
+          {!members.loading && members.hasMore && !members.error && (
+            <div ref={setMembersSentinel} className="flex items-center justify-center gap-2 py-4 font-mono text-[11px] uppercase tracking-[0.18em] text-white/35">
+              {members.loadingMore && <><Spinner size={12} /> Loading more…</>}
+            </div>
+          )}
+          {members.error && (
+            <div className="flex items-center justify-center gap-3 py-4 font-mono text-[11px] text-status-crit">
+              Couldn&apos;t load students.
+              <button type="button" className="ghost-button !px-3 !py-1 text-[11px]" onClick={visibleMembers.length ? members.loadMore : members.reload}>
+                Retry
+              </button>
+            </div>
+          )}
+          {!members.loading && !members.hasMore && visibleMembers.length > 0 && (
+            <div className="py-3 text-center font-mono text-[10px] uppercase tracking-[0.22em] text-white/25">
+              End of list
+            </div>
+          )}
         </div>
       </section>
 
