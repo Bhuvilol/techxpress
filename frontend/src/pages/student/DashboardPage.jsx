@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useMemo, useState } from 'react';
+import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   User, Users, Mail, ArrowRight, Inbox, Megaphone, ExternalLink,
@@ -25,7 +25,7 @@ const ROLE_TONE = { ADMIN: 'crit', JURY: 'cyan', COORDINATOR: 'warn', STUDENT: '
 const EXPLORE_CARD_CLASS = 'glass-card flat min-h-[188px] rounded-none px-5 py-6 transition duration-200 ease-out hover:border-white hover:bg-white/[0.04]';
 const joinList = (values) => values?.length ? values.join(', ') : '-';
 
-const ProfileTab = ({ user }) => (
+const ProfileTab = ({ user, myTeam }) => (
   <div className="grid gap-6 md:grid-cols-3">
     <section className="glass-card flat md:col-span-2">
       <div className="mb-6 flex items-center gap-3">
@@ -85,6 +85,18 @@ const ProfileTab = ({ user }) => (
         </Badge>
       </div>
 
+      <div className="border-t border-white/5 pt-4">
+        <div className="font-mono text-[10px] uppercase tracking-[0.3em] text-white/30 mb-3">Team</div>
+        {myTeam ? (
+          <div className="space-y-1">
+            <div className="font-sans text-[14px] font-bold text-white">{myTeam.name}</div>
+            <div className="font-mono text-[11px] text-white/50">{myTeam.domain?.name ?? 'No domain'}</div>
+          </div>
+        ) : (
+          <span className="font-mono text-[12px] text-white/40">Not in a team</span>
+        )}
+      </div>
+
       <div className="space-y-2 border-t border-white/10 pt-3">
         <Link to="/teams" className="glow-button inline-flex w-full items-center justify-center gap-2">
           Team Hub <ArrowRight size={14} />
@@ -141,7 +153,7 @@ const ProfileLinks = ({ user }) => {
   );
 };
 
-const InboxTab = () => {
+const InboxTab = ({ onTeamChanged }) => {
   const toast = useToast();
   const invites = useApi(() => api.get('/api/invites/me'), []);
   const requests = useApi(() => api.get('/api/join-requests/me'), []);
@@ -154,6 +166,7 @@ const InboxTab = () => {
       toast.success('Joined the team.');
       invites.refetch();
       requests.refetch();
+      onTeamChanged?.();
     } catch (e) {
       toast.error(e.message);
     }
@@ -435,12 +448,12 @@ const ExploreTab = ({ user, myTeam }) => {
     ({ offset, limit }) => api.get('/api/teams/explore/members', {
       query: { offset, limit, search: memberSearch || undefined },
     }),
-    [memberSearch],
+    [memberSearch, myTeam?.id],
     { pageSize: 20, itemsKey: 'users' },
   );
-  const teams = useApi(() => api.get('/api/teams'), []);
-  const joinable = useApi(() => api.get('/api/teams/joinable'), []);
-  const outgoingRequests = useApi(() => api.get('/api/join-requests/me'), []);
+  const teams = useApi(() => api.get('/api/teams'), [myTeam?.id]);
+  const joinable = useApi(() => api.get('/api/teams/joinable'), [myTeam?.id]);
+  const outgoingRequests = useApi(() => api.get('/api/join-requests/me'), [myTeam?.id]);
 
   const leaderOwnTeam = myTeam?.leader?.id === user.id ? myTeam : null;
   const pendingInvites = useApi(
@@ -802,6 +815,11 @@ export const DashboardPage = () => {
   const myTeam = useApi(() => api.get('/api/teams/mine'), []);
   const u = me.data?.user ?? user;
 
+  const handleTeamChanged = useCallback(() => {
+    myTeam.refetch();
+    me.refetch();
+  }, [myTeam, me]);
+
   return (
     <section className="mx-auto max-w-6xl px-4 sm:px-6 py-8 sm:py-12">
       <PageHeader
@@ -831,11 +849,11 @@ export const DashboardPage = () => {
         {me.loading
           ? <CardSkeleton rows={4} />
           : tab === 'profile'
-            ? <ProfileTab user={u} />
+            ? <ProfileTab user={u} myTeam={myTeam.data?.team ?? null} />
             : tab === 'explore'
               ? <ExploreTab user={u} myTeam={myTeam.data?.team ?? null} />
               : tab === 'inbox'
-                ? <InboxTab />
+                ? <InboxTab onTeamChanged={handleTeamChanged} />
                 : <BroadcastsTab />}
       </div>
     </section>
