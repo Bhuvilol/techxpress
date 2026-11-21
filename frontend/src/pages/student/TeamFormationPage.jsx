@@ -407,15 +407,29 @@ const MyTeamView = ({ team, evaluation, onMutate }) => {
     (c) => c.team?.id === team.id && c.kind !== 'DISBAND',
   );
 
-  const action = async (label, fn) => {
-    try { await fn(); toast.success(label); onMutate(); }
+  const [busyId, setBusyId] = useState('');
+  const pendingInvites  = (invites.data?.invites ?? []).filter((i) => i.status === 'PENDING');
+  const pendingRequests = (requests.data?.requests ?? []).filter((r) => r.status === 'PENDING');
+
+  // Run a team action, then refresh the team AND the invite / join-request
+  // lists (they live in this component, so onMutate alone doesn't reload
+  // them). Refresh even on failure so a stale card never lingers.
+  const action = async (label, fn, id = '') => {
+    setBusyId(id);
+    try { await fn(); toast.success(label); }
     catch (err) { toast.error(err.message); }
+    finally {
+      invites.refetch();
+      requests.refetch();
+      onMutate();
+      setBusyId('');
+    }
   };
 
   const finalize       = () => action('Team finalized.', () => api.post(`/api/teams/${team.id}/finalize`));
-  const cancelInvite   = (id) => action('Invite cancelled.', () => api.post(`/api/invites/${id}/cancel`));
-  const approveRequest = (id) => action('Request approved.', () => api.post(`/api/join-requests/${id}/approve`));
-  const denyRequest    = (id) => action('Request denied.',   () => api.post(`/api/join-requests/${id}/deny`));
+  const cancelInvite   = (id) => action('Invite cancelled.', () => api.post(`/api/invites/${id}/cancel`), id);
+  const approveRequest = (id) => action('Request approved — member added.', () => api.post(`/api/join-requests/${id}/approve`), id);
+  const denyRequest    = (id) => action('Request denied.',   () => api.post(`/api/join-requests/${id}/deny`), id);
 
   const approveChange = async (id, kind) => {
     try {
@@ -655,10 +669,10 @@ const MyTeamView = ({ team, evaluation, onMutate }) => {
 
           {myDisbandApproval.status === 'PENDING' && (
             <div className="flex justify-end gap-2">
-              <button className="ghost-button" onClick={() => denyChange(myDisbandApproval.id, 'DISBAND')}>
+              <button className={`ghost-button ${COMPACT_BTN}`} onClick={() => denyChange(myDisbandApproval.id, 'DISBAND')}>
                 <XCircle size={12}/> Deny
               </button>
-              <button className="danger-button" onClick={() => approveChange(myDisbandApproval.id, 'DISBAND')}>
+              <button className={`danger-button ${COMPACT_BTN}`} onClick={() => approveChange(myDisbandApproval.id, 'DISBAND')}>
                 <CheckCircle2 size={12}/> Approve
               </button>
             </div>
@@ -717,48 +731,60 @@ const MyTeamView = ({ team, evaluation, onMutate }) => {
 
       {isLeader && !isFinalized && !teamDisbandPending && (
         <div className="grid gap-6 lg:grid-cols-2">
-          <section className="space-y-3">
-            <h3 className="section-label">Pending invites</h3>
-            {invites.loading && <CardSkeleton rows={1} />}
-            {invites.data?.invites.filter((i) => i.status === 'PENDING').length === 0 && (
-              <Empty icon={UserPlus} title="No pending invites" />
-            )}
-            {invites.data?.invites.filter((i) => i.status === 'PENDING').map((i) => (
-              <div key={i.id} className="glass-card flat flex items-center justify-between gap-3">
-                <div>
-                  <div className="font-sans text-[13px] font-bold">{i.invitee.fullName}</div>
-                  <div className="font-mono text-[11px] text-text-secondary">{i.invitee.email}</div>
-                </div>
-                <button className="ghost-button" onClick={() => cancelInvite(i.id)}>Cancel</button>
-              </div>
+          <QueuePanel
+            title="Join requests"
+            icon={UserMinus}
+            count={pendingRequests.length}
+            loading={requests.loading}
+            emptyText="No one has asked to join yet."
+          >
+            {pendingRequests.map((r) => (
+              <QueueRow
+                key={r.id}
+                name={r.requester.fullName}
+                sub={r.requester.email}
+                badges={(
+                  <>
+                    {r.requester.domain?.name && <Badge tone="dim">{r.requester.domain.name}</Badge>}
+                    {r.requester.gender === 'FEMALE' && <Badge tone="live">Female</Badge>}
+                    {r.requester.isDomainExpert && <Badge tone="cyan">Expert</Badge>}
+                  </>
+                )}
+                actions={(
+                  <>
+                    <button className={`ghost-button ${COMPACT_BTN}`} disabled={busyId === r.id} onClick={() => denyRequest(r.id)}>
+                      <XCircle size={12} /> Deny
+                    </button>
+                    <button className={`glow-button ${COMPACT_BTN}`} disabled={busyId === r.id} onClick={() => approveRequest(r.id)}>
+                      {busyId === r.id ? <Spinner size={12} /> : <CheckCircle2 size={12} />} Approve
+                    </button>
+                  </>
+                )}
+              />
             ))}
-          </section>
+          </QueuePanel>
 
-          <section className="space-y-3">
-            <h3 className="section-label">Join requests</h3>
-            {requests.loading && <CardSkeleton rows={1} />}
-            {requests.data?.requests.filter((r) => r.status === 'PENDING').length === 0 && (
-              <Empty icon={UserMinus} title="No pending requests" />
-            )}
-            {requests.data?.requests.filter((r) => r.status === 'PENDING').map((r) => (
-              <div key={r.id} className="glass-card flat space-y-2">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <div className="font-sans text-[13px] font-bold">{r.requester.fullName}</div>
-                    <div className="font-mono text-[11px] text-text-secondary">{r.requester.email}</div>
-                  </div>
-                  <div className="flex gap-1">
-                    {r.requester.gender === 'FEMALE' && <Badge tone="cyan">F</Badge>}
-                    {r.requester.isDomainExpert && <Badge tone="live">Expert</Badge>}
-                  </div>
-                </div>
-                <div className="flex justify-end gap-2">
-                  <button className="ghost-button" onClick={() => denyRequest(r.id)}><XCircle size={12}/> Deny</button>
-                  <button className="glow-button" onClick={() => approveRequest(r.id)}><CheckCircle2 size={12}/> Approve</button>
-                </div>
-              </div>
+          <QueuePanel
+            title="Pending invites"
+            icon={UserPlus}
+            count={pendingInvites.length}
+            loading={invites.loading}
+            emptyText="No invites waiting for a reply."
+          >
+            {pendingInvites.map((i) => (
+              <QueueRow
+                key={i.id}
+                name={i.invitee.fullName}
+                sub={i.invitee.email}
+                badges={<Badge tone="warn" dot>Awaiting reply</Badge>}
+                actions={(
+                  <button className={`ghost-button ${COMPACT_BTN}`} disabled={busyId === i.id} onClick={() => cancelInvite(i.id)}>
+                    {busyId === i.id ? <Spinner size={12} /> : <XCircle size={12} />} Cancel
+                  </button>
+                )}
+              />
             ))}
-          </section>
+          </QueuePanel>
         </div>
       )}
 
@@ -781,10 +807,10 @@ const MyTeamView = ({ team, evaluation, onMutate }) => {
                   <Badge tone="warn">{c.kind}</Badge>
                 </div>
                 <div className="flex justify-end gap-2">
-                  <button className="ghost-button" onClick={() => denyChange(c.id, c.kind)}>
+                  <button className={`ghost-button ${COMPACT_BTN}`} onClick={() => denyChange(c.id, c.kind)}>
                     <XCircle size={12}/> Deny
                   </button>
-                  <button className="danger-button" onClick={() => approveChange(c.id, c.kind)}>
+                  <button className={`danger-button ${COMPACT_BTN}`} onClick={() => approveChange(c.id, c.kind)}>
                     <CheckCircle2 size={12}/> Approve
                   </button>
                 </div>
@@ -798,6 +824,46 @@ const MyTeamView = ({ team, evaluation, onMutate }) => {
     </div>
   );
 };
+
+// Small, single-line action buttons (icon beside the label).
+const COMPACT_BTN = 'inline-flex items-center gap-1.5 !px-3 !py-1.5 !text-[12px] disabled:opacity-60';
+
+// Bordered panel with a header + count, used for the leader's queues.
+const QueuePanel = ({ title, icon: Icon, count, loading, emptyText, children }) => (
+  <section className="border border-white/10 bg-white/[0.02]">
+    <header className="flex items-center justify-between border-b border-white/10 px-4 py-3">
+      <div className="flex items-center gap-2">
+        {Icon && <Icon size={14} className="text-white/40" />}
+        <h3 className="section-label !text-white/70">{title}</h3>
+      </div>
+      <Badge tone={count ? 'warn' : 'dim'}>{count}</Badge>
+    </header>
+    {loading ? (
+      <div className="p-4"><CardSkeleton rows={1} /></div>
+    ) : count === 0 ? (
+      <p className="px-4 py-5 text-center font-mono text-[12px] text-white/35">{emptyText}</p>
+    ) : (
+      <div className="divide-y divide-white/5">{children}</div>
+    )}
+  </section>
+);
+
+// One person per row: avatar, name + subline, badges, actions on the right.
+const QueueRow = ({ name, sub, badges, actions }) => (
+  <div className="flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+    <div className="flex min-w-0 items-center gap-3">
+      <div className="grid h-9 w-9 shrink-0 place-items-center border border-white/10 bg-black font-sans text-[12px] font-bold text-white">
+        {(name ?? '?').slice(0, 2).toUpperCase()}
+      </div>
+      <div className="min-w-0">
+        <div className="truncate font-sans text-[13px] font-bold text-text-primary">{name}</div>
+        {sub && <div className="truncate font-mono text-[11px] text-text-secondary">{sub}</div>}
+        {badges && <div className="mt-1.5 flex flex-wrap gap-1">{badges}</div>}
+      </div>
+    </div>
+    <div className="flex shrink-0 justify-end gap-2">{actions}</div>
+  </div>
+);
 
 const Stat = ({ label, value }) => (
   <div>
