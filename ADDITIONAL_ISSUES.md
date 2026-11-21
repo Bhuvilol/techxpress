@@ -27,7 +27,7 @@
 | **AUTH-03** | Password Reissue Fails to Revoke Active JWT Sessions & Realtime Sockets | **High** | **NEW** | Auth / Session Lifecycle | [backend/src/services/user.service.js:237](backend/src/services/user.service.js#L237) |
 | **PERF-01** | Node.js Threadpool Starvation & DoS via Sequential Bulk Bcrypt Hashing | **High** | Open | Performance / DoS | [backend/src/services/testingImport.service.js:103](backend/src/services/testingImport.service.js#L103) |
 | **PERF-02** | PostgreSQL Connection Pool Exhaustion via Unpaginated N+1 Query Storm | **High** | **Resolved in `rohit-jain`** | Database / Stability | [backend/src/controllers/adminVerification.controller.js:19](backend/src/controllers/adminVerification.controller.js#L19) |
-| **PERF-04** | Unpaginated Student Directory Floods Server Bandwidth & Client Memory | **High** | **NEW** | Performance / Memory | [backend/src/services/directory.service.js:33](backend/src/services/directory.service.js#L33) |
+| **PERF-04** | Unpaginated Student Directory Floods Server Bandwidth & Client Memory | **High** | **Resolved in `rohit-jain`** | Performance / Memory | [backend/src/services/directory.service.js:33](backend/src/services/directory.service.js#L33) |
 | **CONC-01** | PostgreSQL Deadlocks during Concurrent Evaluation Submissions (`reRankAll`) | **High** | Open | Concurrency / DB | [backend/src/services/leaderboard.service.js:47](backend/src/services/leaderboard.service.js#L47) |
 | **DATA-01** | Disqualified Teams Eligible for Innovation, Presentation & Domain Awards | **High** | **Resolved** | Business Logic / Data | [backend/src/services/awards.service.js:34](backend/src/services/awards.service.js#L34) |
 | **DATA-06** | Member Revocation from Finalized Team Silently Violates Invariants | **High** | **NEW** | Business Logic / State | [backend/src/services/membership.service.js:267](backend/src/services/membership.service.js#L267) |
@@ -613,6 +613,10 @@
   In an event with 1,500–2,000 verified students, each request returns a 2–4 MB JSON payload containing complete profile details, technical skills, contribution areas, and domain preferences. All search filtering, college chips, domain filters, and team status segmentation are processed client-side in browser RAM (`DirectoryPage.jsx:83-90`). When hundreds of students explore the directory simultaneously during team formation hours, Node.js event-loop latency spikes, outbound network bandwidth saturates, and lower-end mobile browsers freeze.
 - **Remediation:**
   Add server-side pagination and database-level query filtering (`search`, `institutionId`, `domainId`, `hasTeam`, `take: 40`, `skip`).
+- **Resolution in `rohit-jain` (2026-11-21):**
+  1. Created `backend/src/validators/students.schema.js` validating `page`, `limit`, `search`, `institutionId`, `domainId`, and `teamFilter`.
+  2. Implemented database-level pagination, insensitive text search, and taxonomy aggregation in `backend/src/services/directory.service.js`. Zero client-side data flooding.
+  3. Refactored `frontend/src/pages/shared/DirectoryPage.jsx` to consume paginated endpoints, debounce search inputs, and render `<Pagination />` with customizable limits `[12, 24, 48, 96]`.
 
 ---
 

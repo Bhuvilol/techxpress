@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Users, Search, Building2, Layers, UserCheck, UserPlus, ChevronDown, Award, X,
 } from 'lucide-react';
@@ -9,6 +9,7 @@ import { StatTile } from '../../components/ui/StatTile.jsx';
 import { Badge } from '../../components/ui/Badge.jsx';
 import { Empty } from '../../components/ui/Empty.jsx';
 import { CardSkeleton } from '../../components/ui/Skeleton.jsx';
+import { Pagination } from '../../components/ui/Pagination.jsx';
 import { initials } from '../../utils/format.js';
 import { cn } from '../../utils/cn.js';
 
@@ -29,70 +30,56 @@ const GROUPINGS = [
 
 const groupKey = (s, by) => (by === 'institution' ? s.institution : s.domain) ?? { id: '_none', name: by === 'institution' ? 'No college' : 'No domain' };
 
-const matchesSearch = (s, needle) => {
-  if (!needle) return true;
-  return [
-    s.fullName, s.preferredTeamRole, s.technicalSkills, s.degree, s.yearSemester,
-    s.institution?.name, s.domain?.name, s.team?.name,
-    ...(s.contributionAreas ?? []),
-    ...(s.preferredDomains ?? []).map((d) => d.name),
-  ].filter(Boolean).some((v) => v.toLowerCase().includes(needle));
-};
-
 export const DirectoryPage = () => {
-  const { data, loading, error } = useApi(() => api.get('/api/students/directory'), []);
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(24);
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [groupBy, setGroupBy] = useState('institution');
   const [collegeId, setCollegeId] = useState('');
   const [domainId, setDomainId] = useState('');
   const [teamFilter, setTeamFilter] = useState('all');
   const [collapsed, setCollapsed] = useState(() => new Set());
 
+  // Debounce search input to avoid request flooding on keystrokes
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+      setPage(1);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  // Query parameters memoized for server-side pagination & filtering
+  const query = useMemo(() => {
+    const q = { page, limit };
+    if (debouncedSearch.trim()) q.search = debouncedSearch.trim();
+    if (collegeId) q.institutionId = collegeId;
+    if (domainId) q.domainId = domainId;
+    if (teamFilter !== 'all') q.teamFilter = teamFilter;
+    return q;
+  }, [page, limit, debouncedSearch, collegeId, domainId, teamFilter]);
+
+  const { data, loading, error } = useApi(
+    () => api.get('/api/students/directory', { query }),
+    [query],
+  );
+
   const students = useMemo(() => data?.students ?? [], [data]);
 
-  const stats = useMemo(() => {
-    const inTeam = students.filter((s) => s.team).length;
-    return {
-      total: students.length,
-      colleges: new Set(students.map((s) => s.institution?.id).filter(Boolean)).size,
-      inTeam,
-      looking: students.length - inTeam,
-    };
-  }, [students]);
+  const stats = useMemo(() => data?.stats ?? {
+    total: 0,
+    colleges: 0,
+    inTeam: 0,
+    looking: 0,
+  }, [data]);
 
-  // College chips — the primary segmentation, sorted by size.
-  const colleges = useMemo(() => {
-    const map = new Map();
-    for (const s of students) {
-      const c = s.institution ?? { id: '_none', name: 'No college' };
-      const entry = map.get(c.id) ?? { ...c, count: 0 };
-      entry.count += 1;
-      map.set(c.id, entry);
-    }
-    return [...map.values()].sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
-  }, [students]);
-
-  const domainOptions = useMemo(() => {
-    const map = new Map();
-    for (const s of students) {
-      for (const d of [s.domain, ...(s.preferredDomains ?? [])]) if (d) map.set(d.id, d);
-    }
-    return [...map.values()].sort((a, b) => a.name.localeCompare(b.name));
-  }, [students]);
-
-  const filtered = useMemo(() => {
-    const needle = search.trim().toLowerCase();
-    return students.filter((s) =>
-      (!collegeId || (s.institution?.id ?? '_none') === collegeId) &&
-      (!domainId || s.domain?.id === domainId || (s.preferredDomains ?? []).some((d) => d.id === domainId)) &&
-      (teamFilter === 'all' || (teamFilter === 'inteam' ? !!s.team : !s.team)) &&
-      matchesSearch(s, needle),
-    );
-  }, [students, search, collegeId, domainId, teamFilter]);
+  const colleges = useMemo(() => data?.colleges ?? [], [data]);
+  const domainOptions = useMemo(() => data?.domains ?? [], [data]);
 
   const groups = useMemo(() => {
     const map = new Map();
-    for (const s of filtered) {
+    for (const s of students) {
       const g = groupKey(s, groupBy);
       const entry = map.get(g.id) ?? { id: g.id, name: g.name, items: [] };
       entry.items.push(s);
@@ -100,10 +87,33 @@ export const DirectoryPage = () => {
     }
     return [...map.values()].sort((a, b) =>
       (a.id === '_none') - (b.id === '_none') || b.items.length - a.items.length || a.name.localeCompare(b.name));
-  }, [filtered, groupBy]);
+  }, [students, groupBy]);
 
   const hasFilters = !!(search || collegeId || domainId || teamFilter !== 'all');
-  const clearFilters = () => { setSearch(''); setCollegeId(''); setDomainId(''); setTeamFilter('all'); };
+
+  const clearFilters = () => {
+    setSearch('');
+    setDebouncedSearch('');
+    setCollegeId('');
+    setDomainId('');
+    setTeamFilter('all');
+    setPage(1);
+  };
+
+  const handleCollegeToggle = (id) => {
+    setCollegeId((prev) => (prev === id ? '' : id));
+    setPage(1);
+  };
+
+  const handleDomainChange = (e) => {
+    setDomainId(e.target.value);
+    setPage(1);
+  };
+
+  const handleTeamFilterChange = (val) => {
+    setTeamFilter(val);
+    setPage(1);
+  };
 
   const toggleGroup = (id) => setCollapsed((prev) => {
     const next = new Set(prev);
@@ -119,7 +129,7 @@ export const DirectoryPage = () => {
         description="Everyone cleared to take part, grouped by college or domain. Find teammates here, then invite them or request to join from the Teams page."
       />
 
-      {loading && <CardSkeleton rows={4} />}
+      {loading && !data && <CardSkeleton rows={4} />}
       {error && <Empty icon={Users} title="Couldn't load the directory" description={error.message} />}
 
       {data && (
@@ -131,11 +141,11 @@ export const DirectoryPage = () => {
             <StatTile icon={UserPlus} label="Looking" value={stats.looking} tone="warn" hint="Not in a team yet" />
           </div>
 
-          {/* College segmentation */}
+          {/* College segmentation chips */}
           <div className="mb-5 flex flex-wrap gap-2">
-            <Chip active={!collegeId} onClick={() => setCollegeId('')} label="All colleges" count={stats.total} />
+            <Chip active={!collegeId} onClick={() => { setCollegeId(''); setPage(1); }} label="All colleges" count={stats.total} />
             {colleges.map((c) => (
-              <Chip key={c.id} active={collegeId === c.id} onClick={() => setCollegeId(collegeId === c.id ? '' : c.id)} label={c.name} count={c.count} />
+              <Chip key={c.id} active={collegeId === c.id} onClick={() => handleCollegeToggle(c.id)} label={c.name} count={c.count} />
             ))}
           </div>
 
@@ -145,21 +155,23 @@ export const DirectoryPage = () => {
               <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-white/30" />
               <input
                 className="input-glass !pl-10"
-                placeholder="Search name, role, skills, domain…"
+                placeholder="Search name, role, skills, college, domain…"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
             </div>
-            <select className="select-glass lg:!w-56" value={domainId} onChange={(e) => setDomainId(e.target.value)}>
+            <select className="select-glass lg:!w-56" value={domainId} onChange={handleDomainChange}>
               <option value="">All domains</option>
               {domainOptions.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
             </select>
-            <Segmented items={TEAM_FILTERS} value={teamFilter} onChange={setTeamFilter} />
+            <Segmented items={TEAM_FILTERS} value={teamFilter} onChange={handleTeamFilterChange} />
             <Segmented items={GROUPINGS} value={groupBy} onChange={setGroupBy} />
           </div>
 
-          <div className="mb-4 flex items-center justify-between font-mono text-[11px] uppercase tracking-[0.18em] text-white/40">
-            <span>{filtered.length} of {stats.total} students · {groups.length} {groupBy === 'institution' ? 'colleges' : 'domains'}</span>
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-2 font-mono text-[11px] uppercase tracking-[0.18em] text-white/40">
+            <span>
+              Showing {students.length} of {data.total} students {data.totalPages > 1 && `(Page ${page} of ${data.totalPages})`} · {groups.length} {groupBy === 'institution' ? 'colleges' : 'domains'}
+            </span>
             {hasFilters && (
               <button className="inline-flex items-center gap-1 text-white/60 hover:text-white" onClick={clearFilters}>
                 <X size={12} /> Clear filters
@@ -167,41 +179,59 @@ export const DirectoryPage = () => {
             )}
           </div>
 
-          {students.length === 0 && (
-            <Empty icon={UserCheck} title="No verified students yet" description="Students appear here as soon as a coordinator or organizer approves them." />
-          )}
-          {students.length > 0 && filtered.length === 0 && (
-            <Empty icon={Search} title="No matches" description="No verified student matches these filters." action={<button className="ghost-button" onClick={clearFilters}>Clear filters</button>} />
+          {data.total === 0 && (
+            <Empty icon={UserCheck} title="No verified students found" description={hasFilters ? "No verified student matches these filter criteria." : "Students appear here as soon as a coordinator or organizer approves them."} action={hasFilters && <button className="ghost-button" onClick={clearFilters}>Clear filters</button>} />
           )}
 
-          <div className="space-y-6">
-            {groups.map((g) => {
-              const isCollapsed = collapsed.has(g.id);
-              const looking = g.items.filter((s) => !s.team).length;
-              return (
-                <section key={g.id} className="border border-white/5 bg-black">
-                  <button
-                    type="button"
-                    onClick={() => toggleGroup(g.id)}
-                    className="flex w-full items-center justify-between gap-3 border-b border-white/5 px-5 py-4 text-left transition-colors hover:bg-white/[0.02]"
-                  >
-                    <div className="flex min-w-0 items-center gap-3">
-                      {groupBy === 'institution' ? <Building2 size={16} className="shrink-0 text-white/40" /> : <Layers size={16} className="shrink-0 text-white/40" />}
-                      <h2 className="truncate font-sans text-[15px] font-black uppercase tracking-[0.08em] text-white">{g.name}</h2>
-                      <Badge tone="dim">{g.items.length}</Badge>
-                      {looking > 0 && <Badge tone="warn">{looking} looking</Badge>}
-                    </div>
-                    <ChevronDown size={16} className={cn('shrink-0 text-white/40 transition-transform', isCollapsed && '-rotate-90')} />
-                  </button>
-                  {!isCollapsed && (
-                    <div className="grid gap-3 p-4 md:grid-cols-2 xl:grid-cols-3">
-                      {g.items.map((s) => <StudentCard key={s.id} s={s} groupBy={groupBy} />)}
-                    </div>
-                  )}
-                </section>
-              );
-            })}
-          </div>
+          {data.total > 0 && (
+            <div className="space-y-6">
+              {groups.map((g) => {
+                const isCollapsed = collapsed.has(g.id);
+                const looking = g.items.filter((s) => !s.team).length;
+                return (
+                  <section key={g.id} className="border border-white/5 bg-black">
+                    <button
+                      type="button"
+                      onClick={() => toggleGroup(g.id)}
+                      className="flex w-full items-center justify-between gap-3 border-b border-white/5 px-5 py-4 text-left transition-colors hover:bg-white/[0.02]"
+                    >
+                      <div className="flex min-w-0 items-center gap-3">
+                        {groupBy === 'institution' ? <Building2 size={16} className="shrink-0 text-white/40" /> : <Layers size={16} className="shrink-0 text-white/40" />}
+                        <h2 className="truncate font-sans text-[15px] font-black uppercase tracking-[0.08em] text-white">{g.name}</h2>
+                        <Badge tone="dim">{g.items.length}</Badge>
+                        {looking > 0 && <Badge tone="warn">{looking} looking</Badge>}
+                      </div>
+                      <ChevronDown size={16} className={cn('shrink-0 text-white/40 transition-transform', isCollapsed && '-rotate-90')} />
+                    </button>
+                    {!isCollapsed && (
+                      <div className="grid gap-3 p-4 md:grid-cols-2 xl:grid-cols-3">
+                        {g.items.map((s) => <StudentCard key={s.id} s={s} groupBy={groupBy} />)}
+                      </div>
+                    )}
+                  </section>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Pagination Controls */}
+          {data.totalPages > 1 && (
+            <div className="mt-8">
+              <Pagination
+                page={page}
+                totalPages={data.totalPages}
+                total={data.total}
+                limit={limit}
+                onPageChange={setPage}
+                onLimitChange={(newLimit) => {
+                  setLimit(newLimit);
+                  setPage(1);
+                }}
+                limits={[12, 24, 48, 96]}
+                itemLabel="students"
+              />
+            </div>
+          )}
         </>
       )}
     </section>
