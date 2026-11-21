@@ -67,6 +67,10 @@ export const AdminVerificationPage = () => {
   const total = queryData.data?.total ?? 0;
   const totalPages = queryData.data?.totalPages ?? 1;
 
+  // Approving/rejecting the last row of the last page empties it — step back
+  // to the new last page instead of stranding the admin on an empty one.
+  if (queryData.data && page > totalPages) setPage(totalPages);
+
   const refresh = () => {
     queryData.refetch();
     statsApi.refetch();
