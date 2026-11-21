@@ -16,6 +16,8 @@ export const listTeamsQuerySchema = z.object({
   domainId: cuid.optional(),
   psId: cuid.optional(),
   search: z.string().trim().min(1).max(120).optional(),
+  page: z.coerce.number().int().min(1).optional(),
+  limit: z.coerce.number().int().min(1).max(100).optional(),
 });
 
 export const listJoinableQuerySchema = z.object({

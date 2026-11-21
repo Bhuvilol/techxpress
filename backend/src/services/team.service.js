@@ -176,22 +176,48 @@ export const teamService = {
     });
   },
 
-  list({ status, domainId, psId, search } = {}) {
-    return prisma.team.findMany({
-      where: {
-        ...(status && { status }),
-        ...(domainId && { domainId }),
-        ...(psId && { psId }),
-        ...(search && {
-          OR: [
-            { name: { contains: search, mode: 'insensitive' } },
-            { leader: { fullName: { contains: search, mode: 'insensitive' } } },
-          ],
-        }),
-      },
-      select: TEAM_LIST_FIELDS,
-      orderBy: { createdAt: 'desc' },
-    });
+  async list({ status, domainId, psId, search, page, limit } = {}) {
+    const where = {
+      ...(status && { status }),
+      ...(domainId && { domainId }),
+      ...(psId && { psId }),
+      ...(search && {
+        OR: [
+          { name: { contains: search, mode: 'insensitive' } },
+          { leader: { fullName: { contains: search, mode: 'insensitive' } } },
+        ],
+      }),
+    };
+
+    if (!page) {
+      return prisma.team.findMany({
+        where,
+        select: TEAM_LIST_FIELDS,
+        orderBy: { createdAt: 'desc' },
+      });
+    }
+
+    const take = limit ? Math.min(Math.max(limit, 1), 100) : 20;
+    const skip = (Math.max(page, 1) - 1) * take;
+
+    const [total, teams] = await prisma.$transaction([
+      prisma.team.count({ where }),
+      prisma.team.findMany({
+        where,
+        select: TEAM_LIST_FIELDS,
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take,
+      }),
+    ]);
+
+    return {
+      total,
+      page: Math.max(page, 1),
+      limit: take,
+      totalPages: Math.ceil(total / take) || 1,
+      teams,
+    };
   },
 
   // Teams a user could join right now: same PS (if user has one), still

@@ -9,6 +9,7 @@ import {
   lookupByRegistrationNoQuerySchema,
 } from '../validators/admin.schema.js';
 import {
+  stats,
   listPending,
   listStudents,
   lookupByRegistrationNo,
@@ -23,6 +24,7 @@ const router = Router();
 
 router.use(requireAuth, requireRole('ADMIN'));
 
+router.get('/stats', ah(stats));
 router.get('/pending', validate({ query: listStudentsQuerySchema }), ah(listPending));
 router.get('/students', validate({ query: listStudentsQuerySchema }), ah(listStudents));
 // Resolve a registration number to a user (admin force add/remove member).

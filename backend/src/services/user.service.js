@@ -279,41 +279,117 @@ export const userService = {
     });
   },
 
-  listPending({ search, institutionId } = {}) {
-    return prisma.user.findMany({
-      where: {
-        role: 'STUDENT',
-        verificationStatus: 'PENDING',
-        ...(institutionId && { institutionId }),
-        ...(search && {
-          OR: [
-            { fullName: { contains: search, mode: 'insensitive' } },
-            { email: { contains: search, mode: 'insensitive' } },
-            { registrationNo: { contains: search, mode: 'insensitive' } },
-          ],
-        }),
-      },
-      select: PUBLIC_USER_FIELDS,
-      orderBy: { createdAt: 'asc' },
-    });
+  async listPending({ search, institutionId, page, limit } = {}) {
+    const where = {
+      role: 'STUDENT',
+      verificationStatus: 'PENDING',
+      ...(institutionId && { institutionId }),
+      ...(search && {
+        OR: [
+          { fullName: { contains: search, mode: 'insensitive' } },
+          { email: { contains: search, mode: 'insensitive' } },
+          { registrationNo: { contains: search, mode: 'insensitive' } },
+        ],
+      }),
+    };
+
+    if (!page) {
+      return prisma.user.findMany({
+        where,
+        select: PUBLIC_USER_FIELDS,
+        orderBy: { createdAt: 'asc' },
+      });
+    }
+
+    const take = limit ? Math.min(Math.max(limit, 1), 100) : 25;
+    const skip = (Math.max(page, 1) - 1) * take;
+
+    const [total, users] = await prisma.$transaction([
+      prisma.user.count({ where }),
+      prisma.user.findMany({
+        where,
+        select: PUBLIC_USER_FIELDS,
+        orderBy: { createdAt: 'asc' },
+        skip,
+        take,
+      }),
+    ]);
+
+    return {
+      total,
+      page: Math.max(page, 1),
+      limit: take,
+      totalPages: Math.ceil(total / take) || 1,
+      users,
+    };
   },
 
-  listStudents({ status, search, institutionId } = {}) {
-    return prisma.user.findMany({
-      where: {
-        role: 'STUDENT',
-        ...(status && { verificationStatus: status }),
-        ...(institutionId && { institutionId }),
-        ...(search && {
-          OR: [
-            { fullName: { contains: search, mode: 'insensitive' } },
-            { email: { contains: search, mode: 'insensitive' } },
-            { registrationNo: { contains: search, mode: 'insensitive' } },
-          ],
-        }),
-      },
-      select: PUBLIC_USER_FIELDS,
-      orderBy: { createdAt: 'desc' },
-    });
+  async listStudents({ status, search, institutionId, page, limit } = {}) {
+    const where = {
+      role: 'STUDENT',
+      ...(status && { verificationStatus: status }),
+      ...(institutionId && { institutionId }),
+      ...(search && {
+        OR: [
+          { fullName: { contains: search, mode: 'insensitive' } },
+          { email: { contains: search, mode: 'insensitive' } },
+          { registrationNo: { contains: search, mode: 'insensitive' } },
+        ],
+      }),
+    };
+
+    if (!page) {
+      return prisma.user.findMany({
+        where,
+        select: PUBLIC_USER_FIELDS,
+        orderBy: { createdAt: 'desc' },
+      });
+    }
+
+    const take = limit ? Math.min(Math.max(limit, 1), 100) : 25;
+    const skip = (Math.max(page, 1) - 1) * take;
+
+    const [total, users] = await prisma.$transaction([
+      prisma.user.count({ where }),
+      prisma.user.findMany({
+        where,
+        select: PUBLIC_USER_FIELDS,
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take,
+      }),
+    ]);
+
+    return {
+      total,
+      page: Math.max(page, 1),
+      limit: take,
+      totalPages: Math.ceil(total / take) || 1,
+      users,
+    };
+  },
+
+  async getVerificationStats({ institutionId } = {}) {
+    const where = {
+      role: 'STUDENT',
+      ...(institutionId && { institutionId }),
+    };
+
+    const [counts, total] = await Promise.all([
+      prisma.user.groupBy({
+        by: ['verificationStatus'],
+        where,
+        _count: { _all: true },
+      }),
+      prisma.user.count({ where }),
+    ]);
+
+    const acc = { total, PENDING: 0, VERIFIED: 0, REJECTED: 0, REVOKED: 0 };
+    for (const c of counts) {
+      if (c.verificationStatus && c._count?._all != null) {
+        acc[c.verificationStatus] = c._count._all;
+      }
+    }
+    return acc;
   },
 };

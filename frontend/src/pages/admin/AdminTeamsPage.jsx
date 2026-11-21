@@ -10,6 +10,7 @@ import { CardSkeleton } from '../../components/ui/Skeleton.jsx';
 import { Modal } from '../../components/ui/Modal.jsx';
 import { FormField } from '../../components/ui/FormField.jsx';
 import { Spinner } from '../../components/ui/Spinner.jsx';
+import { Pagination } from '../../components/ui/Pagination.jsx';
 import { confirm } from '../../components/ui/Confirm.jsx';
 import { issueLabel } from '../../utils/format.js';
 
@@ -19,12 +20,24 @@ export const AdminTeamsPage = () => {
   const toast = useToast();
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('');
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(20);
   const [active, setActive] = useState(null);
 
   const teams = useApi(
-    () => api.get('/api/teams', { query: { search, status: status || undefined } }),
-    [search, status],
+    () => api.get('/api/teams', { query: { search, status: status || undefined, page, limit } }),
+    [search, status, page, limit],
   );
+
+  const handleStatusChange = (e) => {
+    setStatus(e.target.value);
+    setPage(1);
+  };
+
+  const handleSearchChange = (e) => {
+    setSearch(e.target.value);
+    setPage(1);
+  };
 
   // Read the global lockdown switch alongside teams so the toggle button
   // reflects current state without an extra round-trip.
@@ -73,7 +86,7 @@ export const AdminTeamsPage = () => {
                 : locked ? <Unlock size={12} /> : <Lock size={12} />}
               {locked ? 'Unlock all teams' : 'Lock all teams'}
             </button>
-            <select className="select-glass w-full md:!w-auto" value={status} onChange={(e) => setStatus(e.target.value)}>
+            <select className="select-glass w-full md:!w-auto" value={status} onChange={handleStatusChange}>
               <option value="">All statuses</option>
               <option value="FORMING">Forming</option>
               <option value="QUALIFIED">Qualified</option>
@@ -82,7 +95,7 @@ export const AdminTeamsPage = () => {
             </select>
             <div className="relative w-full md:w-64">
               <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-text-dim" />
-              <input className="input-glass !pl-10" placeholder="Search…" value={search} onChange={(e) => setSearch(e.target.value)} />
+              <input className="input-glass !pl-10" placeholder="Search…" value={search} onChange={handleSearchChange} />
             </div>
           </div>
         }
@@ -130,7 +143,23 @@ export const AdminTeamsPage = () => {
         ))}
       </div>
 
-      <ManageModal team={active} onClose={() => setActive(null)} onDone={refresh} />
+      {teams.data?.teams?.length > 0 && (
+        <Pagination
+          page={page}
+          totalPages={teams.data?.totalPages ?? 1}
+          total={teams.data?.total ?? 0}
+          limit={limit}
+          onPageChange={setPage}
+          onLimitChange={(l) => {
+            setLimit(l);
+            setPage(1);
+          }}
+          limits={[10, 20, 50]}
+          itemLabel="teams"
+        />
+      )}
+
+      <ManageModal key={active?.id ?? 'none'} team={active} onClose={() => setActive(null)} onDone={refresh} />
     </>
   );
 };

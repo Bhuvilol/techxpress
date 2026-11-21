@@ -14,6 +14,7 @@ import { Modal } from '../../components/ui/Modal.jsx';
 import { FormField } from '../../components/ui/FormField.jsx';
 import { Spinner } from '../../components/ui/Spinner.jsx';
 import { StatTile } from '../../components/ui/StatTile.jsx';
+import { Pagination } from '../../components/ui/Pagination.jsx';
 import { confirm } from '../../components/ui/Confirm.jsx';
 import { titleCase } from '../../utils/format.js';
 
@@ -23,37 +24,53 @@ export const AdminVerificationPage = () => {
   const toast = useToast();
   const [tab, setTab] = useState('PENDING');
   const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(25);
   const [reject, setReject] = useState(null);
   // { user, password } shown after approve / reissue
   const [credential, setCredential] = useState(null);
 
-  const pending = useApi(() => api.get('/api/admin/verification/pending', { query: { search } }), [search]);
-  // Pull all students once for stat tiles + tab content (filter client-side
-  // by status). Search is server-side so the listing stays focused.
-  const students = useApi(
-    () => api.get('/api/admin/verification/students', { query: { search } }),
-    [search],
+  // Dedicated, fast server-side stats calculation for cards & tab badges
+  const statsApi = useApi(() => api.get('/api/admin/verification/stats'), []);
+  const stats = statsApi.data?.stats ?? { total: 0, PENDING: 0, VERIFIED: 0, REJECTED: 0, REVOKED: 0 };
+
+  // Query only the active tab with server-side pagination & search
+  const isPendingTab = tab === 'PENDING';
+  const queryData = useApi(
+    () => isPendingTab
+      ? api.get('/api/admin/verification/pending', {
+          query: { search: search.trim() || undefined, page, limit },
+        })
+      : api.get('/api/admin/verification/students', {
+          query: {
+            status: tab === 'ALL' ? undefined : tab,
+            search: search.trim() || undefined,
+            page,
+            limit,
+          },
+        }),
+    [isPendingTab, tab, search, page, limit],
   );
 
-  // ── stats derived from full list (search-aware) ───────────────────────
-  const stats = useMemo(() => {
-    const all = students.data?.users ?? [];
-    const acc = { total: all.length, PENDING: 0, VERIFIED: 0, REJECTED: 0, REVOKED: 0 };
-    for (const u of all) acc[u.verificationStatus] = (acc[u.verificationStatus] ?? 0) + 1;
-    return acc;
-  }, [students.data]);
+  const list = queryData.data?.users ?? [];
+  const loading = queryData.loading;
+  const total = queryData.data?.total ?? 0;
+  const totalPages = queryData.data?.totalPages ?? 1;
 
-  // ── current tab list ──────────────────────────────────────────────────
-  const list = useMemo(() => {
-    if (tab === 'PENDING') return pending.data?.users ?? [];
-    const all = students.data?.users ?? [];
-    if (tab === 'ALL') return all;
-    return all.filter((u) => u.verificationStatus === tab);
-  }, [tab, pending.data, students.data]);
+  const refresh = () => {
+    queryData.refetch();
+    statsApi.refetch();
+  };
 
-  const loading = tab === 'PENDING' ? pending.loading : students.loading;
+  const handleTabChange = (nextTab) => {
+    setTab(nextTab);
+    setPage(1);
+  };
 
-  const refresh = () => { pending.refetch(); students.refetch(); };
+  const handleSearchChange = (e) => {
+    setSearch(e.target.value);
+    setPage(1);
+  };
 
   // ── actions ───────────────────────────────────────────────────────────
   const approve = async (u) => {
@@ -124,7 +141,7 @@ export const AdminVerificationPage = () => {
           className="input-glass !h-14 !pl-12 !bg-[#050505] border-white/10 focus:border-white/40"
           placeholder="Search name / email / reg #"
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={handleSearchChange}
         />
       </div>
 
@@ -140,7 +157,7 @@ export const AdminVerificationPage = () => {
       <Tabs
         className="mb-4"
         value={tab}
-        onChange={setTab}
+        onChange={handleTabChange}
         items={[
           { value: 'PENDING',  label: 'Pending',  badge: stats.PENDING  || undefined },
           { value: 'VERIFIED', label: 'Verified', badge: stats.VERIFIED || undefined },
@@ -228,6 +245,22 @@ export const AdminVerificationPage = () => {
             </table>
           </div>
         </div>
+      )}
+
+      {list.length > 0 && (
+        <Pagination
+          page={page}
+          totalPages={totalPages}
+          total={total}
+          limit={limit}
+          onPageChange={setPage}
+          onLimitChange={(l) => {
+            setLimit(l);
+            setPage(1);
+          }}
+          limits={[10, 25, 50, 100]}
+          itemLabel="operatives"
+        />
       )}
 
       <RejectModal target={reject} onClose={() => setReject(null)} onDone={refresh} />
