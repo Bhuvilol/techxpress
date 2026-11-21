@@ -1,7 +1,8 @@
 import { z } from 'zod';
+import { normalizeRegistrationNo } from '../utils/registrationNo.js';
 
 const registryRow = z.object({
-  registrationNo: z.string().trim().min(1).max(50),
+  registrationNo: z.string().trim().min(1).max(50).transform(normalizeRegistrationNo),
   fullName:       z.string().trim().min(2).max(120),
   email:          z.string().email().toLowerCase().trim(),
   institutionId:  z.string().cuid(),

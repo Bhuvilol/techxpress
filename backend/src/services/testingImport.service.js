@@ -1,6 +1,7 @@
 import { prisma } from '../config/db.js';
 import { hashPassword, generateSixDigitCode } from '../utils/crypto.js';
 import { logger } from '../utils/logger.js';
+import { normalizeRegistrationNo } from '../utils/registrationNo.js';
 
 const VALID_GENDERS = new Set(['MALE', 'FEMALE', 'OTHER']);
 
@@ -51,7 +52,7 @@ export const testingImportService = {
       try {
         const fullName = cleanString(row.fullName, 120);
         const email = cleanString(row.email, 200)?.toLowerCase();
-        const registrationNo = cleanString(row.registrationNo, 50);
+        const registrationNo = normalizeRegistrationNo(cleanString(row.registrationNo, 50));
         const institutionName = cleanString(row.institutionName, 200);
         const primaryDomainName = cleanString(row.primaryDomainName, 200);
         const gender = cleanString(row.gender)?.toUpperCase();

@@ -1,10 +1,12 @@
 import { prisma } from '../config/db.js';
 import { NotFound } from '../utils/errors.js';
+import { normalizeRegistrationNo } from '../utils/registrationNo.js';
 
 // Source-of-truth registry the admin uploads. A pending student is "matched"
-// if a row with the same registrationNo exists (case-sensitive — registry IDs
-// are typically canonical). Email is shown to the admin as a tie-breaker but
-// not required to match.
+// if a row with the same registrationNo exists. Registration numbers are
+// stored in canonical form (no whitespace, upper-case — utils/registrationNo),
+// so the match ignores case and spacing. Email is shown to the admin as a
+// tie-breaker but not required to match.
 
 export const registryService = {
   async bulkUpsert(rows, uploadedById) {
@@ -54,7 +56,7 @@ export const registryService = {
   async matchUser({ registrationNo, email }) {
     if (!registrationNo) return { matched: false };
     const entry = await prisma.collegeRegistry.findUnique({
-      where: { registrationNo },
+      where: { registrationNo: normalizeRegistrationNo(registrationNo) },
       include: { institution: { select: { id: true, name: true } } },
     });
     if (!entry) return { matched: false };

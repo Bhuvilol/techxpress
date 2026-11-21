@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { normalizeRegistrationNo } from '../utils/registrationNo.js';
 
 export const userIdParamSchema = z.object({
   id: z.string().cuid(),
@@ -14,5 +15,5 @@ export const listStudentsQuerySchema = z.object({
 });
 
 export const lookupByRegistrationNoQuerySchema = z.object({
-  registrationNo: z.string().trim().min(1).max(50),
+  registrationNo: z.string().trim().min(1).max(50).transform(normalizeRegistrationNo),
 });

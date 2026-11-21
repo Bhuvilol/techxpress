@@ -3,6 +3,7 @@ import { Conflict, Forbidden, NotFound, BadRequest } from '../utils/errors.js';
 import { membershipService } from './membership.service.js';
 import { membershipChangeService } from './membershipChange.service.js';
 import { rulesService } from './rules.service.js';
+import { normalizeRegistrationNo } from '../utils/registrationNo.js';
 
 const TEAM_DETAIL_INCLUDE = {
   domain: { select: { id: true, name: true } },
@@ -239,7 +240,7 @@ export const teamService = {
 
     const actorDomainIds = buildActorDomainSet(actor);
     const term = search?.trim() || '';
-    const needle = term.toLowerCase();
+    const regNeedle = term ? normalizeRegistrationNo(term) : '';
 
     // Search runs server-side now that the client only holds one page.
     // Domain names are matched to ids first so preferred domains (stored as
@@ -268,7 +269,7 @@ export const teamService = {
           ] : []),
           // Registration numbers match only when typed in full, so the list
           // can't be used to enumerate them.
-          { registrationNo: { equals: term, mode: 'insensitive' } },
+          { registrationNo: { equals: regNeedle } },
         ],
       }] : []),
       ...(matchActorDomains && actorDomainIds.length ? [{
@@ -341,7 +342,7 @@ export const teamService = {
           ...member,
           // Echo the registration number back only to someone who already
           // typed it exactly (the invite-by-registration-number flow).
-          ...(needle && registrationNo?.toLowerCase() === needle ? { registrationNo } : {}),
+          ...(regNeedle && registrationNo === regNeedle ? { registrationNo } : {}),
           preferredDomainDetails: (member.preferredDomains ?? [])
             .map((domainId) => domainMap.get(domainId))
             .filter(Boolean),
