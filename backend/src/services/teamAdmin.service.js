@@ -76,6 +76,27 @@ export const teamAdminService = {
         data: { leaderId: newLeaderId, adminOverride: true },
       });
 
+      // Re-route open LEAVE requests to the new leader so approval queue is not orphaned
+      await tx.membershipChangeRequest.updateMany({
+        where: {
+          teamId,
+          kind: 'LEAVE',
+          approverId: team.leaderId,
+          status: { in: ['PENDING', 'APPROVED'] },
+        },
+        data: { approverId: newLeaderId },
+      });
+
+      // Cancel any open change requests targeting the new leader (leaders cannot leave or be dismissed)
+      await tx.membershipChangeRequest.updateMany({
+        where: {
+          teamId,
+          targetUserId: newLeaderId,
+          status: { in: ['PENDING', 'APPROVED'] },
+        },
+        data: { status: 'CANCELLED', resolvedAt: new Date() },
+      });
+
       return tx.team.findUnique({ where: { id: teamId }, include: teamService.detailInclude });
     });
   },

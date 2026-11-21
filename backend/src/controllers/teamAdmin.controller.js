@@ -25,6 +25,7 @@ export const setLeader = async (req, res) => {
     entityType: 'Team', entityId: team.id,
     details: { op: 'setLeader', newLeaderId: req.body.newLeaderId },
   });
+  emitLeaderboardChanged();
   res.json({ team });
 };
 

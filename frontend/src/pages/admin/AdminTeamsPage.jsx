@@ -288,11 +288,20 @@ const ManageModal = ({ team, onClose, onDone }) => {
                 placeholder="e.g. 2026-VRTX-101"
                 value={forceAddId}
                 onChange={(e) => setForceAddId(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && forceAddId.trim()) {
+                    resolveAndAct(
+                      forceAddId,
+                      'Member added.',
+                      (userId) => api.post(`/api/admin/teams/${team.id}/force-add`, { userId }),
+                    );
+                  }
+                }}
               />
             </FormField>
             <button
               className="ghost-button inline-flex items-center gap-2"
-              disabled={!forceAddId}
+              disabled={!forceAddId.trim()}
               onClick={() => resolveAndAct(
                 forceAddId,
                 'Member added.',
@@ -311,11 +320,20 @@ const ManageModal = ({ team, onClose, onDone }) => {
                 placeholder="e.g. 2026-VRTX-101"
                 value={forceRemoveId}
                 onChange={(e) => setForceRemoveId(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && forceRemoveId.trim()) {
+                    resolveAndAct(
+                      forceRemoveId,
+                      'Member removed.',
+                      (userId) => api.post(`/api/admin/teams/${team.id}/force-remove`, { userId }),
+                    );
+                  }
+                }}
               />
             </FormField>
             <button
               className="ghost-button inline-flex items-center gap-2"
-              disabled={!forceRemoveId}
+              disabled={!forceRemoveId.trim()}
               onClick={() => resolveAndAct(
                 forceRemoveId,
                 'Member removed.',
@@ -334,11 +352,20 @@ const ManageModal = ({ team, onClose, onDone }) => {
                 placeholder="e.g. 2026-VRTX-101"
                 value={setLeaderId}
                 onChange={(e) => setSetLeaderId(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && setLeaderId.trim()) {
+                    resolveAndAct(
+                      setLeaderId,
+                      'Leadership updated.',
+                      (newLeaderId) => api.post(`/api/admin/teams/${team.id}/set-leader`, { newLeaderId }),
+                    );
+                  }
+                }}
               />
             </FormField>
             <button
               className="ghost-button inline-flex items-center gap-2"
-              disabled={!setLeaderId}
+              disabled={!setLeaderId.trim()}
               onClick={() => resolveAndAct(
                 setLeaderId,
                 'Leadership updated.',
