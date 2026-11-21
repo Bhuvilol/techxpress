@@ -215,7 +215,7 @@ export const DirectoryPage = () => {
           )}
 
           {/* Pagination Controls */}
-          {data.totalPages > 1 && (
+          {data.total > 0 && (
             <div className="mt-8">
               <Pagination
                 page={page}

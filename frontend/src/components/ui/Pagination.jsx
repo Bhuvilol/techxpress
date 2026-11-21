@@ -13,40 +13,25 @@ export const Pagination = ({
   itemLabel = 'items',
   className,
 }) => {
-  const from = total === 0 ? 0 : (page - 1) * limit + 1;
-  const to = Math.min(page * limit, total);
+  const safePage = Math.max(1, Math.min(page, totalPages || 1));
+  const from = total === 0 ? 0 : (safePage - 1) * limit + 1;
+  const to = Math.min(safePage * limit, total);
 
   // Generate page numbers with smart ellipsis: [1, '...', 4, 5, 6, '...', 20]
   const pageNumbers = useMemo(() => {
     if (totalPages <= 7) {
       return Array.from({ length: totalPages }, (_, i) => i + 1);
     }
-    const pages = [];
-    const showLeftEllipsis = page > 4;
-    const showRightEllipsis = page < totalPages - 3;
 
-    pages.push(1);
-
-    if (showLeftEllipsis) {
-      pages.push('ellipsis-left');
+    if (page <= 4) {
+      return [1, 2, 3, 4, 5, 'ellipsis-right', totalPages];
     }
 
-    const start = Math.max(2, page - 1);
-    const end = Math.min(totalPages - 1, page + 1);
-
-    for (let p = start; p <= end; p++) {
-      if (!pages.includes(p)) pages.push(p);
+    if (page >= totalPages - 3) {
+      return [1, 'ellipsis-left', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
     }
 
-    if (showRightEllipsis) {
-      pages.push('ellipsis-right');
-    }
-
-    if (!pages.includes(totalPages)) {
-      pages.push(totalPages);
-    }
-
-    return pages;
+    return [1, 'ellipsis-left', page - 1, page, page + 1, 'ellipsis-right', totalPages];
   }, [page, totalPages]);
 
   if (total === 0) return null;

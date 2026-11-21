@@ -15,7 +15,7 @@ export const listTeamsQuerySchema = z.object({
   status: z.enum(['FORMING', 'QUALIFIED', 'FINALIZED', 'DISQUALIFIED']).optional(),
   domainId: cuid.optional(),
   psId: cuid.optional(),
-  search: z.string().trim().min(1).max(120).optional(),
+  search: z.string().trim().max(120).optional().transform((v) => v || undefined),
   page: z.coerce.number().int().min(1).optional(),
   limit: z.coerce.number().int().min(1).max(100).optional(),
 });

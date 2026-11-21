@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Users, Search, Trash2, RefreshCw, ShieldCheck, UserMinus, UserPlus, Settings, Lock, Unlock, Ban, RotateCcw } from 'lucide-react';
 import { api } from '../../lib/api.js';
 import { useApi } from '../../hooks/useApi.js';
@@ -19,14 +19,31 @@ const STATUS_TONE = { FORMING: 'warn', QUALIFIED: 'live', FINALIZED: 'cyan', DIS
 export const AdminTeamsPage = () => {
   const toast = useToast();
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [status, setStatus] = useState('');
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
   const [active, setActive] = useState(null);
 
+  // Debounce search input to avoid flood on each keystroke
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+      setPage(1);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [search]);
+
   const teams = useApi(
-    () => api.get('/api/teams', { query: { search, status: status || undefined, page, limit } }),
-    [search, status, page, limit],
+    () => api.get('/api/teams', {
+      query: {
+        search: debouncedSearch.trim() || undefined,
+        status: status || undefined,
+        page,
+        limit,
+      },
+    }),
+    [debouncedSearch, status, page, limit],
   );
 
   const handleStatusChange = (e) => {
@@ -36,7 +53,6 @@ export const AdminTeamsPage = () => {
 
   const handleSearchChange = (e) => {
     setSearch(e.target.value);
-    setPage(1);
   };
 
   // Read the global lockdown switch alongside teams so the toggle button

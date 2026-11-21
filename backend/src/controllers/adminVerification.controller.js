@@ -1,5 +1,4 @@
 import { userService } from '../services/user.service.js';
-import { registryService } from '../services/registry.service.js';
 import { auditService } from '../services/audit.service.js';
 import { disconnectUser, emitLeaderboardChanged } from '../realtime/emitter.js';
 import { prisma } from '../config/db.js';

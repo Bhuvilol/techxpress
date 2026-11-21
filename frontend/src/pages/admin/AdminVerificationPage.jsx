@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   ShieldCheck, Search, Users, ShieldAlert, ShieldOff, Clock, Eye, Copy,
 } from 'lucide-react';
@@ -24,11 +24,21 @@ export const AdminVerificationPage = () => {
   const toast = useToast();
   const [tab, setTab] = useState('PENDING');
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(25);
   const [reject, setReject] = useState(null);
   // { user, password } shown after approve / reissue
   const [credential, setCredential] = useState(null);
+
+  // Debounce search query to prevent N requests on every keystroke
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+      setPage(1);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [search]);
 
   // Dedicated, fast server-side stats calculation for cards & tab badges
   const statsApi = useApi(() => api.get('/api/admin/verification/stats'), []);
@@ -39,17 +49,17 @@ export const AdminVerificationPage = () => {
   const queryData = useApi(
     () => isPendingTab
       ? api.get('/api/admin/verification/pending', {
-          query: { search: search.trim() || undefined, page, limit },
+          query: { search: debouncedSearch.trim() || undefined, page, limit },
         })
       : api.get('/api/admin/verification/students', {
           query: {
             status: tab === 'ALL' ? undefined : tab,
-            search: search.trim() || undefined,
+            search: debouncedSearch.trim() || undefined,
             page,
             limit,
           },
         }),
-    [isPendingTab, tab, search, page, limit],
+    [isPendingTab, tab, debouncedSearch, page, limit],
   );
 
   const list = queryData.data?.users ?? [];
