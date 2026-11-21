@@ -730,10 +730,10 @@ const MyTeamView = ({ team, evaluation, onMutate }) => {
         </div>
       </section>
 
-      <TeamChat key={team.id} teamId={team.id} />
-
-      {isLeader && !isFinalized && !teamDisbandPending && (
-        <div className="grid gap-6 lg:grid-cols-2">
+      {/* Leader's queues — shown only when something needs attention, above the chat. */}
+      {isLeader && !isFinalized && !teamDisbandPending && (pendingRequests.length > 0 || pendingInvites.length > 0) && (
+        <div className={`grid gap-6 ${pendingRequests.length > 0 && pendingInvites.length > 0 ? 'lg:grid-cols-2' : ''}`}>
+          {pendingRequests.length > 0 && (
           <QueuePanel
             title="Join requests"
             icon={UserMinus}
@@ -766,7 +766,9 @@ const MyTeamView = ({ team, evaluation, onMutate }) => {
               />
             ))}
           </QueuePanel>
+          )}
 
+          {pendingInvites.length > 0 && (
           <QueuePanel
             title="Pending invites"
             icon={UserPlus}
@@ -788,8 +790,11 @@ const MyTeamView = ({ team, evaluation, onMutate }) => {
               />
             ))}
           </QueuePanel>
+          )}
         </div>
       )}
+
+      <TeamChat key={team.id} teamId={team.id} />
 
       {isLeader && !isFinalized && !teamDisbandPending && teamPendingForMe.length > 0 && (
         <section className="space-y-3">
