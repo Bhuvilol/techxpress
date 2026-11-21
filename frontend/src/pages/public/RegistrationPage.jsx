@@ -15,8 +15,6 @@ import {
   Phone,
   School,
   User,
-  Users,
-  Workflow,
 } from 'lucide-react';
 import { api } from '../../lib/api.js';
 import { useApi } from '../../hooks/useApi.js';
@@ -126,6 +124,116 @@ const EMPTY = {
   website: '', // honeypot — hidden from humans; must stay empty
 };
 
+// ── Validation ────────────────────────────────────────────────────────────
+// Clear, human messages for every rule the server enforces
+// (backend/src/validators/registration.schema.js), checked before submit.
+
+const URL_FIELDS = ['linkedinUrl', 'portfolioUrl', 'githubUrl', 'resumeDriveLink', 'researchPublicationUrl'];
+
+const URL_EXAMPLES = {
+  linkedinUrl: 'https://linkedin.com/in/yourname',
+  portfolioUrl: 'https://yourname.dev',
+  githubUrl: 'https://github.com/yourname',
+  resumeDriveLink: 'https://drive.google.com/file/d/…',
+  researchPublicationUrl: 'https://doi.org/…',
+};
+
+// Order fields appear on the page — used to jump to the first problem.
+const FIELD_ORDER = [
+  'fullName', 'email', 'registrationNo', 'phone', 'gender',
+  'institutionId', 'preferredDomains', 'domainId', 'yearSemester', 'degree',
+  'contributionAreas', 'preferredTeamRole', 'technicalSkills', 'nonTechnicalSkills',
+  'linkedinUrl', 'portfolioUrl', 'githubUrl', 'resumeDriveLink', 'researchPublicationUrl',
+  'certificationsAchievements', 'projectInitiative', 'participationExperience',
+  'bio', 'achievements', 'hackathonExperience',
+];
+
+const FIELD_LABELS = {
+  fullName: 'Name', email: 'Email', registrationNo: 'Registration number', phone: 'Phone',
+  gender: 'Gender', institutionId: 'Institution', preferredDomains: 'Preferred domain',
+  domainId: 'Preferred domain', yearSemester: 'Year / Semester', degree: 'Degree',
+  contributionAreas: 'Contribution areas', preferredTeamRole: 'Preferred team role',
+  technicalSkills: 'Technical skills', nonTechnicalSkills: 'Non-technical skills',
+  linkedinUrl: 'LinkedIn profile', portfolioUrl: 'Portfolio link', githubUrl: 'GitHub profile',
+  resumeDriveLink: 'Resume link', researchPublicationUrl: 'Publication link',
+  certificationsAchievements: 'Certifications', projectInitiative: 'Project / initiative',
+  participationExperience: 'Participation experience', bio: 'Bio',
+  achievements: 'Achievements', hackathonExperience: 'Hackathon experience',
+};
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
+const normalizeUrl = (value) => {
+  const v = (value ?? '').trim();
+  if (!v) return '';
+  return /^https?:\/\//i.test(v) ? v : `https://${v}`;
+};
+
+const isValidUrl = (value) => {
+  try {
+    const u = new URL(value);
+    return (u.protocol === 'https:' || u.protocol === 'http:') && u.hostname.includes('.') && value.length <= 500;
+  } catch {
+    return false;
+  }
+};
+
+const validateRegistration = (f) => {
+  const e = {};
+  const name = f.fullName.trim();
+  if (name.length < 2) e.fullName = 'Enter your full name (at least 2 characters).';
+  else if (name.length > 120) e.fullName = 'Name is too long — 120 characters at most.';
+
+  const email = f.email.trim();
+  if (!email) e.email = 'Email is required — your login details are sent here.';
+  else if (!EMAIL_RE.test(email)) e.email = 'That doesn’t look like a valid email. Use the format name@college.edu.';
+
+  const reg = f.registrationNo.trim();
+  if (!reg) e.registrationNo = 'Registration number is required — use the one issued by your institution.';
+  else if (reg.length > 50) e.registrationNo = 'Registration number is too long — 50 characters at most.';
+
+  const phone = f.phone.trim();
+  if (phone) {
+    const digits = phone.replace(/\D/g, '');
+    if (!/^\+?[\d\s-]+$/.test(phone)) e.phone = 'Use digits only (spaces, dashes and a leading + are fine).';
+    else if (digits.length < 7 || digits.length > 15) e.phone = `Phone number should have 7–15 digits (you entered ${digits.length}).`;
+    else if (phone.length > 20) e.phone = 'Phone number is too long — 20 characters at most.';
+  }
+
+  if (!f.gender) e.gender = 'Select your gender.';
+  if (!f.institutionId) e.institutionId = 'Select your institution from the list.';
+  if (!f.preferredDomains.length) e.preferredDomains = 'Pick at least one domain (up to 4). Your first pick is your primary domain.';
+  if (!f.yearSemester.trim()) e.yearSemester = 'Enter your year / semester, e.g. “3rd Year / Semester 6”.';
+  if (!f.degree) e.degree = 'Select your degree.';
+  if (!f.contributionAreas.length) e.contributionAreas = 'Pick at least one area you can contribute to.';
+  if (!f.preferredTeamRole) e.preferredTeamRole = 'Select the role you’d like to play in a team.';
+  if (f.technicalSkills.length > 500) e.technicalSkills = 'Keep technical skills under 500 characters.';
+  if (f.nonTechnicalSkills.length > 500) e.nonTechnicalSkills = 'Keep non-technical skills under 500 characters.';
+
+  for (const key of URL_FIELDS) {
+    if (f[key] && !isValidUrl(f[key])) e[key] = `Enter a complete link, e.g. ${URL_EXAMPLES[key]}`;
+  }
+
+  const bio = f.bio.trim();
+  if (!bio) e.bio = 'Bio is required — a few lines about what you build, study or care about.';
+  else if (bio.length > 1000) e.bio = `Bio is too long — ${bio.length}/1000 characters.`;
+
+  for (const key of ['certificationsAchievements', 'projectInitiative', 'participationExperience', 'achievements', 'hackathonExperience']) {
+    if (f[key].length > 1500) e[key] = `Too long — ${f[key].length}/1500 characters.`;
+  }
+  return e;
+};
+
+// Scroll the field into view and put the cursor in it.
+const focusField = (key) => {
+  requestAnimationFrame(() => {
+    const el = document.querySelector(`[data-field="${key}"]`);
+    if (!el) return;
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    el.querySelector('input:not([tabindex="-1"]), select, textarea, button')?.focus({ preventScroll: true });
+  });
+};
+
 const sanitizePayload = (form) =>
   Object.fromEntries(
     Object.entries(form)
@@ -189,34 +297,66 @@ export const RegistrationPage = () => {
   const [done, setDone] = useState(null);
   const [errors, setErrors] = useState({});
 
-  const set = (key) => (e) => setForm((prev) => ({ ...prev, [key]: e.target.value }));
-  const setList = (key) => (value) =>
+  // Editing a field clears its error straight away.
+  const clearError = (...keys) => setErrors((prev) => {
+    if (!keys.some((k) => prev[k])) return prev;
+    const next = { ...prev };
+    keys.forEach((k) => delete next[k]);
+    return next;
+  });
+  const set = (key) => (e) => {
+    setForm((prev) => ({ ...prev, [key]: e.target.value }));
+    clearError(key);
+  };
+  const setList = (key) => (value) => {
     setForm((prev) => ({ ...prev, [key]: toggleListValue(prev[key], value) }));
-  const setPreferredDomain = (domainId) =>
+    clearError(key);
+  };
+  const setPreferredDomain = (domainId) => {
     setForm((prev) => {
       const next = toggleListValue(prev.preferredDomains, domainId).slice(0, 4);
       return { ...prev, preferredDomains: next, domainId: next[0] ?? '' };
     });
+    clearError('preferredDomains', 'domainId');
+  };
+  // Add https:// when someone types "linkedin.com/in/…".
+  const normalizeUrlField = (key) => () => setForm((prev) => ({ ...prev, [key]: normalizeUrl(prev[key]) }));
 
   const { data: instData, loading: instLoading } = useApi(() => api.get('/api/taxonomy/institutions'), []);
   const { data: domData, loading: domLoading } = useApi(() => api.get('/api/taxonomy/domains'), []);
   const { data: regStatus } = useApi(() => api.get('/api/registration/status'), [], { refetchOnFocus: false });
   const registrationClosed = regStatus?.open === false;
 
+  // Show every problem, then take the user to the first one.
+  const reportErrors = (errs) => {
+    setErrors(errs);
+    const keys = FIELD_ORDER.filter((k) => errs[k]);
+    const first = keys[0] ?? Object.keys(errs)[0];
+    const n = Object.keys(errs).length;
+    toast.error(
+      n === 1
+        ? `${FIELD_LABELS[first] ?? 'A field'}: ${errs[first]}`
+        : `Please fix ${n} fields — starting with ${FIELD_LABELS[first] ?? 'the highlighted field'}.`,
+      { ttl: 7000 },
+    );
+    focusField(first === 'domainId' ? 'preferredDomains' : first);
+  };
+
   const submit = async (e) => {
     e.preventDefault();
-    const nextErrors = {};
-    if (!form.preferredDomains.length) nextErrors.preferredDomains = 'Select at least one preferred domain.';
-    if (!form.contributionAreas.length) nextErrors.contributionAreas = 'Select at least one contribution area.';
-    if (Object.keys(nextErrors).length) {
-      setErrors(nextErrors);
-      toast.error('Please correct the highlighted fields.');
+    const normalized = { ...form };
+    for (const key of URL_FIELDS) normalized[key] = normalizeUrl(normalized[key]);
+    setForm(normalized);
+
+    const clientErrors = validateRegistration(normalized);
+    if (Object.keys(clientErrors).length) {
+      reportErrors(clientErrors);
       return;
     }
     setErrors({});
     setBusy(true);
     try {
-      const payload = sanitizePayload(form);
+      const payload = sanitizePayload(normalized);
       if (form.preferredDomains.length) {
         payload.preferredDomains = form.preferredDomains;
         payload.domainId = form.preferredDomains[0];
@@ -230,12 +370,15 @@ export const RegistrationPage = () => {
         const fieldErrs = err.details?.body ?? err.details ?? {};
         const flat = {};
         for (const [key, value] of Object.entries(fieldErrs)) flat[key] = Array.isArray(value) ? value[0] : String(value);
-        setErrors(flat);
-        toast.error('Please correct the highlighted fields.');
+        reportErrors(flat);
       } else if (err.code === 'CONFLICT') {
-        const field = err.details?.field ?? 'field';
-        setErrors({ [field]: err.message });
-        toast.error(err.message);
+        const field = err.details?.field;
+        const msg = field === 'email'
+          ? 'This email is already registered. If you registered before, wait for verification or contact the organizers.'
+          : field === 'registrationNo'
+            ? 'This registration number is already registered. Check it for typos, or contact the organizers.'
+            : err.message;
+        if (field) reportErrors({ [field]: msg }); else toast.error(msg);
       } else {
         toast.error(err.message || 'Registration failed.');
       }
@@ -288,7 +431,7 @@ export const RegistrationPage = () => {
         </div>
       )}
 
-      <form onSubmit={submit} className="glass-card mt-12 space-y-12 border-white/10 bg-[#050505] p-5 sm:p-6 md:mt-14 md:space-y-14 md:p-8 xl:p-10">
+      <form onSubmit={submit} noValidate className="glass-card mt-12 space-y-12 border-white/10 bg-[#050505] p-5 sm:p-6 md:mt-14 md:space-y-14 md:p-8 xl:p-10">
         {/* Honeypot: off-screen, skipped by keyboard and screen readers.
             Bots that fill every input get silently discarded server-side. */}
         <div aria-hidden="true" style={{ position: 'absolute', left: '-10000px', top: 'auto', width: 1, height: 1, overflow: 'hidden' }}>
@@ -300,35 +443,35 @@ export const RegistrationPage = () => {
 
         <Section number="01" title="Identity">
           <div className="grid grid-cols-1 gap-5 md:grid-cols-2 md:gap-6">
-            <FormField label={requiredLabel('Name')} error={errors.fullName}>
+            <FormField field="fullName" label={requiredLabel('Name')} error={errors.fullName}>
               <div className="group relative">
                 <User size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20 transition-colors group-focus-within:text-white" />
                 <input className="input-glass !pl-14 h-12 border-white/10 bg-black transition-all focus:border-white" required minLength={2} maxLength={120} value={form.fullName} onChange={set('fullName')} placeholder="John Doe" />
               </div>
             </FormField>
 
-            <FormField label={requiredLabel('Email')} error={errors.email}>
+            <FormField field="email" label={requiredLabel('Email')} error={errors.email}>
               <div className="group relative">
                 <Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20 transition-colors group-focus-within:text-white" />
                 <input type="email" className="input-glass !pl-14 h-12 border-white/10 bg-black transition-all focus:border-white" required value={form.email} onChange={set('email')} placeholder="john@university.edu" />
               </div>
             </FormField>
 
-            <FormField label={requiredLabel('Regd Number')} error={errors.registrationNo} hint="Use the registration number issued by your institution.">
+            <FormField field="registrationNo" label={requiredLabel('Regd Number')} error={errors.registrationNo} hint="Use the registration number issued by your institution.">
               <div className="group relative">
                 <IdCard size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20 transition-colors group-focus-within:text-white" />
                 <input className="input-glass !pl-14 h-12 border-white/10 bg-black transition-all focus:border-white" required maxLength={50} value={form.registrationNo} onChange={set('registrationNo')} placeholder="2024PS12345" />
               </div>
             </FormField>
 
-            <FormField label="Phone" error={errors.phone}>
+            <FormField field="phone" label="Phone" error={errors.phone}>
               <div className="group relative">
                 <Phone size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20 transition-colors group-focus-within:text-white" />
                 <input className="input-glass !pl-14 h-12 border-white/10 bg-black transition-all focus:border-white" maxLength={20} value={form.phone} onChange={set('phone')} placeholder="+91 98765 43210" />
               </div>
             </FormField>
 
-            <FormField label={requiredLabel('Gender')} error={errors.gender}>
+            <FormField field="gender" label={requiredLabel('Gender')} error={errors.gender}>
               <div className="group relative">
                 <User size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20 transition-colors group-focus-within:text-white" />
                 <select className="select-glass !pl-14 h-12 border-white/10 bg-black transition-all focus:border-white" required value={form.gender} onChange={set('gender')}>
@@ -343,7 +486,7 @@ export const RegistrationPage = () => {
 
         <Section number="02" title="Academic">
           <div className="grid grid-cols-1 gap-5 md:grid-cols-2 md:gap-6">
-            <FormField label={requiredLabel('Institution')} error={errors.institutionId}>
+            <FormField field="institutionId" label={requiredLabel('Institution')} error={errors.institutionId}>
               <div className="group relative">
                 <School size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20 transition-colors group-focus-within:text-white" />
                 {instLoading ? (
@@ -361,11 +504,12 @@ export const RegistrationPage = () => {
 
             <div className="md:col-span-2">
               <FormField
-                label={requiredLabel('Preferred Domain')}
+                field="domainId" label={requiredLabel('Preferred Domain')}
+                field="preferredDomains"
                 error={errors.domainId ?? errors.preferredDomains}
                 hint="Select up to 4. Your first selected domain is treated as the primary domain for team and qualification logic."
               >
-                <div className="rounded-none border border-white/10 bg-white/[0.02] p-3 sm:p-4 md:p-5">
+                <div className="field-box rounded-none border border-white/10 bg-white/[0.02] p-3 sm:p-4 md:p-5">
                   {domLoading ? (
                     <div className="input-glass flex h-12 items-center gap-2 text-white/40"><Spinner size={12} /> Loading...</div>
                   ) : (
@@ -398,14 +542,14 @@ export const RegistrationPage = () => {
               </FormField>
             </div>
 
-            <FormField label={requiredLabel('Year / Semester')} error={errors.yearSemester}>
+            <FormField field="yearSemester" label={requiredLabel('Year / Semester')} error={errors.yearSemester}>
               <div className="group relative">
                 <BookOpen size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20 transition-colors group-focus-within:text-white" />
                 <input className="input-glass !pl-14 h-12 border-white/10 bg-black transition-all focus:border-white" required maxLength={80} value={form.yearSemester} onChange={set('yearSemester')} placeholder="3rd Year / Semester 6" />
               </div>
             </FormField>
 
-            <FormField label={requiredLabel('Degree')} error={errors.degree}>
+            <FormField field="degree" label={requiredLabel('Degree')} error={errors.degree}>
               <div className="group relative">
                 <School size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20 transition-colors group-focus-within:text-white" />
                 <select className="select-glass !pl-14 h-12 border-white/10 bg-black transition-all focus:border-white" required value={form.degree} onChange={set('degree')}>
@@ -422,12 +566,12 @@ export const RegistrationPage = () => {
         <Section number="03" title="Skills & Contribution">
           <div className="grid grid-cols-1 gap-5 md:grid-cols-2 md:gap-6">
             <div className="md:col-span-2">
-              <FormField label={requiredLabel('Contribution Areas')} error={errors.contributionAreas}>
+              <FormField field="contributionAreas" label={requiredLabel('Contribution Areas')} error={errors.contributionAreas}>
                 <ChoiceGrid options={CONTRIBUTION_AREA_OPTIONS} values={form.contributionAreas} onToggle={setList('contributionAreas')} columns="xl:grid-cols-4" />
               </FormField>
             </div>
 
-            <FormField label={requiredLabel('Preferred Team Role')} error={errors.preferredTeamRole}>
+            <FormField field="preferredTeamRole" label={requiredLabel('Preferred Team Role')} error={errors.preferredTeamRole}>
               <div className="group relative">
                 <Briefcase size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20 transition-colors group-focus-within:text-white" />
                 <select className="select-glass !pl-14 h-12 border-white/10 bg-black transition-all focus:border-white" required value={form.preferredTeamRole} onChange={set('preferredTeamRole')}>
@@ -439,7 +583,7 @@ export const RegistrationPage = () => {
               </div>
             </FormField>
 
-            <FormField label="Technical Skills" error={errors.technicalSkills} hint="Optional free text. Stack, tools, methods, labs, platforms.">
+            <FormField field="technicalSkills" label="Technical Skills" error={errors.technicalSkills} hint="Optional free text. Stack, tools, methods, labs, platforms.">
               <textarea
                 className="input-glass min-h-[120px] border-white/10 bg-black px-4 py-4 transition-all focus:border-white"
                 maxLength={500}
@@ -449,7 +593,7 @@ export const RegistrationPage = () => {
               />
             </FormField>
 
-            <FormField label="Non-Technical Skills" error={errors.nonTechnicalSkills}>
+            <FormField field="nonTechnicalSkills" label="Non-Technical Skills" error={errors.nonTechnicalSkills}>
               <textarea
                 className="input-glass min-h-[120px] border-white/10 bg-black px-4 py-4 transition-all focus:border-white"
                 maxLength={500}
@@ -466,42 +610,42 @@ export const RegistrationPage = () => {
             Add only what you have. Every field in this section is optional.
           </div>
           <div className="grid grid-cols-1 gap-5 md:grid-cols-2 md:gap-6">
-            <FormField label="LinkedIn Profile" error={errors.linkedinUrl}>
+            <FormField field="linkedinUrl" label="LinkedIn Profile" error={errors.linkedinUrl}>
               <div className="group relative">
                 <Linkedin size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20 transition-colors group-focus-within:text-white" />
-                <input type="url" className="input-glass !pl-14 h-12 border-white/10 bg-black transition-all focus:border-white" value={form.linkedinUrl} onChange={set('linkedinUrl')} placeholder="https://linkedin.com/in/..." />
+                <input type="text" inputMode="url" autoComplete="url" className="input-glass !pl-14 h-12 border-white/10 bg-black transition-all focus:border-white" value={form.linkedinUrl} onChange={set('linkedinUrl')} onBlur={normalizeUrlField('linkedinUrl')} placeholder="https://linkedin.com/in/..." />
               </div>
             </FormField>
 
-            <FormField label="Portfolio / Work Link" error={errors.portfolioUrl}>
+            <FormField field="portfolioUrl" label="Portfolio / Work Link" error={errors.portfolioUrl}>
               <div className="group relative">
                 <Globe size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20 transition-colors group-focus-within:text-white" />
-                <input type="url" className="input-glass !pl-14 h-12 border-white/10 bg-black transition-all focus:border-white" value={form.portfolioUrl} onChange={set('portfolioUrl')} placeholder="https://..." />
+                <input type="text" inputMode="url" autoComplete="url" className="input-glass !pl-14 h-12 border-white/10 bg-black transition-all focus:border-white" value={form.portfolioUrl} onChange={set('portfolioUrl')} onBlur={normalizeUrlField('portfolioUrl')} placeholder="https://..." />
               </div>
             </FormField>
 
-            <FormField label="GitHub / Technical Profile" error={errors.githubUrl}>
+            <FormField field="githubUrl" label="GitHub / Technical Profile" error={errors.githubUrl}>
               <div className="group relative">
                 <Github size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20 transition-colors group-focus-within:text-white" />
-                <input type="url" className="input-glass !pl-14 h-12 border-white/10 bg-black transition-all focus:border-white" value={form.githubUrl} onChange={set('githubUrl')} placeholder="https://github.com/..." />
+                <input type="text" inputMode="url" autoComplete="url" className="input-glass !pl-14 h-12 border-white/10 bg-black transition-all focus:border-white" value={form.githubUrl} onChange={set('githubUrl')} onBlur={normalizeUrlField('githubUrl')} placeholder="https://github.com/..." />
               </div>
             </FormField>
 
-            <FormField label="Resume / CV Drive Link" error={errors.resumeDriveLink} hint="Paste a shared Google Drive link instead of uploading a file.">
+            <FormField field="resumeDriveLink" label="Resume / CV Drive Link" error={errors.resumeDriveLink} hint="Paste a shared Google Drive link instead of uploading a file.">
               <div className="group relative">
                 <FileText size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20 transition-colors group-focus-within:text-white" />
-                <input type="url" className="input-glass !pl-14 h-12 border-white/10 bg-black transition-all focus:border-white" value={form.resumeDriveLink} onChange={set('resumeDriveLink')} placeholder="https://drive.google.com/..." />
+                <input type="text" inputMode="url" autoComplete="url" className="input-glass !pl-14 h-12 border-white/10 bg-black transition-all focus:border-white" value={form.resumeDriveLink} onChange={set('resumeDriveLink')} onBlur={normalizeUrlField('resumeDriveLink')} placeholder="https://drive.google.com/..." />
               </div>
             </FormField>
 
-            <FormField label="Research Paper / Publication Link" error={errors.researchPublicationUrl}>
+            <FormField field="researchPublicationUrl" label="Research Paper / Publication Link" error={errors.researchPublicationUrl}>
               <div className="group relative">
                 <BookOpen size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20 transition-colors group-focus-within:text-white" />
-                <input type="url" className="input-glass !pl-14 h-12 border-white/10 bg-black transition-all focus:border-white" value={form.researchPublicationUrl} onChange={set('researchPublicationUrl')} placeholder="https://..." />
+                <input type="text" inputMode="url" autoComplete="url" className="input-glass !pl-14 h-12 border-white/10 bg-black transition-all focus:border-white" value={form.researchPublicationUrl} onChange={set('researchPublicationUrl')} onBlur={normalizeUrlField('researchPublicationUrl')} placeholder="https://..." />
               </div>
             </FormField>
 
-            <FormField label="Certifications / Achievements" error={errors.certificationsAchievements}>
+            <FormField field="certificationsAchievements" label="Certifications / Achievements" error={errors.certificationsAchievements}>
               <textarea
                 className="input-glass min-h-[120px] border-white/10 bg-black px-4 py-4 transition-all focus:border-white"
                 maxLength={1500}
@@ -511,7 +655,7 @@ export const RegistrationPage = () => {
               />
             </FormField>
 
-            <FormField label="Project / Startup / Initiative" error={errors.projectInitiative}>
+            <FormField field="projectInitiative" label="Project / Startup / Initiative" error={errors.projectInitiative}>
               <textarea
                 className="input-glass min-h-[120px] border-white/10 bg-black px-4 py-4 transition-all focus:border-white"
                 maxLength={1500}
@@ -522,7 +666,7 @@ export const RegistrationPage = () => {
             </FormField>
 
             <div className="md:col-span-2">
-              <FormField label="Participation Experience" error={errors.participationExperience}>
+              <FormField field="participationExperience" label="Participation Experience" error={errors.participationExperience}>
                 <textarea
                   className="input-glass min-h-[120px] border-white/10 bg-black px-4 py-4 transition-all focus:border-white"
                   maxLength={1500}
@@ -540,7 +684,7 @@ export const RegistrationPage = () => {
             Bio is required. The remaining fields in this section are optional.
           </div>
           <div className="grid grid-cols-1 gap-5 md:gap-6">
-            <FormField label={requiredLabel('Bio')} error={errors.bio} hint="Up to 1000 characters.">
+            <FormField field="bio" label={requiredLabel('Bio')} error={errors.bio} hint="Up to 1000 characters.">
               <textarea
                 className="input-glass min-h-[140px] border-white/10 bg-black px-4 py-4 transition-all focus:border-white"
                 required
@@ -552,7 +696,7 @@ export const RegistrationPage = () => {
             </FormField>
 
             <div className="grid grid-cols-1 gap-5 md:grid-cols-2 md:gap-6">
-              <FormField label="Achievements" error={errors.achievements}>
+              <FormField field="achievements" label="Achievements" error={errors.achievements}>
                 <div className="group relative">
                   <Award size={18} className="absolute left-4 top-6 text-white/20 transition-colors group-focus-within:text-white" />
                   <textarea
@@ -565,7 +709,7 @@ export const RegistrationPage = () => {
                 </div>
               </FormField>
 
-              <FormField label="Hackathon Experience" error={errors.hackathonExperience}>
+              <FormField field="hackathonExperience" label="Hackathon Experience" error={errors.hackathonExperience}>
                 <div className="group relative">
                   <Briefcase size={18} className="absolute left-4 top-6 text-white/20 transition-colors group-focus-within:text-white" />
                   <textarea

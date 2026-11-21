@@ -162,6 +162,15 @@ input:-webkit-autofill:focus {
   transition: background-color 5000s ease-in-out 0s;
 }
 
+/* Invalid fields (FormField with an error) — red outline that wins over the
+   page-level border utility classes. */
+[data-invalid="true"] .input-glass,
+[data-invalid="true"] .select-glass,
+[data-invalid="true"] .field-box {
+  border-color: var(--status-crit) !important;
+  box-shadow: 0 0 0 2px rgba(248, 113, 113, 0.15);
+}
+
 /* Buttons ─────────────────────────────────────────────────────────────── */
 
 .glow-button {

@@ -3,8 +3,14 @@ import { cn } from '../../utils/cn.js';
 // Labelled form field with optional inline error and help text. Wraps
 // .input-glass / .select-glass / textarea to keep layouts consistent.
 
-export const FormField = ({ label, hint, error, required, children, className }) => (
-  <label className={cn('flex flex-col gap-2.5', className)}>
+// `field` names the form value this wraps; forms use it to scroll to and focus
+// the first invalid field. `error` also marks the field invalid for styling.
+export const FormField = ({ label, hint, error, required, children, className, field }) => (
+  <label
+    className={cn('flex flex-col gap-2.5', className)}
+    data-field={field}
+    data-invalid={error ? 'true' : undefined}
+  >
     <span className="flex min-h-[18px] items-center gap-1.5 font-mono text-[11px] uppercase tracking-[0.22em] text-text-secondary">
       <span>{label}</span>
       {required && (
