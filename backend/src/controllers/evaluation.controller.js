@@ -3,6 +3,7 @@ import { auditService } from '../services/audit.service.js';
 import { rulesService } from '../services/rules.service.js';
 import { prisma } from '../config/db.js';
 import { Forbidden } from '../utils/errors.js';
+import { emitLeaderboardChanged } from '../realtime/emitter.js';
 
 export const submit = async (req, res) => {
   const result = await evaluationService.submit({
@@ -20,6 +21,8 @@ export const submit = async (req, res) => {
     entityId: result.evaluation.id,
     details: { teamId: req.body.teamId, round: req.body.round, total: result.evaluation.total },
   });
+
+  emitLeaderboardChanged(); // leaderboard page refetches live
 
   res.status(201).json(result);
 };

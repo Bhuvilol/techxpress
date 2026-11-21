@@ -216,6 +216,59 @@ export const membershipService = {
   },
 
   /**
+   * Take a just-revoked student out of their team (admin action; bypasses
+   * lockdown and finalized-status guards). The team itself stays — including
+   * its scores and leaderboard standing.
+   *
+   *   - member  → removed, counters updated
+   *   - leader  → leadership passes to the longest-standing other member,
+   *               then the old leader is removed
+   *   - leader and the only member → the empty team is deleted
+   *
+   * Open membership-change requests involving them on that team are
+   * cancelled (their approver/initiator may no longer be valid).
+   * Returns { teamId, teamName, newLeaderId?, teamDeleted } or null.
+   */
+  async removeRevokedUser(tx, userId) {
+    const membership = await tx.teamMember.findUnique({
+      where: { userId },
+      select: { teamId: true, team: { select: { name: true, leaderId: true } } },
+    });
+    if (!membership) return null;
+    const { teamId } = membership;
+    const result = { teamId, teamName: membership.team.name, newLeaderId: null, teamDeleted: false };
+
+    await tx.membershipChangeRequest.updateMany({
+      where: {
+        teamId,
+        status: { in: ['PENDING', 'APPROVED'] },
+        OR: [{ targetUserId: userId }, { approverId: userId }, { initiatorId: userId }],
+      },
+      data: { status: 'CANCELLED', resolvedAt: new Date() },
+    });
+
+    if (membership.team.leaderId === userId) {
+      const successor = await tx.teamMember.findFirst({
+        where: { teamId, NOT: { userId } },
+        orderBy: { joinedAt: 'asc' },
+        select: { userId: true },
+      });
+      if (!successor) {
+        await tx.team.delete({ where: { id: teamId } }); // cascade: members, invites, messages…
+        removeUserFromTeamRoom(userId, teamId);
+        return { ...result, teamDeleted: true };
+      }
+      await tx.teamMember.update({ where: { teamId_userId: { teamId, userId } }, data: { role: 'MEMBER' } });
+      await tx.teamMember.update({ where: { teamId_userId: { teamId, userId: successor.userId } }, data: { role: 'LEADER' } });
+      await tx.team.update({ where: { id: teamId }, data: { leaderId: successor.userId } });
+      result.newLeaderId = successor.userId;
+    }
+
+    await this.removeMember(tx, { teamId, userId, allowFinalized: true, allowLockdown: true });
+    return result;
+  },
+
+  /**
    * Recount a team's denormalized counters from scratch. Used as a safety
    * net by admin-override flows; not on hot paths.
    */

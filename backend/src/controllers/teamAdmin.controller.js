@@ -1,5 +1,6 @@
 import { teamAdminService } from '../services/teamAdmin.service.js';
 import { auditService } from '../services/audit.service.js';
+import { emitLeaderboardChanged } from '../realtime/emitter.js';
 
 export const forceAddMember = async (req, res) => {
   const team = await teamAdminService.forceAddMember({
@@ -35,6 +36,7 @@ export const disbandTeam = async (req, res) => {
     entityType: 'Team', entityId: req.params.id,
     details: { op: 'disband' },
   });
+  emitLeaderboardChanged();
   res.json(result);
 };
 
@@ -58,10 +60,33 @@ export const setStatus = async (req, res) => {
     entityType: 'Team', entityId: team.id,
     details: { op: 'setStatus', status: req.body.status },
   });
+  emitLeaderboardChanged();
   res.json({ team });
 };
 
 export const recount = async (req, res) => {
   const counters = await teamAdminService.recount({ teamId: req.params.id });
   res.json({ counters });
+};
+
+export const disqualify = async (req, res) => {
+  const team = await teamAdminService.disqualify({ teamId: req.params.id });
+  auditService.record({
+    actorId: req.user.id, action: 'TEAM_FORCE_MODIFIED',
+    entityType: 'Team', entityId: team.id,
+    details: { op: 'disqualify', status: 'DISQUALIFIED' },
+  });
+  emitLeaderboardChanged();
+  res.json({ team });
+};
+
+export const reinstate = async (req, res) => {
+  const team = await teamAdminService.reinstate({ teamId: req.params.id });
+  auditService.record({
+    actorId: req.user.id, action: 'TEAM_FORCE_MODIFIED',
+    entityType: 'Team', entityId: team.id,
+    details: { op: 'reinstate', status: team.status },
+  });
+  emitLeaderboardChanged();
+  res.json({ team });
 };

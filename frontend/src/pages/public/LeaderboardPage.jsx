@@ -12,7 +12,9 @@ const RANK_TONE = (rank) =>
   rank === 1 ? 'live' : rank === 2 ? 'cyan' : rank === 3 ? 'warn' : 'dim';
 
 export const LeaderboardPage = () => {
-  const { data, loading, error, refetch } = useApi(() => api.get('/api/leaderboard'), []);
+  // Logged-in users get live socket updates; everyone also polls every 30 s
+  // (anonymous visitors have no socket).
+  const { data, loading, error, refetch } = useApi(() => api.get('/api/leaderboard'), [], { pollMs: 30000 });
 
   // Server tells us when a score lands → refetch.
   useSocketEvent('leaderboard:changed', () => refetch(), []);

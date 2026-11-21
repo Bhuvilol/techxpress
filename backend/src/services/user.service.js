@@ -3,6 +3,7 @@ import { Conflict, NotFound, Forbidden } from '../utils/errors.js';
 import { generateSixDigitCode, hashPassword } from '../utils/crypto.js';
 import { rulesService } from './rules.service.js';
 import { invalidateUserStatus } from '../utils/userStatusCache.js';
+import { membershipService } from './membership.service.js';
 
 // Sole owner of User table writes related to the verification lifecycle.
 // Controllers must NOT touch prisma.user directly for these flows.
@@ -171,18 +172,23 @@ export const userService = {
       throw Conflict('Only VERIFIED users can be revoked');
     }
 
-    // Wipe credentials on revoke. The user row stays for audit/history.
-    const updated = await prisma.user.update({
-      where: { id: userId },
-      data: {
-        verificationStatus: 'REVOKED',
-        passwordHash: null,
-        passwordIssuedAt: null,
-      },
-      select: PUBLIC_USER_FIELDS,
+    // Wipe credentials and take them out of their team, atomically. The user
+    // row stays for audit/history; the team (and its scores) stays too.
+    const { updated, team } = await prisma.$transaction(async (tx) => {
+      const updated = await tx.user.update({
+        where: { id: userId },
+        data: {
+          verificationStatus: 'REVOKED',
+          passwordHash: null,
+          passwordIssuedAt: null,
+        },
+        select: PUBLIC_USER_FIELDS,
+      });
+      const team = await membershipService.removeRevokedUser(tx, userId);
+      return { updated, team };
     });
     invalidateUserStatus(userId); // existing tokens stop working immediately
-    return { user: updated, snapshot: user };
+    return { user: updated, snapshot: user, team };
   },
 
   async restoreRevokedStudent(userId) {

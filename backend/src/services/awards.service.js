@@ -22,7 +22,7 @@ const TEAM_PROJECTION = {
 
 const grandPrize = async () => {
   const top = await prisma.leaderboardEntry.findFirst({
-    where: { rank: 1 },
+    where: { rank: 1, team: { status: 'FINALIZED' } },
     include: { team: { select: TEAM_PROJECTION } },
   });
   if (!top) return null;
@@ -33,6 +33,7 @@ const metricChampion = async (metric) => {
   // Group evaluations by team, sum the metric, take the highest.
   const grouped = await prisma.evaluation.groupBy({
     by: ['teamId'],
+    where: { team: { status: 'FINALIZED' } }, // disqualified teams aren't eligible
     _sum: { [metric]: true },
     orderBy: { _sum: { [metric]: 'desc' } },
     take: 1,
@@ -47,7 +48,7 @@ const domainChampions = async () => {
   // Single query: rank rows joined to team+domain. Iterate, keep first
   // per domain (rows are already ordered by rank asc, nulls last).
   const rows = await prisma.leaderboardEntry.findMany({
-    where: { rank: { not: null } },
+    where: { rank: { not: null }, team: { status: 'FINALIZED' } },
     orderBy: [{ rank: 'asc' }],
     include: { team: { select: TEAM_PROJECTION } },
   });

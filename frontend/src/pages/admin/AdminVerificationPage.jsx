@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import {
-  ShieldCheck, Search, KeyRound, Users, ShieldAlert, ShieldOff, Clock, Eye, Copy,
+  ShieldCheck, Search, Users, ShieldAlert, ShieldOff, Clock, Eye, Copy,
 } from 'lucide-react';
 import { api } from '../../lib/api.js';
 import { useApi } from '../../hooks/useApi.js';
@@ -69,13 +69,13 @@ export const AdminVerificationPage = () => {
   const revoke = async (u) => {
     const ok = await confirm({
       title: `Revoke ${u.fullName}?`,
-      message: 'They will be signed out and unable to log in. Their team membership stays for now.',
+      message: 'They are signed out immediately and removed from their team (if they lead it, leadership passes to the longest-standing member). The team keeps its scores.',
       tone: 'crit', confirmLabel: 'Revoke',
     });
     if (!ok) return;
     try {
-      await api.post(`/api/admin/verification/students/${u.id}/revoke`);
-      toast.success('Access revoked.');
+      const res = await api.post(`/api/admin/verification/students/${u.id}/revoke`);
+      toast.success(res?.message ?? 'Access revoked.', { ttl: 7000 });
       refresh();
     } catch (e) { toast.error(e.message); }
   };

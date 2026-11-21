@@ -39,6 +39,16 @@ router.post('/:id/set-status',
   ah(admin.setStatus),
 );
 
+router.post('/:id/disqualify',
+  validate({ params: teamIdParamSchema }),
+  ah(admin.disqualify),
+);
+
+router.post('/:id/reinstate',
+  validate({ params: teamIdParamSchema }),
+  ah(admin.reinstate),
+);
+
 router.post('/:id/recount',
   validate({ params: teamIdParamSchema }),
   ah(admin.recount),

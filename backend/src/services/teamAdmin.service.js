@@ -3,6 +3,7 @@ import { Conflict, BadRequest, NotFound } from '../utils/errors.js';
 import { membershipService } from './membership.service.js';
 import { rulesService } from './rules.service.js';
 import { teamService } from './team.service.js';
+import { leaderboardService } from './leaderboard.service.js';
 
 // Admin "force resolve" override paths. These bypass:
 //   - team.status guards (can edit FINALIZED teams when needed)
@@ -66,7 +67,55 @@ export const teamAdminService = {
       // Cascade wipes members/invites/requests/etc.
       await tx.team.delete({ where: { id: teamId } });
       return { disbanded: true, teamId };
+    }).then(async (result) => {
+      await leaderboardService.rerank(); // close the rank gap left by the deleted team
+      return result;
     });
+  },
+
+  /**
+   * Take a team out of the competition. Scores are KEPT (so reinstating
+   * restores the team's standing); the team simply drops off the leaderboard
+   * and awards, and juries stop seeing it. Open invites/requests are closed.
+   */
+  async disqualify({ teamId }) {
+    const team = await prisma.$transaction(async (tx) => {
+      const current = await tx.team.findUnique({ where: { id: teamId }, select: { id: true, status: true } });
+      if (!current) throw NotFound('Team not found');
+      if (current.status === 'DISQUALIFIED') throw Conflict('Team is already disqualified');
+      const now = new Date();
+      await tx.teamInvite.updateMany({ where: { teamId, status: 'PENDING' }, data: { status: 'CANCELLED', respondedAt: now } });
+      await tx.joinRequest.updateMany({ where: { teamId, status: 'PENDING' }, data: { status: 'CANCELLED', respondedAt: now } });
+      return tx.team.update({
+        where: { id: teamId },
+        data: { status: 'DISQUALIFIED', adminOverride: true },
+        include: teamService.detailInclude,
+      });
+    });
+    await leaderboardService.rerank();
+    return team;
+  },
+
+  /**
+   * Undo a disqualification. A team that had been finalized goes straight
+   * back to FINALIZED (and reappears on the leaderboard with its scores);
+   * otherwise it returns to FORMING and the rules engine re-evaluates it.
+   */
+  async reinstate({ teamId }) {
+    const team = await prisma.$transaction(async (tx) => {
+      const current = await tx.team.findUnique({ where: { id: teamId }, select: { id: true, status: true, finalizedAt: true } });
+      if (!current) throw NotFound('Team not found');
+      if (current.status !== 'DISQUALIFIED') throw Conflict('Only disqualified teams can be reinstated');
+      if (current.finalizedAt) {
+        await tx.team.update({ where: { id: teamId }, data: { status: 'FINALIZED' } });
+      } else {
+        await tx.team.update({ where: { id: teamId }, data: { status: 'FORMING', adminOverride: false } });
+        await rulesService.recomputeTeamStatus(tx, teamId);
+      }
+      return tx.team.findUnique({ where: { id: teamId }, include: teamService.detailInclude });
+    });
+    await leaderboardService.rerank();
+    return team;
   },
 
   /**
@@ -112,7 +161,7 @@ export const teamAdminService = {
     if (!['FORMING', 'QUALIFIED', 'FINALIZED', 'DISQUALIFIED'].includes(status)) {
       throw BadRequest('Invalid status');
     }
-    return prisma.team.update({
+    const team = await prisma.team.update({
       where: { id: teamId },
       data: {
         status,
@@ -121,6 +170,8 @@ export const teamAdminService = {
       },
       include: teamService.detailInclude,
     });
+    await leaderboardService.rerank();
+    return team;
   },
 
   async recount({ teamId }) {

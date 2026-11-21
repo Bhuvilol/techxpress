@@ -44,21 +44,33 @@ const computeFinal = (r1, r2, r3) => {
 // Postgres folds unquoted identifiers to lowercase; Prisma keeps the
 // model name as the table name with quoted camelCase columns, so all
 // identifiers below are quoted.
+//
+// Only ELIGIBLE rows are ranked: a score exists AND the team is FINALIZED.
+// Disqualified teams (or any team moved out of FINALIZED by an admin) keep
+// their scores but get rank NULL, so they drop off the leaderboard and awards
+// and come back automatically if reinstated.
 const reRankAll = (tx) => tx.$executeRawUnsafe(`
   UPDATE "LeaderboardEntry" l
   SET "rank" = r.new_rank,
       "updatedAt" = NOW()
   FROM (
-    SELECT "teamId",
+    SELECT e."teamId",
            CASE
-             WHEN "finalScore" IS NULL THEN NULL
-             ELSE DENSE_RANK() OVER (ORDER BY "finalScore" DESC)
+             WHEN e."finalScore" IS NOT NULL AND t."status" = 'FINALIZED'
+             THEN DENSE_RANK() OVER (
+                    PARTITION BY (e."finalScore" IS NOT NULL AND t."status" = 'FINALIZED')
+                    ORDER BY e."finalScore" DESC)
+             ELSE NULL
            END AS new_rank
-    FROM "LeaderboardEntry"
+    FROM "LeaderboardEntry" e
+    JOIN "Team" t ON t."id" = e."teamId"
   ) r
   WHERE l."teamId" = r."teamId"
     AND (l."rank" IS DISTINCT FROM r.new_rank)
 `);
+
+// Teams that may appear publicly (leaderboard + awards).
+const ELIGIBLE_TEAM = { status: 'FINALIZED' };
 
 export const leaderboardService = {
   /**
@@ -98,6 +110,16 @@ export const leaderboardService = {
    * Admin-triggered full rebuild. Reads every Evaluation, regenerates
    * LeaderboardEntry rows, then re-ranks. Single transaction.
    */
+  /**
+   * Re-rank after a team's status changes (disqualify / reinstate / disband)
+   * so ranks close up immediately. Cheap: one UPDATE in its own transaction.
+   */
+  async rerank() {
+    await prisma.$transaction((tx) => reRankAll(tx));
+  },
+
+  eligibleTeamFilter: ELIGIBLE_TEAM,
+
   async recomputeAll() {
     return prisma.$transaction(async (tx) => {
       const evals = await tx.evaluation.findMany({
@@ -149,6 +171,7 @@ export const leaderboardService = {
     }
 
     const rows = await prisma.leaderboardEntry.findMany({
+      where: { team: ELIGIBLE_TEAM },
       take: limit,
       orderBy: [{ rank: 'asc' }, { teamId: 'asc' }],
       include: {

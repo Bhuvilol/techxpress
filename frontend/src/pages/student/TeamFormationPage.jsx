@@ -21,6 +21,14 @@ import { TeamChat } from '../../components/team/TeamChat.jsx';
 
 // ── Status banner derived from rules engine evaluation ─────────────────────
 const StatusBanner = ({ status, issues }) => {
+  if (status === 'DISQUALIFIED') {
+    return (
+      <div className="flex items-center gap-3 rounded-[4px] border border-status-crit/40 bg-status-crit/5 px-4 py-3">
+        <XCircle size={16} className="text-status-crit" />
+        <div className="font-mono text-[12px] text-status-crit">This team has been disqualified by the organizers. Contact them if you think this is a mistake.</div>
+      </div>
+    );
+  }
   if (status === 'FINALIZED') {
     return (
       <div className="flex items-center gap-3 rounded-[4px] border border-status-live/40 bg-status-live/5 px-4 py-3">

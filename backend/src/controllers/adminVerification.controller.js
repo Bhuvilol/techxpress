@@ -1,7 +1,7 @@
 import { userService } from '../services/user.service.js';
 import { registryService } from '../services/registry.service.js';
 import { auditService } from '../services/audit.service.js';
-import { disconnectUser } from '../realtime/emitter.js';
+import { disconnectUser, emitLeaderboardChanged } from '../realtime/emitter.js';
 import {
   sendVerificationApprovedMail,
   sendVerificationRejectedMail,
@@ -97,17 +97,23 @@ export const reject = async (req, res) => {
 };
 
 export const revoke = async (req, res) => {
-  const { user } = await userService.revokeStudent(req.params.id);
+  const { user, team } = await userService.revokeStudent(req.params.id);
   disconnectUser(user.id); // close their live sockets too
+  if (team) emitLeaderboardChanged(); // team roster / leader may have changed
 
   auditService.record({
     actorId: req.user.id,
     action: 'USER_REVOKED',
     entityType: 'User',
     entityId: user.id,
+    details: team ? { removedFromTeam: team.teamName, teamId: team.teamId, newLeaderId: team.newLeaderId, teamDeleted: team.teamDeleted } : undefined,
   });
 
-  res.json({ message: 'Access revoked', user });
+  const teamNote = !team ? ''
+    : team.teamDeleted ? ` Their team "${team.teamName}" had no other members and was removed.`
+    : team.newLeaderId ? ` Removed from "${team.teamName}"; leadership passed to the longest-standing member.`
+    : ` Removed from team "${team.teamName}".`;
+  res.json({ message: `Access revoked.${teamNote}`, user, team });
 };
 
 export const restore = async (req, res) => {

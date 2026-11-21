@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react';
-import { Users, Search, Trash2, RefreshCw, ShieldCheck, UserMinus, UserPlus, Settings, Lock, Unlock } from 'lucide-react';
+import { useState } from 'react';
+import { Users, Search, Trash2, RefreshCw, ShieldCheck, UserMinus, UserPlus, Settings, Lock, Unlock, Ban, RotateCcw } from 'lucide-react';
 import { api } from '../../lib/api.js';
 import { useApi } from '../../hooks/useApi.js';
 import { useToast } from '../../contexts/ToastContext.jsx';
@@ -184,6 +184,26 @@ const ManageModal = ({ team, onClose, onDone }) => {
     action('Team force-finalized.', () => api.post(`/api/admin/teams/${team.id}/force-finalize`));
   };
 
+  const disqualify = async () => {
+    const ok = await confirm({
+      title: `Disqualify ${team.name}?`,
+      message: 'The team drops off the leaderboard and awards, juries stop seeing it, and members can no longer change the team. Scores are kept — Reinstate brings it back.',
+      tone: 'crit', confirmLabel: 'Disqualify',
+    });
+    if (!ok) return;
+    action('Team disqualified.', () => api.post(`/api/admin/teams/${team.id}/disqualify`));
+  };
+
+  const reinstate = async () => {
+    const ok = await confirm({
+      title: `Reinstate ${team.name}?`,
+      message: 'A previously finalized team returns to the leaderboard with its scores. A team that was still forming goes back to forming.',
+      confirmLabel: 'Reinstate',
+    });
+    if (!ok) return;
+    action('Team reinstated.', () => api.post(`/api/admin/teams/${team.id}/reinstate`));
+  };
+
   const disband = async () => {
     const ok = await confirm({
       title: `Disband ${team.name}?`,
@@ -267,9 +287,18 @@ const ManageModal = ({ team, onClose, onDone }) => {
             <RefreshCw size={12}/> Recount counters
           </button>
           <button className="glow-button inline-flex items-center gap-2" onClick={forceFinalize}
-                  disabled={team.status === 'FINALIZED'}>
+                  disabled={team.status === 'FINALIZED' || team.status === 'DISQUALIFIED'}>
             <ShieldCheck size={12}/> Force finalize
           </button>
+          {team.status === 'DISQUALIFIED' ? (
+            <button className="glow-button inline-flex items-center gap-2" onClick={reinstate}>
+              <RotateCcw size={12}/> Reinstate
+            </button>
+          ) : (
+            <button className="danger-button inline-flex items-center gap-2" onClick={disqualify}>
+              <Ban size={12}/> Disqualify
+            </button>
+          )}
           <button className="danger-button inline-flex items-center gap-2" onClick={disband}>
             <Trash2 size={12}/> Disband
           </button>
