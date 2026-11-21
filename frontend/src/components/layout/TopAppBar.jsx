@@ -57,7 +57,7 @@ export const TopAppBar = () => {
             <div className="ml-4 flex items-center gap-1 border-l border-border-dim pl-4">
               <NavItem to={homePathForRole(user.role)}>Dashboard</NavItem>
               <NavItem to="/directory">Directory</NavItem>
-              {user.role === 'STUDENT'  && <NavItem to="/teams">Teams</NavItem>}
+              {user.role === 'STUDENT'  && <NavItem to="/teams">My Team</NavItem>}
               {user.role === 'JURY'     && <NavItem to="/jury">Evaluations</NavItem>}
               {user.role === 'ADMIN'    && <NavItem to="/admin">Admin</NavItem>}
               {user.role === 'COORDINATOR' && <NavItem to="/coordinator">Coordinator</NavItem>}
@@ -105,7 +105,7 @@ export const TopAppBar = () => {
             <div className="flex flex-col gap-2">
               <NavItem to={homePathForRole(user.role)} onClick={closeMenu}>Dashboard</NavItem>
               <NavItem to="/directory" onClick={closeMenu}>Directory</NavItem>
-              {user.role === 'STUDENT'  && <NavItem to="/teams" onClick={closeMenu}>Teams</NavItem>}
+              {user.role === 'STUDENT'  && <NavItem to="/teams" onClick={closeMenu}>My Team</NavItem>}
               {user.role === 'JURY'     && <NavItem to="/jury" onClick={closeMenu}>Evaluations</NavItem>}
               {user.role === 'ADMIN'    && <NavItem to="/admin" onClick={closeMenu}>Admin</NavItem>}
               {user.role === 'COORDINATOR' && <NavItem to="/coordinator" onClick={closeMenu}>Coordinator</NavItem>}
