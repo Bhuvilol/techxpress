@@ -17,7 +17,7 @@ import { leaderboardService } from './leaderboard.service.js';
 // can flag teams that were touched outside the normal flow.
 
 export const teamAdminService = {
-  async forceAddMember({ teamId, userId, role = 'MEMBER' }) {
+  async forceAddMember({ teamId, userId }) {
     return prisma.$transaction(async (tx) => {
       const team = await membershipService.loadTeamForUpdate(tx, teamId);
       const user = await membershipService.loadUserOrThrow(tx, userId);
@@ -27,10 +27,12 @@ export const teamAdminService = {
       // refuse to insert a duplicate user via the unique constraint.
       // Counter still bumps; the team will fail rules.qualifies() afterwards
       // if size exceeds maxTeamSize, and the admin will see that in the UI.
+      // Members added by admin are always inserted as MEMBER. To change a
+      // team's leader, use setLeader.
       await membershipService.addMember(tx, {
         team,
         user,
-        role,
+        role: 'MEMBER',
         maxTeamSize: Math.max(rules.maxTeamSize, team.memberCount + 1),
         allowFinalized: true,
         allowLockdown: true,
@@ -39,6 +41,39 @@ export const teamAdminService = {
       await tx.team.update({
         where: { id: teamId },
         data: { adminOverride: true },
+      });
+
+      return tx.team.findUnique({ where: { id: teamId }, include: teamService.detailInclude });
+    });
+  },
+
+  async setLeader({ teamId, newLeaderId }) {
+    return prisma.$transaction(async (tx) => {
+      const team = await membershipService.loadTeamForUpdate(tx, teamId);
+      if (team.leaderId === newLeaderId) {
+        throw BadRequest('User is already the leader of this team');
+      }
+
+      const newLeaderMembership = await tx.teamMember.findUnique({
+        where: { teamId_userId: { teamId, userId: newLeaderId } },
+        select: { role: true },
+      });
+      if (!newLeaderMembership) {
+        throw BadRequest('New leader must already be a member of this team');
+      }
+
+      // Demote current leader to MEMBER, promote new leader to LEADER, update Team.leaderId
+      await tx.teamMember.update({
+        where: { teamId_userId: { teamId, userId: team.leaderId } },
+        data: { role: 'MEMBER' },
+      });
+      await tx.teamMember.update({
+        where: { teamId_userId: { teamId, userId: newLeaderId } },
+        data: { role: 'LEADER' },
+      });
+      await tx.team.update({
+        where: { id: teamId },
+        data: { leaderId: newLeaderId, adminOverride: true },
       });
 
       return tx.team.findUnique({ where: { id: teamId }, include: teamService.detailInclude });

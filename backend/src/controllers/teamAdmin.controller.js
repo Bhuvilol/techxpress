@@ -6,12 +6,24 @@ export const forceAddMember = async (req, res) => {
   const team = await teamAdminService.forceAddMember({
     teamId: req.params.id,
     userId: req.body.userId,
-    role:   req.body.role,
   });
   auditService.record({
     actorId: req.user.id, action: 'TEAM_FORCE_MODIFIED',
     entityType: 'Team', entityId: team.id,
     details: { op: 'forceAddMember', userId: req.body.userId },
+  });
+  res.json({ team });
+};
+
+export const setLeader = async (req, res) => {
+  const team = await teamAdminService.setLeader({
+    teamId: req.params.id,
+    newLeaderId: req.body.newLeaderId,
+  });
+  auditService.record({
+    actorId: req.user.id, action: 'TEAM_FORCE_MODIFIED',
+    entityType: 'Team', entityId: team.id,
+    details: { op: 'setLeader', newLeaderId: req.body.newLeaderId },
   });
   res.json({ team });
 };

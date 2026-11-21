@@ -59,6 +59,7 @@
 | **API-01** | CORS Rejection Throws Unhandled Server Error Instead of Rejection Response | **Low** | Open | API / Standards | [backend/src/index.js:47](backend/src/index.js#L47) |
 | **INFRA-02** | Windows PowerShell Incompatibility with Makefile Sleep Command | **Low** | Open | Developer Tooling | [Makefile:52](Makefile#L52) |
 | **ADM-04** | Admin Accounts Blocked from Inspecting Student Dashboard Perspective | **Low** | Open | UX / Role Testing | [frontend/src/components/layout/RouteGuards.jsx:17](frontend/src/components/layout/RouteGuards.jsx#L17) |
+| **ADM-05** | Admin Force-Add with Role LEADER Creates Trapped Duplicate Leader (Issue #12) | **Medium** | **Resolved in `rohit-jain`** | Data Integrity / Admin | [backend/src/validators/team.schema.js:72](backend/src/validators/team.schema.js#L72) |
 | **RATE-01** | Shared Campus NAT IP Blocks Teammates via Chat Rate Limiter Fallback | **Low** | **NEW** | Network / Rate Limiting | [backend/src/middleware/rateLimit.js:68](backend/src/middleware/rateLimit.js#L68) |
 | **OPS-01** | Single-Process In-Memory User Cache Incompatible with Multi-Replicas | **Low** | **NEW** | Operations / Cache Sync | [backend/src/utils/userStatusCache.js:12](backend/src/utils/userStatusCache.js#L12) |
 
@@ -556,6 +557,19 @@
   ```javascript
   const allowed = user.role === 'ADMIN' || (Array.isArray(role) ? role.includes(user.role) : user.role === role);
   ```
+
+---
+
+### ADM-05: Admin Force-Add with Role LEADER Creates Trapped Duplicate Leader (Issue #12)
+- **Location:** [backend/src/validators/team.schema.js:72](backend/src/validators/team.schema.js#L72), [backend/src/services/teamAdmin.service.js:20](backend/src/services/teamAdmin.service.js#L20), and [backend/src/services/membership.service.js:133](backend/src/services/membership.service.js#L133)
+- **Severity:** **Medium**
+- **Category:** Data Integrity / Admin Workflow
+- **Problem:**
+  `POST /api/admin/teams/:id/force-add` accepted `role: 'LEADER'`. Supplying this inserted a second `TeamMember` row with role `LEADER` while `Team.leaderId` still referenced the original leader.
+- **Evidence & Real-World User Impact:**
+  GitHub Issue #12: The added student could not leave (`requestLeave` returned 400 "Leaders cannot leave"), could not transfer leadership (403 "Only the current leader can transfer leadership"), and the original leader could not dismiss them (400 "Cannot dismiss the leader"). The roster showed two LEADER badges and the student remained permanently trapped.
+- **Remediation:**
+  Remove `role` from `forceAddSchema`, always insert force-added users as `MEMBER`, enforce single-leader invariant in `membershipService.addMember` by rejecting any attempt to add a second leader, and provide a dedicated `POST /api/admin/teams/:id/set-leader` endpoint along with a UI "Set leader" action in `AdminTeamsPage`.
 
 ---
 

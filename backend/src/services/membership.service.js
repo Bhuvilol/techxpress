@@ -1,4 +1,4 @@
-import { Conflict, Forbidden, NotFound } from '../utils/errors.js';
+import { Conflict, Forbidden, NotFound, BadRequest } from '../utils/errors.js';
 import { rulesService } from './rules.service.js';
 import { removeUserFromTeamRoom } from '../realtime/emitter.js';
 
@@ -129,6 +129,9 @@ export const membershipService = {
     if (user.role !== 'STUDENT') throw Forbidden('Only students can join teams');
     if (user.verificationStatus !== 'VERIFIED') {
       throw Forbidden('User is not verified');
+    }
+    if (role === 'LEADER' && team.leaderId && team.leaderId !== user.id) {
+      throw BadRequest('Cannot add a second leader to a team');
     }
     if (team.memberCount >= maxTeamSize) throw Conflict('Team is full');
 
