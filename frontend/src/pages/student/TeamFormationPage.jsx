@@ -18,6 +18,7 @@ import { Spinner } from '../../components/ui/Spinner.jsx';
 import { confirm } from '../../components/ui/Confirm.jsx';
 import { issueLabel, formatRelative } from '../../utils/format.js';
 import { TeamChat } from '../../components/team/TeamChat.jsx';
+import { normalizeRegistrationNo } from '../../utils/registrationNo.js';
 
 // ── Status banner derived from rules engine evaluation ─────────────────────
 const StatusBanner = ({ status, issues }) => {
@@ -252,12 +253,13 @@ const InviteModal = ({ open, onClose, teamId, onSent }) => {
   );
 
   const candidates = useMemo(() => {
-    const needle = registrationNo.trim().toLowerCase();
+    // Same canonical form the server uses, so "2024 ps01" finds "2024PS01".
+    const needle = normalizeRegistrationNo(registrationNo);
     if (!needle) return [];
     const users = lookup.data?.users ?? [];
-    const exact = users.filter((user) => (user.registrationNo ?? '').toLowerCase() === needle);
+    const exact = users.filter((user) => user.registrationNo === needle);
     if (exact.length) return exact;
-    return users.filter((user) => (user.registrationNo ?? '').toLowerCase().includes(needle));
+    return users.filter((user) => (user.registrationNo ?? '').includes(needle));
   }, [lookup.data, registrationNo]);
 
   const sendInvite = async (inviteeId) => {

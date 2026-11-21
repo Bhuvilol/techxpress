@@ -4,6 +4,7 @@ import { generateSixDigitCode, hashPassword } from '../utils/crypto.js';
 import { rulesService } from './rules.service.js';
 import { invalidateUserStatus } from '../utils/userStatusCache.js';
 import { membershipService } from './membership.service.js';
+import { normalizeRegistrationNo } from '../utils/registrationNo.js';
 
 // Sole owner of User table writes related to the verification lifecycle.
 // Controllers must NOT touch prisma.user directly for these flows.
@@ -74,7 +75,9 @@ const assertInstitutionScope = (user, institutionId) => {
 export const userService = {
   publicFields: PUBLIC_USER_FIELDS,
 
-  async createPendingStudent(data) {
+  async createPendingStudent(input) {
+    // The validator already normalizes; do it again so no caller can bypass it.
+    const data = { ...input, registrationNo: normalizeRegistrationNo(input.registrationNo) };
     const rules = await rulesService.get();
     if (!rules.registrationOpen) {
       throw Forbidden('Registration is currently closed', { code: 'REGISTRATION_CLOSED' });
@@ -266,7 +269,7 @@ export const userService = {
 
   findByRegistrationNo(registrationNo) {
     return prisma.user.findUnique({
-      where: { registrationNo },
+      where: { registrationNo: normalizeRegistrationNo(registrationNo) },
       select: PUBLIC_USER_FIELDS,
     });
   },

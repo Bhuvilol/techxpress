@@ -63,12 +63,14 @@ export const listJoinable = async (req, res) => {
 };
 
 export const listAvailableMembers = async (req, res) => {
-  const users = await teamService.listAvailableMembers({
+  const { users, total, matchCount, offset, hasMore } = await teamService.listAvailableMembers({
     actorId: req.user.id,
     search: req.query.search,
     matchActorDomains: req.query.matchActorDomains,
+    limit: req.query.limit,
+    offset: req.query.offset,
   });
-  res.json({ count: users.length, users });
+  res.json({ count: users.length, users, total, matchCount, offset, hasMore });
 };
 
 // Live preview of qualification for a single team. Read-only, no status flip.

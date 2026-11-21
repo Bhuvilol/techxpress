@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { api } from '../../lib/api.js';
 import { useApi } from '../../hooks/useApi.js';
+import { normalizeRegistrationNo } from '../../utils/registrationNo.js';
 import { useToast } from '../../contexts/ToastContext.jsx';
 import { FormField } from '../../components/ui/FormField.jsx';
 import { Spinner } from '../../components/ui/Spinner.jsx';
@@ -305,7 +306,10 @@ export const RegistrationPage = () => {
     return next;
   });
   const set = (key) => (e) => {
-    setForm((prev) => ({ ...prev, [key]: e.target.value }));
+    // Registration numbers are shown in their canonical form as you type
+    // (no spaces, upper-case) — the same form the server stores.
+    const value = key === 'registrationNo' ? normalizeRegistrationNo(e.target.value) : e.target.value;
+    setForm((prev) => ({ ...prev, [key]: value }));
     clearError(key);
   };
   const setList = (key) => (value) => {

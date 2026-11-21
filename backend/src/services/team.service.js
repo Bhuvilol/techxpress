@@ -3,6 +3,7 @@ import { Conflict, Forbidden, NotFound, BadRequest } from '../utils/errors.js';
 import { membershipService } from './membership.service.js';
 import { membershipChangeService } from './membershipChange.service.js';
 import { rulesService } from './rules.service.js';
+import { normalizeRegistrationNo } from '../utils/registrationNo.js';
 
 const TEAM_DETAIL_INCLUDE = {
   domain: { select: { id: true, name: true } },
@@ -239,7 +240,18 @@ export const teamService = {
     }));
   },
 
-  async listAvailableMembers({ actorId, search, matchActorDomains = false } = {}) {
+  /**
+   * Explore list of verified students, best domain matches first.
+   *
+   * Two phases so a page costs ~20 profiles, not the whole roster:
+   *   1. a light query (ids + the fields the ranking needs) for everyone
+   *      matching the filters; rank in memory — same order as before;
+   *   2. full profile fields for just the requested slice.
+   *
+   * Without `limit` the whole ranked list is returned (invite lookup).
+   * Returns { users, total, matchCount, offset, hasMore }.
+   */
+  async listAvailableMembers({ actorId, search, matchActorDomains = false, limit, offset = 0 } = {}) {
     const actor = actorId
       ? await prisma.user.findUnique({
           where: { id: actorId },
@@ -253,18 +265,37 @@ export const teamService = {
       : null;
 
     const actorDomainIds = buildActorDomainSet(actor);
-    const needle = search?.trim().toLowerCase() || '';
+    const term = search?.trim() || '';
+    const regNeedle = term ? normalizeRegistrationNo(term) : '';
+
+    // Search runs server-side now that the client only holds one page.
+    // Domain names are matched to ids first so preferred domains (stored as
+    // an id array) are searchable too.
+    const searchDomainIds = term
+      ? (await prisma.domain.findMany({
+          where: { name: { contains: term, mode: 'insensitive' } },
+          select: { id: true },
+        })).map((d) => d.id)
+      : [];
+
     const filters = [
       { role: 'STUDENT' },
       // Only real participants — never pending / rejected / revoked accounts.
       { verificationStatus: 'VERIFIED' },
       ...(actorId ? [{ NOT: { id: actorId } }] : []),
-      ...(search ? [{
+      ...(term ? [{
         OR: [
-          { fullName: { contains: search, mode: 'insensitive' } },
+          { fullName: { contains: term, mode: 'insensitive' } },
+          { preferredTeamRole: { contains: term, mode: 'insensitive' } },
+          { technicalSkills: { contains: term, mode: 'insensitive' } },
+          { institution: { name: { contains: term, mode: 'insensitive' } } },
+          ...(searchDomainIds.length ? [
+            { domainId: { in: searchDomainIds } },
+            { preferredDomains: { hasSome: searchDomainIds } },
+          ] : []),
           // Registration numbers match only when typed in full, so the list
           // can't be used to enumerate them.
-          { registrationNo: { equals: search.trim(), mode: 'insensitive' } },
+          { registrationNo: { equals: regNeedle } },
         ],
       }] : []),
       ...(matchActorDomains && actorDomainIds.length ? [{
@@ -275,11 +306,43 @@ export const teamService = {
       }] : []),
     ];
 
-    const users = await prisma.user.findMany({
+    // Phase 1 — rank everyone on the light fields only.
+    const candidates = await prisma.user.findMany({
       where: { AND: filters },
-      select: EXPLORE_MEMBER_FIELDS,
-      orderBy: { createdAt: 'desc' },
+      select: { id: true, createdAt: true, domainId: true, preferredDomains: true, institutionId: true },
     });
+
+    const ranked = candidates
+      .map((c) => {
+        const { score, sharedPreferredDomainIds, primaryDomainMatched } = scoreMemberMatch({
+          actorDomainIds,
+          actorInstitutionId: actor?.institutionId,
+          member: { preferredDomains: c.preferredDomains, domain: c.domainId && { id: c.domainId }, institution: c.institutionId && { id: c.institutionId } },
+        });
+        return { id: c.id, createdAt: c.createdAt, score, shared: sharedPreferredDomainIds.length, isMatch: primaryDomainMatched || sharedPreferredDomainIds.length > 0 };
+      })
+      .sort((a, b) => (
+        b.score - a.score
+        || b.shared - a.shared
+        || b.createdAt.getTime() - a.createdAt.getTime()
+        || (a.id < b.id ? -1 : 1) // stable order across pages
+      ));
+
+    const total = ranked.length;
+    const matchCount = ranked.filter((r) => r.isMatch).length;
+    const start = Math.min(Number(offset) || 0, total);
+    const slice = limit ? ranked.slice(start, start + Number(limit)) : ranked.slice(start);
+    const hasMore = start + slice.length < total;
+
+    // Phase 2 — full profile fields for just this page, kept in ranked order.
+    const rows = slice.length
+      ? await prisma.user.findMany({
+          where: { id: { in: slice.map((r) => r.id) } },
+          select: EXPLORE_MEMBER_FIELDS,
+        })
+      : [];
+    const rowById = new Map(rows.map((r) => [r.id, r]));
+    const users = slice.map((r) => rowById.get(r.id)).filter(Boolean);
 
     const allDomainIds = uniqueIds([
       ...users.flatMap((member) => member.preferredDomains ?? []),
@@ -294,7 +357,7 @@ export const teamService = {
       : [];
     const domainMap = new Map(domains.map((domain) => [domain.id, domain]));
 
-    return users
+    const decorated = users
       .map(({ registrationNo, ...member }) => {
         const { score, sharedPreferredDomainIds, primaryDomainMatched } = scoreMemberMatch({
           actorDomainIds,
@@ -305,7 +368,7 @@ export const teamService = {
           ...member,
           // Echo the registration number back only to someone who already
           // typed it exactly (the invite-by-registration-number flow).
-          ...(needle && registrationNo?.toLowerCase() === needle ? { registrationNo } : {}),
+          ...(regNeedle && registrationNo === regNeedle ? { registrationNo } : {}),
           preferredDomainDetails: (member.preferredDomains ?? [])
             .map((domainId) => domainMap.get(domainId))
             .filter(Boolean),
@@ -315,12 +378,9 @@ export const teamService = {
           primaryDomainMatched,
           matchScore: score,
         };
-      })
-      .sort((a, b) => (
-        b.matchScore - a.matchScore
-        || b.sharedPreferredDomains.length - a.sharedPreferredDomains.length
-        || new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-      ));
+      });
+
+    return { users: decorated, total, matchCount, offset: start, hasMore };
   },
 
   /**

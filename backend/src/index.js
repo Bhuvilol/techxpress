@@ -8,6 +8,7 @@ import { logger } from './utils/logger.js';
 import { requestLog } from './middleware/requestLog.js';
 import { notFoundHandler, errorHandler } from './middleware/error.js';
 
+import healthRoutes from './routes/health.js';
 import authRoutes from './routes/auth.js';
 import registrationRoutes from './routes/registration.js';
 import adminVerificationRoutes from './routes/adminVerification.js';
@@ -59,7 +60,8 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 app.use(requestLog);
 
-app.get('/api/health', (_req, res) => res.json({ status: 'ok' }));
+// Readiness (checks the database) and liveness probes — see routes/health.js.
+app.use('/api/health', healthRoutes);
 
 app.use('/api/auth', authRoutes);
 app.use('/api/registration', registrationRoutes);

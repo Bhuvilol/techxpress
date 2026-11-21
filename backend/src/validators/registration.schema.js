@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { normalizeRegistrationNo } from '../utils/registrationNo.js';
 
 // Human-readable messages: these reach the registration form verbatim when a
 // field fails server-side validation (the form also validates client-side
@@ -26,7 +27,8 @@ export const registrationSchema = z.object({
     .email('That doesn’t look like a valid email. Use the format name@college.edu.'),
   registrationNo: z.string().trim()
     .min(1, 'Registration number is required — use the one issued by your institution.')
-    .max(50, 'Registration number is too long — 50 characters at most.'),
+    .max(50, 'Registration number is too long — 50 characters at most.')
+    .transform(normalizeRegistrationNo),
   institutionId: z.string({ required_error: 'Select your institution from the list.' }).cuid('Select your institution from the list.'),
   domainId: z.string({ required_error: 'Pick at least one domain.' }).cuid('Pick at least one domain.'),
   preferredDomains: cuidList,

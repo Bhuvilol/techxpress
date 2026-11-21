@@ -25,8 +25,12 @@ export const listJoinableQuerySchema = z.object({
 });
 
 export const listExploreMembersQuerySchema = z.object({
-  search: z.string().trim().min(1).max(120).optional(),
+  search: z.string().trim().max(120).optional().transform((v) => v || undefined),
   matchActorDomains: z.coerce.boolean().optional(),
+  // Paging for the Explore panel (infinite scroll). Omit `limit` to get the
+  // whole list (used by the invite-by-registration-number lookup).
+  limit: z.coerce.number().int().min(1).max(50).optional(),
+  offset: z.coerce.number().int().min(0).max(100_000).optional(),
 });
 
 // invite

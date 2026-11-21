@@ -130,6 +130,8 @@ jobs:
             --query '[StandardOutputContent,StandardErrorContent]' --output text
           [ "$STATUS" = "Success" ]
 
+      # /api/health checks the database too (503 when it's unreachable), so a
+      # deploy whose app can't reach the database fails here.
       - name: Smoke test
         run: |
           for i in $(seq 1 18); do
