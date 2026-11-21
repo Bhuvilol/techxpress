@@ -116,20 +116,49 @@ const CreateTeamForm = ({ onCreated }) => {
 const JoinableList = () => {
   const toast = useToast();
   const [filter, setFilter] = useState('');
+  const [busyTeamId, setBusyTeamId] = useState('');
   const { data, loading, refetch } = useApi(() => api.get('/api/teams/joinable'), []);
+  // My pending join requests, so a team I've already asked shows "Request sent".
+  const outgoing = useApi(() => api.get('/api/join-requests/me'), []);
 
   const teams = useMemo(
     () => (data?.teams ?? []).filter((t) => t.name.toLowerCase().includes(filter.toLowerCase())),
     [data, filter],
   );
 
+  // teamId → pending request id
+  const pendingByTeam = useMemo(
+    () => new Map((outgoing.data?.requests ?? []).map((r) => [r.team.id, r.id])),
+    [outgoing.data],
+  );
+
   const requestJoin = async (teamId) => {
+    setBusyTeamId(teamId);
     try {
       await api.post(`/api/teams/${teamId}/join-requests`);
       toast.success('Join request sent.');
       refetch();
     } catch (err) {
       toast.error(err.message);
+    } finally {
+      // Re-sync either way (e.g. a request sent from another tab → 409).
+      await outgoing.refetch();
+      setBusyTeamId('');
+    }
+  };
+
+  const cancelRequest = async (teamId) => {
+    const requestId = pendingByTeam.get(teamId);
+    if (!requestId) return;
+    setBusyTeamId(teamId);
+    try {
+      await api.post(`/api/join-requests/${requestId}/cancel`);
+      toast.info('Join request cancelled.');
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      await outgoing.refetch();
+      setBusyTeamId('');
     }
   };
 
@@ -163,9 +192,29 @@ const JoinableList = () => {
                 ))}
               </div>
             )}
-            <button className="glow-button inline-flex items-center gap-2" onClick={() => requestJoin(t.id)}>
-              <Send size={12} /> Request to join
-            </button>
+            {pendingByTeam.has(t.id) ? (
+              <div className="flex flex-wrap items-center gap-2">
+                <button className="ghost-button inline-flex cursor-default items-center gap-2 !border-status-live/50 !text-status-live" disabled>
+                  <CheckCircle2 size={12} /> Request sent
+                </button>
+                <button
+                  className="ghost-button inline-flex items-center gap-1 text-[11px]"
+                  disabled={busyTeamId === t.id}
+                  onClick={() => cancelRequest(t.id)}
+                >
+                  {busyTeamId === t.id ? <Spinner size={12} /> : <XCircle size={12} />} Cancel
+                </button>
+              </div>
+            ) : (
+              <button
+                className="glow-button inline-flex items-center gap-2"
+                disabled={busyTeamId === t.id}
+                onClick={() => requestJoin(t.id)}
+              >
+                {busyTeamId === t.id ? <Spinner size={12} /> : <Send size={12} />}
+                {busyTeamId === t.id ? 'Sending…' : 'Request to join'}
+              </button>
+            )}
           </article>
         ))}
       </div>
