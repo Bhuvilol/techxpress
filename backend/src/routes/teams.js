@@ -31,7 +31,7 @@ router.use(requireAuth);
 router.get('/',          validate({ query: listTeamsQuerySchema }), ah(team.list));
 router.get('/mine',      ah(team.mine));
 router.get('/joinable',  validate({ query: listJoinableQuerySchema }), ah(team.listJoinable));
-router.get('/explore/members', validate({ query: listExploreMembersQuerySchema }), ah(team.listAvailableMembers));
+router.get('/explore/members', requireRole('STUDENT'), validate({ query: listExploreMembersQuerySchema }), ah(team.listAvailableMembers));
 
 router.post('/',
   requireRole('STUDENT'),

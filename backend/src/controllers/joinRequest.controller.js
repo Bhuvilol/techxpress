@@ -1,4 +1,5 @@
 import { joinRequestService } from '../services/joinRequest.service.js';
+import { teamService } from '../services/team.service.js';
 
 export const create = async (req, res) => {
   const request = await joinRequestService.create({
@@ -9,6 +10,7 @@ export const create = async (req, res) => {
 };
 
 export const listForTeam = async (req, res) => {
+  await teamService.assertCanViewTeamInternals(req.params.id, req.user);
   const requests = await joinRequestService.listForTeam({
     teamId: req.params.id,
     status: req.query.status,

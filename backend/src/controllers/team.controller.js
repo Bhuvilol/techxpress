@@ -19,10 +19,22 @@ export const create = async (req, res) => {
   res.status(201).json({ team });
 };
 
+// Member emails are visible to the team's own members and admins only.
+// Everyone else (other students browsing teams, jury) gets the same team
+// without email addresses.
+const canSeeTeamContacts = (team, user) =>
+  user.role === 'ADMIN' || team.members.some((m) => m.user.id === user.id);
+
+const withoutContacts = (team) => ({
+  ...team,
+  leader: team.leader && { id: team.leader.id, fullName: team.leader.fullName },
+  members: team.members.map(({ user: { email: _email, ...user }, ...m }) => ({ ...m, user })),
+});
+
 export const get = async (req, res) => {
   const team = await teamService.get(req.params.id);
   if (!team) throw NotFound('Team not found');
-  res.json({ team });
+  res.json({ team: canSeeTeamContacts(team, req.user) ? team : withoutContacts(team) });
 };
 
 export const mine = async (req, res) => {

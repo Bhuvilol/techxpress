@@ -32,27 +32,20 @@ const TEAM_LIST_FIELDS = {
   leader: { select: { id: true, fullName: true } },
 };
 
+// Explore shows verified students to other students so they can pick
+// teammates. Explicit allow-list: NO email, phone, Discord, gender, resume or
+// long free-text answers. registrationNo is selected only so an exact
+// "invite by registration number" search can be confirmed; it is stripped
+// from every result that wasn't matched by that exact number.
 const EXPLORE_MEMBER_FIELDS = {
   id: true,
   fullName: true,
-  email: true,
   registrationNo: true,
   createdAt: true,
-  phone: true,
-  discordId: true,
-  bio: true,
   preferredDomains: true,
   linkedinUrl: true,
   githubUrl: true,
   portfolioUrl: true,
-  resumeDriveLink: true,
-  researchPublicationUrl: true,
-  certificationsAchievements: true,
-  projectInitiative: true,
-  participationExperience: true,
-  achievements: true,
-  hackathonExperience: true,
-  gender: true,
   isDomainExpert: true,
   track: true,
   degree: true,
@@ -234,14 +227,18 @@ export const teamService = {
       : null;
 
     const actorDomainIds = buildActorDomainSet(actor);
+    const needle = search?.trim().toLowerCase() || '';
     const filters = [
       { role: 'STUDENT' },
+      // Only real participants — never pending / rejected / revoked accounts.
+      { verificationStatus: 'VERIFIED' },
       ...(actorId ? [{ NOT: { id: actorId } }] : []),
       ...(search ? [{
         OR: [
           { fullName: { contains: search, mode: 'insensitive' } },
-          { email: { contains: search, mode: 'insensitive' } },
-          { registrationNo: { contains: search, mode: 'insensitive' } },
+          // Registration numbers match only when typed in full, so the list
+          // can't be used to enumerate them.
+          { registrationNo: { equals: search.trim(), mode: 'insensitive' } },
         ],
       }] : []),
       ...(matchActorDomains && actorDomainIds.length ? [{
@@ -272,7 +269,7 @@ export const teamService = {
     const domainMap = new Map(domains.map((domain) => [domain.id, domain]));
 
     return users
-      .map((member) => {
+      .map(({ registrationNo, ...member }) => {
         const { score, sharedPreferredDomainIds, primaryDomainMatched } = scoreMemberMatch({
           actorDomainIds,
           actorInstitutionId: actor?.institutionId,
@@ -280,6 +277,9 @@ export const teamService = {
         });
         return {
           ...member,
+          // Echo the registration number back only to someone who already
+          // typed it exactly (the invite-by-registration-number flow).
+          ...(needle && registrationNo?.toLowerCase() === needle ? { registrationNo } : {}),
           preferredDomainDetails: (member.preferredDomains ?? [])
             .map((domainId) => domainMap.get(domainId))
             .filter(Boolean),
@@ -397,6 +397,22 @@ export const teamService = {
 
       return tx.team.findUnique({ where: { id: teamId }, include: TEAM_DETAIL_INCLUDE });
     });
+  },
+
+  /**
+   * Throws unless `user` may see a team's internal queues (pending invites,
+   * join requests): members of that team, or an admin. 404 when the team
+   * doesn't exist, 403 otherwise.
+   */
+  async assertCanViewTeamInternals(teamId, user) {
+    if (user.role === 'ADMIN') return;
+    const team = await prisma.team.findUnique({ where: { id: teamId }, select: { id: true } });
+    if (!team) throw NotFound('Team not found');
+    const member = await prisma.teamMember.findUnique({
+      where: { teamId_userId: { teamId, userId: user.id } },
+      select: { userId: true },
+    });
+    if (!member) throw Forbidden('Only members of this team can view this');
   },
 
   detailInclude: TEAM_DETAIL_INCLUDE,

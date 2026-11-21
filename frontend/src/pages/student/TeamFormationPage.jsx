@@ -265,7 +265,7 @@ const InviteModal = ({ open, onClose, teamId, onSent }) => {
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <div className="font-sans text-[14px] font-bold text-text-primary">{candidate.fullName}</div>
-                    <div className="font-mono text-[11px] text-text-secondary">{candidate.email}</div>
+                    {candidate.email && <div className="font-mono text-[11px] text-text-secondary">{candidate.email}</div>}
                   </div>
                   <div className="flex flex-wrap gap-1.5">
                     <Badge tone="cyan">{candidate.domain?.name ?? 'No domain'}</Badge>

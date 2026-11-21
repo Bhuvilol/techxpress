@@ -274,7 +274,7 @@ const MemberDetailsModal = ({ member, action, busy, onInvite, onClose }) => {
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <div className="font-sans text-[22px] font-bold text-text-primary">{member.fullName}</div>
-            <div className="font-mono text-[12px] text-text-secondary">{member.email}</div>
+            <div className="font-mono text-[12px] text-text-secondary">{member.institution?.name ?? 'No institution'}</div>
           </div>
           <div className="flex flex-wrap gap-1.5">
             <Badge tone="cyan">{member.domain?.name ?? 'No domain'}</Badge>
@@ -287,11 +287,9 @@ const MemberDetailsModal = ({ member, action, busy, onInvite, onClose }) => {
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field icon={IdCard} label="Registration #" value={member.registrationNo ?? '-'} />
           <Field icon={Layers} label="Preferred Domain" value={member.domain?.name ?? '-'} />
           <Field icon={GraduationCap} label="Institution" value={member.institution?.name ?? '-'} />
           <Field icon={GraduationCap} label="Degree" value={member.degree ?? '-'} />
-          <Field icon={Mail} label="Phone" value={member.phone ?? '-'} />
           <Field icon={BookOpen} label="Year / Semester" value={member.yearSemester ?? '-'} />
           <Field icon={Briefcase} label="Preferred Team Role" value={member.preferredTeamRole ?? '-'} />
           <Field icon={Award} label="Contribution Areas" value={joinList(member.contributionAreas)} />
@@ -316,14 +314,8 @@ const MemberDetailsModal = ({ member, action, busy, onInvite, onClose }) => {
           </div>
         ) : null}
 
-        <ProfileCopySection title="Bio" value={member.bio} />
         <ProfileCopySection title="Technical Skills" value={member.technicalSkills} />
         <ProfileCopySection title="Non-Technical Skills" value={member.nonTechnicalSkills} />
-        <ProfileCopySection title="Achievements" value={member.achievements} />
-        <ProfileCopySection title="Hackathon Experience" value={member.hackathonExperience} />
-        <ProfileCopySection title="Certifications / Achievements" value={member.certificationsAchievements} />
-        <ProfileCopySection title="Project / Startup / Initiative" value={member.projectInitiative} />
-        <ProfileCopySection title="Participation Experience" value={member.participationExperience} />
 
         <ProfileLinks user={member} />
 
@@ -395,7 +387,7 @@ const TeamDetailsModal = ({ team, action, busy, onRequest, onClose }) => {
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <div className="font-sans text-[14px] font-bold text-text-primary">{member.user.fullName}</div>
-                      <div className="font-mono text-[11px] text-text-secondary">{member.user.email}</div>
+                      {member.user.email && <div className="font-mono text-[11px] text-text-secondary">{member.user.email}</div>}
                     </div>
                     <Badge tone={member.role === 'LEADER' ? 'cyan' : 'dim'}>{member.role}</Badge>
                   </div>
@@ -467,8 +459,8 @@ const ExploreTab = ({ user, myTeam }) => {
     return all.filter((member) =>
       [
         member.fullName,
-        member.email,
-        member.registrationNo,
+        member.preferredTeamRole,
+        member.technicalSkills,
         member.institution?.name,
         member.domain?.name,
         ...(member.preferredDomainDetails?.map((domain) => domain.name) ?? []),
@@ -633,7 +625,7 @@ const ExploreTab = ({ user, myTeam }) => {
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <div className="font-sans text-[15px] font-bold text-text-primary">{member.fullName}</div>
-                      <div className="font-mono text-[12px] text-text-secondary">{member.email}</div>
+                      <div className="font-mono text-[12px] text-text-secondary">{member.institution?.name ?? 'No institution'}</div>
                     </div>
                     <div className="flex flex-wrap justify-end gap-1.5">
                       <Badge tone="cyan">{member.domain?.name ?? 'No domain'}</Badge>
@@ -645,9 +637,8 @@ const ExploreTab = ({ user, myTeam }) => {
                 </button>
 
                 <div className="flex flex-wrap items-center gap-2 font-mono text-[11px] leading-relaxed text-text-secondary">
-                  <span>Reg #: {member.registrationNo ?? '-'}</span>
-                  <span>·</span>
-                  <span>{member.institution?.name ?? 'No institution'}</span>
+                  <span>{[member.degree, member.yearSemester].filter(Boolean).join(' · ') || 'Profile'}</span>
+                  {member.preferredTeamRole && (<><span>·</span><span>{member.preferredTeamRole}</span></>)}
                   {member.membership?.team && (
                     <>
                       <span>·</span>

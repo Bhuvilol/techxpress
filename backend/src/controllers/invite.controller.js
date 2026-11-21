@@ -1,4 +1,5 @@
 import { inviteService } from '../services/invite.service.js';
+import { teamService } from '../services/team.service.js';
 import { emitInviteReceived } from '../realtime/emitter.js';
 
 export const create = async (req, res) => {
@@ -16,6 +17,7 @@ export const create = async (req, res) => {
 };
 
 export const listForTeam = async (req, res) => {
+  await teamService.assertCanViewTeamInternals(req.params.id, req.user);
   const invites = await inviteService.listForTeam({
     teamId: req.params.id,
     status: req.query.status,
