@@ -317,6 +317,21 @@ input:-webkit-autofill:focus {
 }
 ::-webkit-scrollbar-thumb:hover { background: var(--border-active); }
 
+/* Scrollable panels (e.g. Explore lists): a clearly visible scrollbar,
+   since the page-level one is intentionally near-invisible on black. */
+.scroll-panel {
+  scrollbar-width: thin;
+  scrollbar-color: #4a4a4a transparent;
+}
+.scroll-panel::-webkit-scrollbar { width: 6px; }
+.scroll-panel::-webkit-scrollbar-track { background: transparent; }
+.scroll-panel::-webkit-scrollbar-thumb {
+  background: #4a4a4a;
+  border: 0;
+  border-radius: 3px;
+}
+.scroll-panel::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+
 /* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { Fragment, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   User, Users, Mail, ArrowRight, Inbox, Megaphone, ExternalLink,
@@ -429,7 +429,10 @@ const ExploreTab = ({ user, myTeam }) => {
   const [inviteingId, setInviteingId] = useState('');
   const [requestingTeamId, setRequestingTeamId] = useState('');
 
-  const members = useApi(() => api.get('/api/teams/explore/members', { query: { matchActorDomains: true } }), []);
+  // Everyone, not just domain matches. The server already orders by match
+  // score, so students sharing domains come first; the UI adds a divider
+  // before the first student with no shared domain.
+  const members = useApi(() => api.get('/api/teams/explore/members'), []);
   const teams = useApi(() => api.get('/api/teams'), []);
   const joinable = useApi(() => api.get('/api/teams/joinable'), []);
   const outgoingRequests = useApi(() => api.get('/api/join-requests/me'), []);
@@ -474,6 +477,15 @@ const ExploreTab = ({ user, myTeam }) => {
         .some((value) => value.toLowerCase().includes(needle)),
     );
   }, [members.data, memberFilter]);
+
+  // A "match" shares at least one domain with you (primary or preferred).
+  // Matches always come first (server sort), so the rest start at one index.
+  const isDomainMatch = (member) =>
+    (member.sharedPreferredDomains?.length ?? 0) > 0 || member.primaryDomainMatched;
+  const matchCount = useMemo(
+    () => visibleMembers.filter(isDomainMatch).length,
+    [visibleMembers],
+  );
 
   const visibleTeams = useMemo(() => {
     const all = (teams.data?.teams ?? []).filter((team) => team.id !== myTeam?.id);
@@ -573,7 +585,7 @@ const ExploreTab = ({ user, myTeam }) => {
         <div>
           <h2 className="section-label">Available members</h2>
           <p className="font-mono text-[12px] text-text-secondary">
-            Ranked by preferred-domain overlap first, then by recent registrations.
+            Students sharing your domains first (most shared on top), then everyone else.
           </p>
         </div>
           <div className="relative w-full md:max-w-xs">
@@ -592,12 +604,27 @@ const ExploreTab = ({ user, myTeam }) => {
           <Empty icon={Users} title="No members found" description="No registered student matched your current member search." />
         )}
 
-        <div className="space-y-4">
-          {visibleMembers.map((member) => {
+        {!members.loading && visibleMembers.length > 0 && (
+          <div className="font-mono text-[11px] uppercase tracking-[0.18em] text-white/40">
+            {visibleMembers.length} students · {matchCount} share your domains
+          </div>
+        )}
+
+        <div className="scroll-panel max-h-[75vh] space-y-4 overflow-y-auto overscroll-contain pr-2">
+          {visibleMembers.map((member, index) => {
             const action = memberActionState(member);
+            const startsOthers = index === matchCount && index < visibleMembers.length;
 
             return (
-              <article key={member.id} className={`${EXPLORE_CARD_CLASS} flex flex-col justify-between space-y-3`}>
+              <Fragment key={member.id}>
+              {startsOthers && (
+                <div className="flex items-center gap-3 pt-2 font-mono text-[10px] uppercase tracking-[0.22em] text-white/35">
+                  <span className="h-px flex-1 bg-white/10" />
+                  Other students · no shared domains
+                  <span className="h-px flex-1 bg-white/10" />
+                </div>
+              )}
+              <article className={`${EXPLORE_CARD_CLASS} flex flex-col justify-between space-y-3`}>
                 <button
                   type="button"
                   className="w-full text-left"
@@ -658,6 +685,7 @@ const ExploreTab = ({ user, myTeam }) => {
                   </button>
                 </div>
               </article>
+              </Fragment>
             );
           })}
         </div>
@@ -687,7 +715,7 @@ const ExploreTab = ({ user, myTeam }) => {
           <Empty icon={Users} title="No other teams visible" description="Your own team is hidden here. No other team matched your search." />
         )}
 
-        <div className="space-y-4">
+        <div className="scroll-panel max-h-[75vh] space-y-4 overflow-y-auto overscroll-contain pr-2">
           {visibleTeams.map((team) => {
             const action = teamActionState(team);
             return (
