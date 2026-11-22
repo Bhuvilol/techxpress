@@ -39,9 +39,7 @@ img {
    ───────────────────────────────────────────── */
 :root {
   --master-height: 80vh; /* Scaled up for better presence */
-  --cloud-width: 55vh;
-  --cloud-offset-x: 23vw;
-  --cloud-offset-y: 45vh;
+  --cloud-width: min(64vw, 78vh, 820px);
 }
 
 .guide-overlay {
@@ -96,15 +94,25 @@ img {
 
 .guide-cloud {
   position: absolute;
-  bottom: var(--cloud-offset-y);
-  left: var(--cloud-offset-x);
+  top: clamp(6rem, 11vh, 126px);
+  bottom: auto;
+  left: 0;
+  right: 0;
+  margin-inline: auto;
   width: var(--cloud-width);
+  container-type: inline-size;
   opacity: 0; /* Hidden by default */
 }
 
 .guide-overlay.visible .guide-cloud {
   opacity: 1;
   animation: popInCloud 0.6s 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+.guide-overlay.visible .guide-cloud:focus-visible {
+  outline: 3px solid #d32f2f;
+  outline-offset: 3px;
+  border-radius: 1rem;
 }
 
 .guide-overlay.variant-right .guide-character {
@@ -119,7 +127,8 @@ img {
 
 .guide-overlay.variant-right .guide-cloud {
   left: auto;
-  right: 32vw; 
+  right: 3vw;
+  margin-inline: 0;
 }
 
 .guide-cloud img {
@@ -130,39 +139,42 @@ img {
 
 .cloud-text {
   position: absolute;
-  /* Safe-zone: avoid top logos and bottom tail */
-  top: 18%;
+  /* Keep copy clear of the emblem and the artwork at the bottom of the card. */
+  top: 27%;
   left: 0;
   width: 100%;
-  height: 62%;
+  height: 47%;
 
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
 
-  padding: 0 14%;
+  gap: 1.1cqw;
+  padding: 0 10%;
   box-sizing: border-box;
 
   color: #1a1a1a;
   font-family: 'Playfair Display', serif;
-  font-size: clamp(1.2rem, 2.5vh, 2.5rem);
+  font-size: clamp(0.85rem, 3.2cqw, 2.2rem);
   font-weight: 700;
-  line-height: 1.2;
+  line-height: 1.08;
   text-align: center;
   letter-spacing: -0.015em;
 }
 
 .cloud-text p {
+  max-width: 100%;
   margin: 0;
   filter: drop-shadow(0 0 1px rgba(0,0,0,0.05));
+  text-wrap: balance;
 }
 
 .cloud-text span {
   display: block;
   font-family: 'Bebas Neue', sans-serif;
-  font-size: clamp(1rem, 1.8vh, 1.8rem);
-  margin-top: 15px;
+  font-size: clamp(0.7rem, 2.35cqw, 1.3rem);
+  margin-top: 0;
   font-weight: 400;
   letter-spacing: 0.12em;
   color: #d32f2f;
@@ -209,43 +221,6 @@ img {
   50% { opacity: 0.3; }
 }
 
-/* --- Alignment Debug Points --- */
-.debug-point {
-  position: absolute;
-  width: 15px;
-  height: 15px;
-  background: #ff00ff;
-  border: 2px solid white;
-  border-radius: 50%;
-  pointer-events: none;
-  z-index: 11000;
-}
-
-.master-head {
-  top: 15%;
-  right: 20%;
-  transform: translate(50%, -50%);
-}
-
-.cloud-origin {
-  bottom: 10%;
-  left: 0;
-  transform: translate(-50%, 50%);
-}
-
-/* --- Global Utilities --- */
-.center-guide {
-  position: fixed;
-  top: 0;
-  left: 50%;
-  width: 2px;
-  height: 100vh;
-  background: red;
-  z-index: 1000;
-  pointer-events: none;
-  opacity: 0.3;
-}
-
 /* ═══════════════════════════════════════════════════════════
    Mobile Responsive Overrides — TT Master + Cloud only
    Desktop layout (above this block) is completely untouched.
@@ -255,9 +230,6 @@ img {
 @media (max-width: 1024px) {
   :root {
     --master-height: 60vh;
-    --cloud-width: 48vw;
-    --cloud-offset-x: 20vw;
-    --cloud-offset-y: 42vh;
   }
 }
 
@@ -282,27 +254,19 @@ img {
   }
 
   .guide-cloud {
-    width: 65vw;
-    max-width: 75vw;
-    left: 28vw;
-    bottom: 32vh;              /* Lifted to upper body area */
+    --cloud-width: min(88vw, 72vh, 640px);
   }
 
   .guide-overlay.variant-right .guide-cloud {
-    left: auto;
-    right: 28vw;
-    bottom: 50vh;
+    right: 3vw;
   }
 
   .cloud-text {
-    font-size: clamp(1rem, 4.5vw, 1.3rem); 
-    line-height: 1.1;
-    padding: 0 10%;
+    font-size: clamp(0.82rem, 3.2cqw, 1.5rem);
   }
 
   .cloud-text span {
-    font-size: clamp(0.75rem, 3.8vw, 1.1rem);
-    margin-top: 12px;
+    font-size: clamp(0.68rem, 2.35cqw, 1rem);
   }
 }
 
@@ -315,16 +279,11 @@ img {
   }
 
   .guide-cloud {
-    width: 85vw;
-    max-width: 95vw;
-    left: 5vw;                 /* More centered */
-    bottom: 32vh;              
+    --cloud-width: min(92vw, 62vh, 560px);
   }
 
   .guide-overlay.variant-right .guide-cloud {
-    left: auto;
-    right: 5vw;
-    bottom: 50vh;
+    right: 2vw;
   }
   
   .guide-overlay.variant-right .guide-character {
@@ -334,13 +293,29 @@ img {
   }
 
   .cloud-text {
-    padding: 0 10%;
-    font-size: clamp(0.9rem, 5vw, 1.15rem);
+    font-size: clamp(0.78rem, 3.2cqw, 1.25rem);
   }
 
   .cloud-text span {
-    font-size: clamp(0.65rem, 4.5vw, 0.85rem);
-    margin-top: 8px;
+    font-size: clamp(0.62rem, 2.35cqw, 0.85rem);
+  }
+}
+
+/* Very short landscape viewports need a tighter card-to-viewport fit. */
+@media (max-height: 520px) {
+  .guide-character {
+    height: 54vh;
+  }
+
+  .guide-cloud {
+    top: clamp(5.5rem, 10vh, 80px);
+    --cloud-width: min(62vw, 100vh, 820px);
+  }
+
+  .cloud-text {
+    top: 26%;
+    height: 48%;
+    font-size: clamp(0.78rem, 3.2cqw, 1.5rem);
   }
 }
 

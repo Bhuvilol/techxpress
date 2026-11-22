@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { Fragment, useState } from "react";
 
 /**
  * StationMaster (Generic Character Guide) Component
@@ -30,15 +30,12 @@ export default function StationMaster({
     }
   };
 
-  useEffect(() => {
-    if (isVisible) setIndex(0);
-  }, [isVisible]);
-
   if (!dialogues || dialogues.length === 0) return null;
   if (!isVisible && index === 0) return null; // Don't render until actually triggered
 
   const currentDialogue = dialogues[index];
   const currentText = currentDialogue.text;
+  const dialogueLines = currentText.split("\n");
   
   // Support dynamic character swapping per dialogue step
   const activeImg = currentDialogue.image || characterImg || assets.ttMaster;
@@ -50,17 +47,31 @@ export default function StationMaster({
     >
       <div className="guide-character" key={activeImg}>
         <img src={activeImg} alt="Character Guide" />
-        {/* Debug: Character Origin Reference Point */}
-        <div className="debug-point character-origin" />
       </div>
-      <div className="guide-cloud" key={index}>
+      <div
+        className="guide-cloud"
+        key={index}
+        role="group"
+        tabIndex={isVisible ? 0 : -1}
+        aria-label="Stationmaster message. Press Enter or Space to continue."
+        onKeyDown={(event) => {
+          if (event.target !== event.currentTarget) return;
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            handleNext(event);
+          }
+        }}
+      >
         <img src={assets.cloud} alt="Speech Bubble" />
         <div className="cloud-text">
-          <p
-            dangerouslySetInnerHTML={{
-              __html: currentText.replace(/\n/g, "<br/>"),
-            }}
-          />
+          <p>
+            {dialogueLines.map((line, lineIndex) => (
+              <Fragment key={lineIndex}>
+                {line}
+                {lineIndex < dialogueLines.length - 1 && <br />}
+              </Fragment>
+            ))}
+          </p>
           <span>(Click to continue)</span>
           {showSkipOption && index === dialogues.length - 1 && (
              <label className="skip-guide-label" onClick={e => e.stopPropagation()}>
@@ -74,8 +85,6 @@ export default function StationMaster({
              </label>
           )}
         </div>
-        {/* Debug: Cloud Origin Reference Point */}
-        <div className="debug-point cloud-origin" />
       </div>
     </div>
   );
