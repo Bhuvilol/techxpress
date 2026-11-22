@@ -47,6 +47,7 @@
 | **STU-01** | Form URL Inputs Silently Reject Plain Links Without `https://` | **Medium** | **Resolved** | UX / Registration | [frontend/src/pages/public/RegistrationPage.jsx:457](frontend/src/pages/public/RegistrationPage.jsx#L457) |
 | **STU-02** | 1500px Registration Form Fails to Scroll to Validation Errors | **Medium** | **Resolved** | UX / Accessibility | [frontend/src/pages/public/RegistrationPage.jsx:230](frontend/src/pages/public/RegistrationPage.jsx#L230) |
 | **STU-03** | Registration Page Renders Active Form When Registration is Disabled | **Medium** | **Partially Resolved** | UX / Rules Engine | [frontend/src/pages/public/RegistrationPage.jsx:428](frontend/src/pages/public/RegistrationPage.jsx#L428) |
+| **STU-04** | Dashboard: Accepting Invite in Inbox Fails to Refresh Team State in Explore (Issue #17) | **Medium** | **Resolved in `rohit-jain`** | UX / State Sync | [frontend/src/pages/student/DashboardPage.jsx:156](frontend/src/pages/student/DashboardPage.jsx#L156) |
 | **ADM-01** | Admin & Coordinator Navigation Bars Lack Links to Public Pages | **Medium** | Open | UX / Navigation | [frontend/src/components/layout/TopAppBar.jsx:33](frontend/src/components/layout/TopAppBar.jsx#L33) |
 | **ADM-02** | "Qualified Teams" Dashboard Counter Counts Down as Teams Finalize | **Medium** | Open | UI / Metrics Display | [frontend/src/pages/admin/AdminOverviewPage.jsx:21](frontend/src/pages/admin/AdminOverviewPage.jsx#L21) |
 | **COORD-01**| Filter Search Inputs Mutate Campus Verification Aggregate Stats | **Medium** | Open | UI / Data Binding | [frontend/src/pages/coordinator/CoordinatorVerificationPage.jsx:36](frontend/src/pages/coordinator/CoordinatorVerificationPage.jsx#L36) |
@@ -58,6 +59,8 @@
 | **API-01** | CORS Rejection Throws Unhandled Server Error Instead of Rejection Response | **Low** | Open | API / Standards | [backend/src/index.js:47](backend/src/index.js#L47) |
 | **INFRA-02** | Windows PowerShell Incompatibility with Makefile Sleep Command | **Low** | Open | Developer Tooling | [Makefile:52](Makefile#L52) |
 | **ADM-04** | Admin Accounts Blocked from Inspecting Student Dashboard Perspective | **Low** | Open | UX / Role Testing | [frontend/src/components/layout/RouteGuards.jsx:17](frontend/src/components/layout/RouteGuards.jsx#L17) |
+| **ADM-05** | Admin Force-Add with Role LEADER Creates Trapped Duplicate Leader (Issue #12) | **Medium** | **Resolved in `rohit-jain`** | Data Integrity / Admin | [backend/src/validators/team.schema.js:72](backend/src/validators/team.schema.js#L72) |
+| **ADM-06** | Testing Import Accepts Passwords Shorter Than Login Allows (Issue #20) | **Medium** | **Resolved in `rohit-jain`** | Data Hardening / Admin | [backend/src/services/testingImport.service.js:80](backend/src/services/testingImport.service.js#L80) |
 | **RATE-01** | Shared Campus NAT IP Blocks Teammates via Chat Rate Limiter Fallback | **Low** | **NEW** | Network / Rate Limiting | [backend/src/middleware/rateLimit.js:68](backend/src/middleware/rateLimit.js#L68) |
 | **OPS-01** | Single-Process In-Memory User Cache Incompatible with Multi-Replicas | **Low** | **NEW** | Operations / Cache Sync | [backend/src/utils/userStatusCache.js:12](backend/src/utils/userStatusCache.js#L12) |
 
@@ -414,6 +417,19 @@
 
 ---
 
+### STU-04: Dashboard: Accepting Invite in Inbox Fails to Refresh Team State in Explore (Issue #17)
+- **Location:** [frontend/src/pages/student/DashboardPage.jsx:156](frontend/src/pages/student/DashboardPage.jsx#L156) & [frontend/src/pages/student/DashboardPage.jsx:315](frontend/src/pages/student/DashboardPage.jsx#L315)
+- **Severity:** **Medium**
+- **Category:** UX / State Synchronization
+- **Problem:**
+  When a student accepts a team invite in the Inbox tab, their team membership state (`myTeam`) in `DashboardPage` was not invalidated or refetched. Navigating to Explore still presented team creation / join options or stale team lists until a hard browser refresh.
+- **Evidence & Real-World User Impact:**
+  GitHub Issue #17: Students accepting team invitations had to reload the page to see their new team in the Explore tab and profile summary.
+- **Remediation:**
+  Add `onTeamChanged` callback to `InboxTab` invoked on successful invite acceptance, which triggers `refetchTeam()` and `refetchMe()`. In addition, wire `[myTeam?.id]` into `ExploreTab` dependency arrays so the member list, joinable teams, and outgoing requests instantly re-query and reflect the new membership state.
+
+---
+
 ### ADM-01: Admin & Coordinator Navigation Bars Lack Links to Public Pages
 - **Location:** [frontend/src/components/layout/TopAppBar.jsx:33](frontend/src/components/layout/TopAppBar.jsx#L33) & [frontend/src/components/layout/AdminShell.jsx:10-20](frontend/src/components/layout/AdminShell.jsx#L10-L20)
 - **Severity:** **Medium**
@@ -542,6 +558,32 @@
   ```javascript
   const allowed = user.role === 'ADMIN' || (Array.isArray(role) ? role.includes(user.role) : user.role === role);
   ```
+
+---
+
+### ADM-05: Admin Force-Add with Role LEADER Creates Trapped Duplicate Leader (Issue #12)
+- **Location:** [backend/src/validators/team.schema.js:72](backend/src/validators/team.schema.js#L72), [backend/src/services/teamAdmin.service.js:20](backend/src/services/teamAdmin.service.js#L20), and [backend/src/services/membership.service.js:133](backend/src/services/membership.service.js#L133)
+- **Severity:** **Medium**
+- **Category:** Data Integrity / Admin Workflow
+- **Problem:**
+  `POST /api/admin/teams/:id/force-add` accepted `role: 'LEADER'`. Supplying this inserted a second `TeamMember` row with role `LEADER` while `Team.leaderId` still referenced the original leader.
+- **Evidence & Real-World User Impact:**
+  GitHub Issue #12: The added student could not leave (`requestLeave` returned 400 "Leaders cannot leave"), could not transfer leadership (403 "Only the current leader can transfer leadership"), and the original leader could not dismiss them (400 "Cannot dismiss the leader"). The roster showed two LEADER badges and the student remained permanently trapped.
+- **Remediation:**
+  Remove `role` from `forceAddSchema`, always insert force-added users as `MEMBER`, enforce single-leader invariant in `membershipService.addMember` by rejecting any attempt to add a second leader, and provide a dedicated `POST /api/admin/teams/:id/set-leader` endpoint along with a UI "Set leader" action in `AdminTeamsPage`.
+
+---
+
+### ADM-06: Testing Import Accepts Passwords Shorter Than Login Allows (Issue #20)
+- **Location:** [backend/src/services/testingImport.service.js:80](backend/src/services/testingImport.service.js#L80) & [backend/src/validators/auth.schema.js:5](backend/src/validators/auth.schema.js#L5)
+- **Severity:** **Medium**
+- **Category:** Data Hardening / Admin Testing
+- **Problem:**
+  The bulk testing import accepted arbitrary `plainPassword` values without minimum length checks, whereas `loginSchema` requires at least 6 characters. Imported accounts with shorter passwords (e.g., `1234`) could never log in.
+- **Evidence & Real-World User Impact:**
+  GitHub Issue #20: Staging and load test accounts created through spreadsheet import with short passwords resulted in validation errors upon login, preventing access.
+- **Remediation:**
+  Enforce a minimum length of 6 characters on `row.plainPassword` during import. Rows with shorter passwords fail with `"plainPassword must be at least 6 characters"`. In addition, update the instruction notes in the testing spreadsheet template.
 
 ---
 

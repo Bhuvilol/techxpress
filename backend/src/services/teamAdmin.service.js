@@ -1,6 +1,7 @@
 import { prisma } from '../config/db.js';
 import { Conflict, BadRequest, NotFound } from '../utils/errors.js';
 import { membershipService } from './membership.service.js';
+import { membershipChangeService } from './membershipChange.service.js';
 import { rulesService } from './rules.service.js';
 import { teamService } from './team.service.js';
 import { leaderboardService } from './leaderboard.service.js';
@@ -17,7 +18,7 @@ import { leaderboardService } from './leaderboard.service.js';
 // can flag teams that were touched outside the normal flow.
 
 export const teamAdminService = {
-  async forceAddMember({ teamId, userId, role = 'MEMBER' }) {
+  async forceAddMember({ teamId, userId }) {
     return prisma.$transaction(async (tx) => {
       const team = await membershipService.loadTeamForUpdate(tx, teamId);
       const user = await membershipService.loadUserOrThrow(tx, userId);
@@ -27,10 +28,12 @@ export const teamAdminService = {
       // refuse to insert a duplicate user via the unique constraint.
       // Counter still bumps; the team will fail rules.qualifies() afterwards
       // if size exceeds maxTeamSize, and the admin will see that in the UI.
+      // Members added by admin are always inserted as MEMBER. To change a
+      // team's leader, use setLeader.
       await membershipService.addMember(tx, {
         team,
         user,
-        role,
+        role: 'MEMBER',
         maxTeamSize: Math.max(rules.maxTeamSize, team.memberCount + 1),
         allowFinalized: true,
         allowLockdown: true,
@@ -39,6 +42,82 @@ export const teamAdminService = {
       await tx.team.update({
         where: { id: teamId },
         data: { adminOverride: true },
+      });
+
+      return tx.team.findUnique({ where: { id: teamId }, include: teamService.detailInclude });
+    });
+  },
+
+  async setLeader({ teamId, newLeaderId }) {
+    return prisma.$transaction(async (tx) => {
+      const team = await membershipService.loadTeamForUpdate(tx, teamId);
+      if (team.leaderId === newLeaderId) {
+        throw BadRequest('User is already the leader of this team');
+      }
+
+      // A dissolution vote is tied to the leader who started it. Swapping the
+      // leader mid-vote would either let the ex-leader's disband delete the
+      // team, or (if the new leader was the last pending approver) leave the
+      // team frozen forever behind APPROVED rows. Refuse instead; the admin
+      // can still delete the team outright.
+      await membershipChangeService.assertNoActiveTeamDisband(tx, teamId);
+
+      const newLeaderMembership = await tx.teamMember.findUnique({
+        where: { teamId_userId: { teamId, userId: newLeaderId } },
+        select: { role: true },
+      });
+      if (!newLeaderMembership) {
+        throw BadRequest('New leader must already be a member of this team');
+      }
+
+      // Demote current leader to MEMBER, promote new leader to LEADER, update Team.leaderId
+      await tx.teamMember.update({
+        where: { teamId_userId: { teamId, userId: team.leaderId } },
+        data: { role: 'MEMBER' },
+      });
+      await tx.teamMember.update({
+        where: { teamId_userId: { teamId, userId: newLeaderId } },
+        data: { role: 'LEADER' },
+      });
+      await tx.team.update({
+        where: { id: teamId },
+        data: { leaderId: newLeaderId, adminOverride: true },
+      });
+
+      // Re-route open LEAVE requests to the new leader so approval queue is not orphaned
+      await tx.membershipChangeRequest.updateMany({
+        where: {
+          teamId,
+          kind: 'LEAVE',
+          approverId: team.leaderId,
+          status: { in: ['PENDING', 'APPROVED'] },
+        },
+        data: { approverId: newLeaderId },
+      });
+
+      const now = new Date();
+
+      // Cancel DISMISS requests the ex-leader started: they no longer have
+      // the authority to remove members, so the target shouldn't be able to
+      // "accept" their way out of the team on the old leader's behalf.
+      await tx.membershipChangeRequest.updateMany({
+        where: {
+          teamId,
+          kind: 'DISMISS',
+          initiatorId: team.leaderId,
+          status: { in: ['PENDING', 'APPROVED'] },
+        },
+        data: { status: 'CANCELLED', resolvedAt: now },
+      });
+
+      // Cancel any open change requests targeting the new leader (leaders cannot leave or be dismissed)
+      await tx.membershipChangeRequest.updateMany({
+        where: {
+          teamId,
+          targetUserId: newLeaderId,
+          status: { in: ['PENDING', 'APPROVED'] },
+        },
+        data: { status: 'CANCELLED', resolvedAt: now },
       });
 
       return tx.team.findUnique({ where: { id: teamId }, include: teamService.detailInclude });

@@ -71,7 +71,6 @@ export const transferLeadershipSchema = z.object({
 // admin override
 export const forceAddSchema = z.object({
   userId: cuid,
-  role: z.enum(['LEADER', 'MEMBER']).optional(),
 });
 
 export const forceRemoveSchema = z.object({

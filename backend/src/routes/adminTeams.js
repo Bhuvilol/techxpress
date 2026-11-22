@@ -7,6 +7,7 @@ import {
   forceAddSchema,
   forceRemoveSchema,
   setStatusSchema,
+  transferLeadershipSchema,
 } from '../validators/team.schema.js';
 import * as admin from '../controllers/teamAdmin.controller.js';
 
@@ -17,6 +18,11 @@ router.use(requireAuth, requireRole('ADMIN'));
 router.post('/:id/force-add',
   validate({ params: teamIdParamSchema, body: forceAddSchema }),
   ah(admin.forceAddMember),
+);
+
+router.post('/:id/set-leader',
+  validate({ params: teamIdParamSchema, body: transferLeadershipSchema }),
+  ah(admin.setLeader),
 );
 
 router.post('/:id/force-remove',

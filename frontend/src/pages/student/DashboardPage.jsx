@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useMemo, useState } from 'react';
+import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   User, Users, Mail, ArrowRight, Inbox, Megaphone, ExternalLink,
@@ -25,7 +25,7 @@ const ROLE_TONE = { ADMIN: 'crit', JURY: 'cyan', COORDINATOR: 'warn', STUDENT: '
 const EXPLORE_CARD_CLASS = 'glass-card flat min-h-[188px] rounded-none px-5 py-6 transition duration-200 ease-out hover:border-white hover:bg-white/[0.04]';
 const joinList = (values) => values?.length ? values.join(', ') : '-';
 
-const ProfileTab = ({ user }) => (
+const ProfileTab = ({ user, myTeam }) => (
   <div className="grid gap-6 md:grid-cols-3">
     <section className="glass-card flat md:col-span-2">
       <div className="mb-6 flex items-center gap-3">
@@ -85,6 +85,20 @@ const ProfileTab = ({ user }) => (
         </Badge>
       </div>
 
+      {user.role === 'STUDENT' && (
+        <div className="border-t border-white/5 pt-4">
+          <div className="font-mono text-[10px] uppercase tracking-[0.3em] text-white/30 mb-3">Team</div>
+          {myTeam ? (
+            <div className="space-y-1">
+              <div className="font-sans text-[14px] font-bold text-white">{myTeam.name}</div>
+              <div className="font-mono text-[11px] text-white/50">{myTeam.domain?.name ?? 'No domain'}</div>
+            </div>
+          ) : (
+            <span className="font-mono text-[12px] text-white/40">Not in a team</span>
+          )}
+        </div>
+      )}
+
       <div className="space-y-2 border-t border-white/10 pt-3">
         <Link to="/teams" className="glow-button inline-flex w-full items-center justify-center gap-2">
           Team Hub <ArrowRight size={14} />
@@ -141,41 +155,52 @@ const ProfileLinks = ({ user }) => {
   );
 };
 
-const InboxTab = () => {
+const InboxTab = ({ onTeamChanged }) => {
   const toast = useToast();
+  const [busyId, setBusyId] = useState('');
   const invites = useApi(() => api.get('/api/invites/me'), []);
   const requests = useApi(() => api.get('/api/join-requests/me'), []);
 
   useSocketEvent('invite:received', () => invites.refetch(), [invites.refetch]);
 
   const accept = async (id) => {
+    setBusyId(id);
     try {
       await api.post(`/api/invites/${id}/accept`);
       toast.success('Joined the team.');
       invites.refetch();
       requests.refetch();
+      onTeamChanged?.();
     } catch (e) {
       toast.error(e.message);
+    } finally {
+      setBusyId('');
     }
   };
 
   const decline = async (id) => {
+    setBusyId(id);
     try {
       await api.post(`/api/invites/${id}/decline`);
       toast.info('Invite declined.');
       invites.refetch();
     } catch (e) {
       toast.error(e.message);
+    } finally {
+      setBusyId('');
     }
   };
 
   const cancel = async (id) => {
+    setBusyId(id);
     try {
       await api.post(`/api/join-requests/${id}/cancel`);
       toast.info('Request cancelled.');
       requests.refetch();
     } catch (e) {
       toast.error(e.message);
+    } finally {
+      setBusyId('');
     }
   };
 
@@ -198,8 +223,21 @@ const InboxTab = () => {
             <div className="flex items-center justify-between">
               <span className="font-mono text-[11px] text-text-dim">{formatRelative(inv.createdAt)}</span>
               <div className="flex gap-2">
-                <button className="ghost-button" onClick={() => decline(inv.id)}>Decline</button>
-                <button className="glow-button" onClick={() => accept(inv.id)}>Accept</button>
+                <button
+                  className="ghost-button"
+                  disabled={busyId === inv.id}
+                  onClick={() => decline(inv.id)}
+                >
+                  Decline
+                </button>
+                <button
+                  className="glow-button inline-flex items-center gap-1.5"
+                  disabled={busyId === inv.id}
+                  onClick={() => accept(inv.id)}
+                >
+                  {busyId === inv.id && <Spinner size={12} />}
+                  Accept
+                </button>
               </div>
             </div>
           </article>
@@ -218,7 +256,14 @@ const InboxTab = () => {
               <div className="font-sans text-[14px] font-bold">{r.team.name}</div>
               <div className="font-mono text-[12px] text-text-secondary">{r.team.domain?.name}</div>
             </div>
-            <button className="ghost-button" onClick={() => cancel(r.id)}>Cancel</button>
+            <button
+              className="ghost-button inline-flex items-center gap-1.5"
+              disabled={busyId === r.id}
+              onClick={() => cancel(r.id)}
+            >
+              {busyId === r.id && <Spinner size={12} />}
+              Cancel
+            </button>
           </article>
         ))}
       </section>
@@ -435,12 +480,12 @@ const ExploreTab = ({ user, myTeam }) => {
     ({ offset, limit }) => api.get('/api/teams/explore/members', {
       query: { offset, limit, search: memberSearch || undefined },
     }),
-    [memberSearch],
+    [memberSearch, myTeam?.id],
     { pageSize: 20, itemsKey: 'users' },
   );
-  const teams = useApi(() => api.get('/api/teams'), []);
-  const joinable = useApi(() => api.get('/api/teams/joinable'), []);
-  const outgoingRequests = useApi(() => api.get('/api/join-requests/me'), []);
+  const teams = useApi(() => api.get('/api/teams'), [myTeam?.id]);
+  const joinable = useApi(() => api.get('/api/teams/joinable'), [myTeam?.id]);
+  const outgoingRequests = useApi(() => api.get('/api/join-requests/me'), [myTeam?.id]);
 
   const leaderOwnTeam = myTeam?.leader?.id === user.id ? myTeam : null;
   const pendingInvites = useApi(
@@ -800,7 +845,14 @@ export const DashboardPage = () => {
 
   const me = useApi(() => api.get('/api/auth/me'), []);
   const myTeam = useApi(() => api.get('/api/teams/mine'), []);
+  const { refetch: refetchMe } = me;
+  const { refetch: refetchTeam } = myTeam;
   const u = me.data?.user ?? user;
+
+  const handleTeamChanged = useCallback(() => {
+    refetchTeam();
+    refetchMe();
+  }, [refetchTeam, refetchMe]);
 
   return (
     <section className="mx-auto max-w-6xl px-4 sm:px-6 py-8 sm:py-12">
@@ -828,14 +880,14 @@ export const DashboardPage = () => {
       />
 
       <div className="fade-in">
-        {me.loading
+        {me.loading || (u.role === 'STUDENT' && myTeam.loading)
           ? <CardSkeleton rows={4} />
           : tab === 'profile'
-            ? <ProfileTab user={u} />
+            ? <ProfileTab user={u} myTeam={myTeam.data?.team ?? null} />
             : tab === 'explore'
               ? <ExploreTab user={u} myTeam={myTeam.data?.team ?? null} />
               : tab === 'inbox'
-                ? <InboxTab />
+                ? <InboxTab onTeamChanged={handleTeamChanged} />
                 : <BroadcastsTab />}
       </div>
     </section>

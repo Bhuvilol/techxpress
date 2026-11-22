@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Users, Search, Trash2, RefreshCw, ShieldCheck, UserMinus, UserPlus, Settings, Lock, Unlock, Ban, RotateCcw } from 'lucide-react';
+import { Users, Search, Trash2, RefreshCw, ShieldCheck, UserMinus, UserPlus, Settings, Lock, Unlock, Ban, RotateCcw, Crown } from 'lucide-react';
 import { api } from '../../lib/api.js';
 import { useApi } from '../../hooks/useApi.js';
 import { useToast } from '../../contexts/ToastContext.jsx';
@@ -192,6 +192,7 @@ const ManageModal = ({ team, onClose, onDone }) => {
   );
   const [forceAddId, setForceAddId] = useState('');
   const [forceRemoveId, setForceRemoveId] = useState('');
+  const [setLeaderId, setSetLeaderId] = useState('');
 
   if (!team) return null;
 
@@ -282,7 +283,7 @@ const ManageModal = ({ team, onClose, onDone }) => {
           )}
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-4 sm:grid-cols-3">
           <div className="glass-card flat space-y-3">
             <h3 className="section-label">Force add member</h3>
             <FormField label="Registration #" hint="Bypasses team-full / status guards. Unique constraints still apply.">
@@ -291,11 +292,20 @@ const ManageModal = ({ team, onClose, onDone }) => {
                 placeholder="e.g. 2026-VRTX-101"
                 value={forceAddId}
                 onChange={(e) => setForceAddId(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && forceAddId.trim()) {
+                    resolveAndAct(
+                      forceAddId,
+                      'Member added.',
+                      (userId) => api.post(`/api/admin/teams/${team.id}/force-add`, { userId }),
+                    );
+                  }
+                }}
               />
             </FormField>
             <button
               className="ghost-button inline-flex items-center gap-2"
-              disabled={!forceAddId}
+              disabled={!forceAddId.trim()}
               onClick={() => resolveAndAct(
                 forceAddId,
                 'Member added.',
@@ -314,11 +324,20 @@ const ManageModal = ({ team, onClose, onDone }) => {
                 placeholder="e.g. 2026-VRTX-101"
                 value={forceRemoveId}
                 onChange={(e) => setForceRemoveId(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && forceRemoveId.trim()) {
+                    resolveAndAct(
+                      forceRemoveId,
+                      'Member removed.',
+                      (userId) => api.post(`/api/admin/teams/${team.id}/force-remove`, { userId }),
+                    );
+                  }
+                }}
               />
             </FormField>
             <button
               className="ghost-button inline-flex items-center gap-2"
-              disabled={!forceRemoveId}
+              disabled={!forceRemoveId.trim()}
               onClick={() => resolveAndAct(
                 forceRemoveId,
                 'Member removed.',
@@ -326,6 +345,38 @@ const ManageModal = ({ team, onClose, onDone }) => {
               )}
             >
               <UserMinus size={12}/> Force remove
+            </button>
+          </div>
+
+          <div className="glass-card flat space-y-3">
+            <h3 className="section-label">Set team leader</h3>
+            <FormField label="Registration #" hint="Transfers leadership to an existing team member.">
+              <input
+                className="input-glass"
+                placeholder="e.g. 2026-VRTX-101"
+                value={setLeaderId}
+                onChange={(e) => setSetLeaderId(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && setLeaderId.trim()) {
+                    resolveAndAct(
+                      setLeaderId,
+                      'Leadership updated.',
+                      (newLeaderId) => api.post(`/api/admin/teams/${team.id}/set-leader`, { newLeaderId }),
+                    );
+                  }
+                }}
+              />
+            </FormField>
+            <button
+              className="ghost-button inline-flex items-center gap-2"
+              disabled={!setLeaderId.trim()}
+              onClick={() => resolveAndAct(
+                setLeaderId,
+                'Leadership updated.',
+                (newLeaderId) => api.post(`/api/admin/teams/${team.id}/set-leader`, { newLeaderId }),
+              )}
+            >
+              <Crown size={12}/> Set leader
             </button>
           </div>
         </div>

@@ -77,6 +77,16 @@ export const testingImportService = {
         if (!bio) throw new Error('Missing bio');
         if (contributionAreas.length === 0) throw new Error('contributionAreas is required (use | to separate values)');
 
+        const rawPassword = cleanString(row.plainPassword);
+        if (rawPassword) {
+          if (rawPassword.length < 6) {
+            throw new Error('plainPassword must be at least 6 characters');
+          }
+          if (rawPassword.length > 128) {
+            throw new Error('plainPassword cannot exceed 128 characters');
+          }
+        }
+
         const institution = institutionByName.get(institutionName.toLowerCase());
         if (!institution) throw new Error(`Unknown institution: "${institutionName}"`);
 
@@ -100,7 +110,7 @@ export const testingImportService = {
           throw new Error(`Duplicate ${field}`);
         }
 
-        const plainPassword = cleanString(row.plainPassword, 120) ?? generateSixDigitCode();
+        const plainPassword = rawPassword ?? generateSixDigitCode();
         const passwordHash = await hashPassword(plainPassword);
 
         const data = {
@@ -159,7 +169,9 @@ export const testingImportService = {
         results.push({
           row: rowNumber,
           status: 'failed',
-          email: row?.email ?? null,
+          email: cleanString(row?.email, 200)?.toLowerCase() ?? null,
+          fullName: cleanString(row?.fullName, 120) ?? null,
+          registrationNo: cleanString(row?.registrationNo, 50) ?? null,
           error: err.message,
         });
         logger.warn('testing_import.row_failed', { row: rowNumber, err: err.message });

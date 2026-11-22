@@ -115,7 +115,7 @@ export const downloadTemplate = async (_req, res) => {
     { Field: 'achievements', Required: 'no', Notes: 'Long text' },
     { Field: 'hackathonExperience', Required: 'no', Notes: 'Long text' },
     { Field: 'isDomainExpert', Required: 'no', Notes: 'TRUE | FALSE (default FALSE)' },
-    { Field: 'plainPassword', Required: 'no', Notes: 'If blank, a random 6-digit password is generated' },
+    { Field: 'plainPassword', Required: 'no', Notes: 'If blank, a random 6-digit password is generated (minimum 6 characters if provided)' },
   ];
   const instructionsSheet = XLSX.utils.json_to_sheet(instructionRows);
   XLSX.utils.book_append_sheet(workbook, instructionsSheet, 'Instructions');
