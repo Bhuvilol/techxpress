@@ -1,23 +1,27 @@
 import { useEffect, useRef, useState } from "react";
 import gsap from "gsap";
+import interiorVideoAsset from "../assets/train_bg_optimized.mp4";
+import interiorMaskPngAsset from "../assets/train_interior_pov_masked1_optimized.png";
+import interiorMaskWebpAsset from "../assets/train_interior_pov_masked1_optimized.webp";
 import "./InteriorScene.css";
 import SeatNavigation from "./SeatNavigation";
 
 const ASSETS = {
-  video: "/assets/train_bg.mp4",
-  mask: "/assets/train_interior_pov_masked1.png",
+  video: interiorVideoAsset,
+  mask: interiorMaskPngAsset,
+  maskWebp: interiorMaskWebpAsset,
 };
 
 export default function InteriorScene({ onNavigate }) {
   const revealRef = useRef(null);
 
   const [isAssetsReady, setIsAssetsReady] = useState(false);
-  const loadCount = useRef(0);
+  const loadedAssets = useRef(new Set());
   const TOTAL_ASSETS = 2; // Background video & foreground interior mask
 
-  const handleLoaded = () => {
-    loadCount.current += 1;
-    if (loadCount.current >= TOTAL_ASSETS) {
+  const handleLoaded = (assetName) => {
+    loadedAssets.current.add(assetName);
+    if (loadedAssets.current.size >= TOTAL_ASSETS) {
       setIsAssetsReady(true);
     }
   };
@@ -44,20 +48,25 @@ export default function InteriorScene({ onNavigate }) {
           muted
           loop
           playsInline
+          preload="auto"
           className="interior-video"
-          onCanPlayThrough={handleLoaded}
+          onLoadedData={() => handleLoaded('video')}
         />
       </div>
 
       {/* 2. Foreground Mask Layer (Train interior, seats, ceiling, windows) */}
       <div className="interior-mask-container">
-        <img
-          src={ASSETS.mask}
-          alt="Train Interior Mask"
-          className="interior-mask"
-          onLoad={handleLoaded}
-          onError={handleLoaded}
-        />
+        <picture className="interior-mask-picture">
+          <source srcSet={ASSETS.maskWebp} type="image/webp" />
+          <img
+            src={ASSETS.mask}
+            alt="Train interior"
+            className="interior-mask"
+            fetchPriority="high"
+            decoding="async"
+            onLoad={() => handleLoaded('mask')}
+          />
+        </picture>
       </div>
 
       {/* 3. Initial Reveal Overlay (Blackout lifts on arrival) */}

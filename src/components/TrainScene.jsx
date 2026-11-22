@@ -1,6 +1,16 @@
 import { useRef, useState, useCallback, useEffect } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import backgroundAsset from '../assets/background2.png';
+import tracksAsset from '../assets/track_wbg.png';
+import closedTrainAsset from '../assets/train_long_closed_wbg.png';
+import openTrainAsset from '../assets/train_long_open_wbg.png';
+import platformAsset from '../assets/platform_wbg.png';
+import stationMasterAsset from '../assets/TT_master_wbg.png';
+import cloudAsset from '../assets/cloud_wbg.png';
+import interiorMaskPngAsset from '../assets/train_interior_pov_masked1_optimized.png';
+import interiorMaskWebpAsset from '../assets/train_interior_pov_masked1_optimized.webp';
+import interiorVideoAsset from '../assets/train_bg_optimized.mp4';
 import './TrainScene.css';
 
 gsap.registerPlugin(ScrollTrigger);
@@ -28,13 +38,13 @@ const PLATFORM_Y_PERCENT = 0.62;
    Asset paths (relative to public/)
    ───────────────────────────────────────────── */
 const ASSETS = {
-  background: '/assets/background2.png',
-  tracks: '/assets/track_wbg.png',
-  trainClosed: '/assets/train_long_closed_wbg.png',
-  trainOpen: '/assets/train_long_open_wbg.png',
-  platform: '/assets/platform_wbg.png',
-  ttMaster: '/assets/TT_master_wbg.png',
-  cloud: '/assets/cloud_wbg.png',
+  background: backgroundAsset,
+  tracks: tracksAsset,
+  trainClosed: closedTrainAsset,
+  trainOpen: openTrainAsset,
+  platform: platformAsset,
+  ttMaster: stationMasterAsset,
+  cloud: cloudAsset,
 };
 
 const STATION_MASTER_DIALOGUE = [
@@ -59,7 +69,6 @@ export default function TrainScene({ onComplete }) {
   const blackoutRef = useRef(null);
   const backgroundSharpRef = useRef(null); // Base sharp layer
   const backgroundBlurRef = useRef(null); // Blurred layer for performance
-  const pivotMarkerRef = useRef(null); // Added ref for visual debugging
 
   // Dialogue & Navigation state
   const [dialogueStep, setDialogueStep] = useState(0); // 0: hidden, 1: showing, 2: finished
@@ -67,6 +76,22 @@ export default function TrainScene({ onComplete }) {
   const isNavigatingRef = useRef(false);
   const completeTriggeredRef = useRef(false);
   const hasArrivedRef = useRef(false);
+  const interiorPreloadStartedRef = useRef(false);
+
+  // Keep the page stationary until the arrival and stationmaster introduction finish.
+  useEffect(() => {
+    if (dialogueStep === 2) return undefined;
+
+    const htmlOverflow = document.documentElement.style.overflow;
+    const bodyOverflow = document.body.style.overflow;
+    document.documentElement.style.overflow = 'hidden';
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      document.documentElement.style.overflow = htmlOverflow;
+      document.body.style.overflow = bodyOverflow;
+    };
+  }, [dialogueStep]);
 
   // Responsive Viewport Tracking (Resize & Orientation)
   const [windowDimensions, setWindowDimensions] = useState({
@@ -104,27 +129,55 @@ export default function TrainScene({ onComplete }) {
 
   /* loading gate */
   const [loaded, setLoaded] = useState(false);
+  const [loadError, setLoadError] = useState(false);
+  const [loadAttempt, setLoadAttempt] = useState(0);
   const loadCount = useRef(0);
+  const failedAttemptRef = useRef(false);
+  const currentAttemptRef = useRef(loadAttempt);
   const TOTAL_IMAGES = 8; // BG-sharp, BG-blur, tracks, train-closed, train-open, platform, ttMaster, cloud
 
-  const handleImgReady = useCallback(() => {
+  const handleImgReady = useCallback((attempt) => {
+    if (attempt !== currentAttemptRef.current || failedAttemptRef.current) return;
     loadCount.current += 1;
     if (loadCount.current >= TOTAL_IMAGES) {
       setLoaded(true);
     }
   }, []);
 
-  /* ── Defer non-essential interior assets: preload in background AFTER landing is ready ── */
+  const handleImgError = useCallback((attempt) => {
+    if (attempt !== currentAttemptRef.current) return;
+    failedAttemptRef.current = true;
+    setLoadError(true);
+  }, []);
+
+  const retryImageLoading = () => {
+    loadCount.current = 0;
+    failedAttemptRef.current = false;
+    setLoaded(false);
+    setLoadError(false);
+    const nextAttempt = loadAttempt + 1;
+    currentAttemptRef.current = nextAttempt;
+    setLoadAttempt(nextAttempt);
+  };
+
+  const assetUrl = (path) => `${path}?retry=${loadAttempt}`;
+
+  /* ── Preload interior assets as soon as the landing artwork is ready ── */
   useEffect(() => {
-    if (!loaded) return;
-    const idleTimer = setTimeout(() => {
-      const img = new Image();
-      img.src = '/assets/train_interior_pov_masked1.png';
-      const video = document.createElement('video');
-      video.src = '/assets/train_bg.mp4';
-      video.preload = 'auto';
-    }, 800);
-    return () => clearTimeout(idleTimer);
+    if (!loaded || interiorPreloadStartedRef.current) return;
+    interiorPreloadStartedRef.current = true;
+
+    const img = new Image();
+    img.decoding = 'async';
+    img.fetchPriority = 'low';
+    const supportsWebp = document.createElement('canvas').toDataURL('image/webp').startsWith('data:image/webp');
+    img.src = supportsWebp
+      ? interiorMaskWebpAsset
+      : interiorMaskPngAsset;
+
+    const video = document.createElement('video');
+    video.preload = 'auto';
+    video.src = interiorVideoAsset;
   }, [loaded]);
 
   /* ── Smooth Navigation to Train Interior ── */
@@ -321,6 +374,7 @@ export default function TrainScene({ onComplete }) {
           gsap.delayedCall(0.25, () => {
             const skipGuides = window.SKIP_GUIDES === true;
             setDialogueStep(skipGuides ? 2 : 1);
+            if (skipGuides) stRef.current?.enable();
             setShowInstruction(true);
           });
         }
@@ -388,12 +442,8 @@ export default function TrainScene({ onComplete }) {
         }
       },
     });
-
-    // Positioning the pivot marker (debug only)
-    const marker = pivotMarkerRef.current;
-    if (marker) {
-      gsap.set(marker, { left: pivotX, top: pivotY });
-    }
+    // Scrolling becomes available only after the arrival dialogue is dismissed.
+    st.disable(false);
 
     // Store for cleanup
     tlRef.current = { trainEntry, scrollTl };
@@ -413,7 +463,14 @@ export default function TrainScene({ onComplete }) {
       {/* Loading screen */}
       {!loaded && (
         <div className="scene-loading">
-          <div className="loading-spinner">Arriving…</div>
+          {loadError ? (
+            <div className="scene-load-error" role="alert">
+              <p>Some arrival artwork could not be loaded. The journey will begin when all original images are ready.</p>
+              <button type="button" onClick={retryImageLoading}>Retry loading images</button>
+            </div>
+          ) : (
+            <div className="loading-spinner" role="status" aria-live="polite">Arriving…</div>
+          )}
         </div>
       )}
 
@@ -421,6 +478,12 @@ export default function TrainScene({ onComplete }) {
       <div
         className={`enter-instruction ${showInstruction ? 'visible' : 'hidden'}`}
         onDoubleClick={triggerEnterTrain}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            triggerEnterTrain();
+          }
+        }}
         role="button"
         tabIndex={0}
         aria-label="Double tap to enter the train"
@@ -444,10 +507,10 @@ export default function TrainScene({ onComplete }) {
           {/* z-0: Background (Sharper default layer) */}
           <div className="scene-layer layer-background layer-background-sharp" ref={backgroundSharpRef}>
             <img
-              src={ASSETS.background}
+              src={assetUrl(ASSETS.background)}
               alt="New Delhi railway station"
-              onLoad={handleImgReady}
-              onError={handleImgReady}
+              onLoad={() => handleImgReady(loadAttempt)}
+              onError={() => handleImgError(loadAttempt)}
               draggable={false}
             />
           </div>
@@ -455,10 +518,10 @@ export default function TrainScene({ onComplete }) {
           {/* z-0 overlay: Pre-blurred layer for performance optimization */}
           <div className="scene-layer layer-background layer-background-blur" ref={backgroundBlurRef}>
             <img
-              src={ASSETS.background}
+              src={assetUrl(ASSETS.background)}
               alt="Blurred background"
-              onLoad={handleImgReady}
-              onError={handleImgReady}
+              onLoad={() => handleImgReady(loadAttempt)}
+              onError={() => handleImgError(loadAttempt)}
               draggable={false}
             />
           </div>
@@ -467,10 +530,10 @@ export default function TrainScene({ onComplete }) {
           <div className="scene-layer layer-tracks">
             <img
               ref={tracksRef}
-              src={ASSETS.tracks}
+              src={assetUrl(ASSETS.tracks)}
               alt="Railway tracks"
-              onLoad={handleImgReady}
-              onError={handleImgReady}
+              onLoad={() => handleImgReady(loadAttempt)}
+              onError={() => handleImgError(loadAttempt)}
               draggable={false}
             />
           </div>
@@ -479,10 +542,10 @@ export default function TrainScene({ onComplete }) {
           <div className="scene-layer layer-train">
             <img
               ref={trainClosedRef}
-              src={ASSETS.trainClosed}
+              src={assetUrl(ASSETS.trainClosed)}
               alt="TechXpress train — doors closed"
-              onLoad={handleImgReady}
-              onError={handleImgReady}
+              onLoad={() => handleImgReady(loadAttempt)}
+              onError={() => handleImgError(loadAttempt)}
               draggable={false}
             />
           </div>
@@ -491,10 +554,10 @@ export default function TrainScene({ onComplete }) {
           <div className="scene-layer layer-train layer-train-open">
             <img
               ref={trainOpenRef}
-              src={ASSETS.trainOpen}
+              src={assetUrl(ASSETS.trainOpen)}
               alt="TechXpress train — doors open"
-              onLoad={handleImgReady}
-              onError={handleImgReady}
+              onLoad={() => handleImgReady(loadAttempt)}
+              onError={() => handleImgError(loadAttempt)}
               draggable={false}
             />
           </div>
@@ -503,10 +566,10 @@ export default function TrainScene({ onComplete }) {
         {/* z-4: Foreground Platform */}
         <div className="scene-layer layer-platform" ref={platformRef}>
           <img
-            src={ASSETS.platform}
+            src={assetUrl(ASSETS.platform)}
             alt="Station platform foreground"
-            onLoad={handleImgReady}
-            onError={handleImgReady}
+            onLoad={() => handleImgReady(loadAttempt)}
+            onError={() => handleImgError(loadAttempt)}
             draggable={false}
           />
         </div>
@@ -518,14 +581,21 @@ export default function TrainScene({ onComplete }) {
         <StationMaster
           isVisible={dialogueStep === 1}
           dialogues={STATION_MASTER_DIALOGUE}
-          assets={ASSETS}
-          onComplete={() => setDialogueStep(2)}
+          assets={{
+            ...ASSETS,
+            ttMaster: assetUrl(ASSETS.ttMaster),
+            cloud: assetUrl(ASSETS.cloud),
+          }}
+          onComplete={() => {
+            setDialogueStep(2);
+            stRef.current?.enable();
+          }}
         />
 
         {/* Hidden pre-loaders for essential character guide assets */}
         <div style={{ display: 'none' }}>
-           <img src={ASSETS.ttMaster} onLoad={handleImgReady} alt="" />
-           <img src={ASSETS.cloud} onLoad={handleImgReady} alt="" />
+           <img src={assetUrl(ASSETS.ttMaster)} onLoad={() => handleImgReady(loadAttempt)} onError={() => handleImgError(loadAttempt)} alt="" />
+           <img src={assetUrl(ASSETS.cloud)} onLoad={() => handleImgReady(loadAttempt)} onError={() => handleImgError(loadAttempt)} alt="" />
         </div>
       </div>
 
@@ -539,9 +609,6 @@ export default function TrainScene({ onComplete }) {
         }}
       />
 
-      {/* Visual guide to help with centering - DO NOT REMOVE UNTIL FINAL APPROVAL */}
-      <div className="center-guide" />
-      <div ref={pivotMarkerRef} id="pivot-marker" />
     </>
   );
 }

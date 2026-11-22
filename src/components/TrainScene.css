@@ -160,6 +160,34 @@
   gap: 1.5rem;
 }
 
+.scene-load-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+  width: min(90vw, 560px);
+  padding: 2rem;
+  text-align: center;
+  line-height: 1.5;
+}
+
+.scene-load-error button {
+  padding: 0.75rem 1.25rem;
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  border-radius: 999px;
+  background: #fff;
+  color: #111;
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.scene-load-error button:focus-visible {
+  outline: 3px solid #d32f2f;
+  outline-offset: 4px;
+}
+
 .loading-spinner::before {
   content: '';
   width: 40px;
