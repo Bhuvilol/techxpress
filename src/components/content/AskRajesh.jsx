@@ -1,4 +1,5 @@
 import React from 'react';
+import stationMasterAsset from '../../assets/TT_master_wbg.png';
 import './ContentPages.css';
 
 export default function AskRajesh({ onBack }) {
@@ -13,7 +14,7 @@ export default function AskRajesh({ onBack }) {
 
       <div className="chat-interface-container animate-fade-in">
         <div className="rajesh-sidebar">
-          <img src="/assets/TT_master_wbg.png" alt="Rajesh Sharma" />
+          <img src={stationMasterAsset} alt="Rajesh Sharma" />
         </div>
 
         <div className="chat-window-box glass">
