@@ -1,6 +1,7 @@
 import { prisma } from '../config/db.js';
 import { Conflict, BadRequest, NotFound } from '../utils/errors.js';
 import { membershipService } from './membership.service.js';
+import { membershipChangeService } from './membershipChange.service.js';
 import { rulesService } from './rules.service.js';
 import { teamService } from './team.service.js';
 import { leaderboardService } from './leaderboard.service.js';
@@ -54,6 +55,13 @@ export const teamAdminService = {
         throw BadRequest('User is already the leader of this team');
       }
 
+      // A dissolution vote is tied to the leader who started it. Swapping the
+      // leader mid-vote would either let the ex-leader's disband delete the
+      // team, or (if the new leader was the last pending approver) leave the
+      // team frozen forever behind APPROVED rows. Refuse instead; the admin
+      // can still delete the team outright.
+      await membershipChangeService.assertNoActiveTeamDisband(tx, teamId);
+
       const newLeaderMembership = await tx.teamMember.findUnique({
         where: { teamId_userId: { teamId, userId: newLeaderId } },
         select: { role: true },
@@ -87,6 +95,21 @@ export const teamAdminService = {
         data: { approverId: newLeaderId },
       });
 
+      const now = new Date();
+
+      // Cancel DISMISS requests the ex-leader started: they no longer have
+      // the authority to remove members, so the target shouldn't be able to
+      // "accept" their way out of the team on the old leader's behalf.
+      await tx.membershipChangeRequest.updateMany({
+        where: {
+          teamId,
+          kind: 'DISMISS',
+          initiatorId: team.leaderId,
+          status: { in: ['PENDING', 'APPROVED'] },
+        },
+        data: { status: 'CANCELLED', resolvedAt: now },
+      });
+
       // Cancel any open change requests targeting the new leader (leaders cannot leave or be dismissed)
       await tx.membershipChangeRequest.updateMany({
         where: {
@@ -94,7 +117,7 @@ export const teamAdminService = {
           targetUserId: newLeaderId,
           status: { in: ['PENDING', 'APPROVED'] },
         },
-        data: { status: 'CANCELLED', resolvedAt: new Date() },
+        data: { status: 'CANCELLED', resolvedAt: now },
       });
 
       return tx.team.findUnique({ where: { id: teamId }, include: teamService.detailInclude });
