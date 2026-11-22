@@ -1,15 +1,23 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { Routes, Route, useNavigate } from 'react-router-dom';
 import Lenis from 'lenis';
 import TrainScene from './components/TrainScene';
 import InteriorScene from './components/InteriorScene';
 import AboutPage from './components/content/AboutPage';
-import RegisterPage from './components/content/RegisterPage';
 import AskRajesh from './components/content/AskRajesh';
+
+const TICKETING_URL = 'https://vortex-app.bhuvism003.workers.dev/';
+
+function TicketingRedirect() {
+  useEffect(() => {
+    window.location.replace(TICKETING_URL);
+  }, []);
+
+  return null;
+}
 
 export default function App() {
   const navigate = useNavigate();
-  const [journeyStage, setJourneyStage] = useState('station');
 
   useEffect(() => {
     // Initialize Lenis for smooth momentum scrolling
@@ -25,19 +33,22 @@ export default function App() {
   return (
     <div className="App">
       <Routes>
-        {/* The Cinematic Journey (Root) */}
-        <Route path="/" element={
-          journeyStage === 'station' ? (
-            <TrainScene onComplete={() => setJourneyStage('interior')} />
-          ) : (
-            <InteriorScene onNavigate={(path) => navigate(`/${path}`)} />
-          )
+        {/* The train animation is always the entry point. */}
+        <Route path="/" element={<TrainScene onComplete={() => navigate('/interior')} />} />
+        <Route path="/interior" element={
+          <InteriorScene onNavigate={(path) => {
+            if (path === 'register') {
+              window.location.assign(TICKETING_URL);
+              return;
+            }
+            navigate(`/${path}`);
+          }} />
         } />
 
         {/* Destination Content Pages */}
-        <Route path="/about" element={<AboutPage onBack={() => navigate('/')} />} />
-        <Route path="/register" element={<RegisterPage onBack={() => navigate('/')} />} />
-        <Route path="/ask" element={<AskRajesh onBack={() => navigate('/')} />} />
+        <Route path="/about" element={<AboutPage onBack={() => navigate('/interior')} />} />
+        <Route path="/register" element={<TicketingRedirect />} />
+        <Route path="/ask" element={<AskRajesh onBack={() => navigate('/interior')} />} />
       </Routes>
     </div>
   );

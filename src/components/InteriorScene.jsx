@@ -9,8 +9,6 @@ const ASSETS = {
 };
 
 export default function InteriorScene({ onNavigate }) {
-  const containerRef = useRef(null);
-  const videoRef = useRef(null);
   const revealRef = useRef(null);
 
   const [isAssetsReady, setIsAssetsReady] = useState(false);
@@ -37,11 +35,10 @@ export default function InteriorScene({ onNavigate }) {
   }, [isAssetsReady]);
 
   return (
-    <div className="interior-scene" ref={containerRef}>
+    <div className="interior-scene">
       {/* 1. Background Video Layer (Train window scenery in motion) */}
       <div className="interior-video-container">
         <video
-          ref={videoRef}
           src={ASSETS.video}
           autoPlay
           muted

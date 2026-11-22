@@ -27,6 +27,12 @@ export default function SeatNavigation({ isVisible, onNavigate }) {
     return () => clearTimeout(timer);
   }, [isVisible]);
 
+  useEffect(() => {
+    const resetTransitionOnRestore = () => setTransitioningTo(null);
+    window.addEventListener('pageshow', resetTransitionOnRestore);
+    return () => window.removeEventListener('pageshow', resetTransitionOnRestore);
+  }, []);
+
   if (!isVisible) return null;
 
   const handleOptionClick = (e, destination) => {
@@ -191,15 +197,13 @@ export default function SeatNavigation({ isVisible, onNavigate }) {
       </div>
 
       {/* 3. Physical 3D Cartoon Unfolding Transition Curtain */}
-      {transitioningTo && (
-        <div className={`cartoon-unfolding-transition-curtain curtain-${transitioningTo}`}>
+      {transitioningTo === 'register' && (
+        <div className="cartoon-unfolding-transition-curtain curtain-register">
           <div className="curtain-cardboard-sheet">
             <div className="curtain-header-tab">
               <span className="curtain-stitch" />
               <span className="curtain-tab-title">
-                {transitioningTo === 'about' && '🚂 ABOUT TECHXPRESS'}
-                {transitioningTo === 'register' && '🎫 EXPEDITION REGISTRATION'}
-                {transitioningTo === 'ask' && '💬 FARES & ASSISTANT RAJESH'}
+                🎫 EXPEDITION REGISTRATION
               </span>
               <span className="curtain-stitch" />
             </div>
