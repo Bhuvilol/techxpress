@@ -28,3 +28,6 @@ npm-debug.log*
 *.sw?
 .DS_Store
 Thumbs.db
+
+# GCP setup settings (project and billing IDs)
+infra/gcp/config.env
