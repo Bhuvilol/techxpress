@@ -1,6 +1,11 @@
 import 'dotenv/config';
 import { z } from 'zod';
 
+// An optional setting where an empty string (e.g. `MAIL_FROM=""` in .env)
+// counts as unset.
+const optionalString = (inner) =>
+  z.preprocess((v) => (v === '' ? undefined : v), inner.min(1).optional());
+
 const schema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   PORT: z.coerce.number().int().positive().default(3001),
@@ -26,13 +31,19 @@ const schema = z.object({
   JURY_SEED_PASSWORD: z.string().min(7).optional(),
   COORDINATOR_SEED_PASSWORD: z.string().min(7).optional(),
 
-  // Amazon SES (transactional email). Optional — when MAIL_FROM is absent,
-  // mail.js logs and skips. MAIL_FROM must be on an SES-verified domain, e.g.
-  // "Vortex <noreply@yourdomain.com>". Credentials come from the AWS default
-  // provider chain (EC2 instance role in staging/production).
-  MAIL_FROM: z.string().min(1).optional().or(z.literal('').transform(() => undefined)),
-  SES_REGION: z.string().min(1).default('ap-south-1'),
-  MAIL_REPLY_TO: z.string().email().optional().or(z.literal('').transform(() => undefined)),
+  // Public URL of the website (no trailing slash), e.g. https://your-domain.
+  // Used for links in emails: ${APP_URL}/vortex/login.
+  APP_URL: optionalString(z.string().url()),
+
+  // Cloudflare Email Service (transactional email). Optional — when any of
+  // MAIL_FROM, CF_ACCOUNT_ID or CF_EMAIL_API_TOKEN is absent, mail.js logs and
+  // skips. MAIL_FROM must be on the domain onboarded in Email Service, e.g.
+  // "TechXpress <noreply@your-domain>". The token needs only the
+  // "Email Sending Write" permission.
+  MAIL_FROM: optionalString(z.string()),
+  MAIL_REPLY_TO: optionalString(z.string().email()),
+  CF_ACCOUNT_ID: optionalString(z.string()),
+  CF_EMAIL_API_TOKEN: optionalString(z.string()),
 });
 
 const parsed = schema.safeParse(process.env);

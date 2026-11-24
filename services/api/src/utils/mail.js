@@ -1,27 +1,86 @@
-import { SESv2Client, SendEmailCommand } from '@aws-sdk/client-sesv2';
+import { env, isProd } from '../config/env.js';
 import { logger } from './logger.js';
 
-// Transactional email via Amazon SES (v2 API).
+// Transactional email via Cloudflare Email Service (REST API).
 //
-// Credentials come from the default AWS provider chain — on EC2 that's the
-// instance role (no keys in env). Sending is enabled only when MAIL_FROM is
-// set, e.g. "Vortex <noreply@your-domain>" on an SES-verified domain. Without
-// it, mail is logged and skipped so local dev and pre-domain staging still work.
+//   POST https://api.cloudflare.com/client/v4/accounts/{CF_ACCOUNT_ID}/email/sending/send
+//   Authorization: Bearer {CF_EMAIL_API_TOKEN}   (token with "Email Sending Write" only)
+//
+// Sending is enabled only when MAIL_FROM, CF_ACCOUNT_ID and CF_EMAIL_API_TOKEN
+// are all set; MAIL_FROM must be on the domain onboarded in Email Service,
+// e.g. "TechXpress <noreply@your-domain>". Without them, mail is logged and
+// skipped so local dev still works.
 //
 // Every helper resolves to { delivered: boolean, ... } and never throws, so a
-// mail outage can't break the business action that triggered it.
+// mail outage can't break the business action that triggered it. Swapping
+// provider means replacing only `deliver()` below.
 
-const FROM = process.env.MAIL_FROM;
-const REPLY_TO = process.env.MAIL_REPLY_TO;
-const REGION = process.env.SES_REGION ?? 'ap-south-1';
+const SEND_TIMEOUT_MS = 10_000;
 
-const ses = FROM ? new SESv2Client({ region: REGION }) : null;
+// "Name <addr@x>" -> { address, name }; a bare address -> { address }.
+const parseAddress = (value) => {
+  const match = /^\s*(.*?)\s*<\s*([^>]+?)\s*>\s*$/.exec(value);
+  if (!match) return { address: value.trim() };
+  const name = match[1].replace(/^"|"$/g, '');
+  return name ? { address: match[2], name } : { address: match[2] };
+};
 
-if (!ses) {
-  const msg = 'mail.disabled — MAIL_FROM is not set; emails will be logged and skipped';
-  if (process.env.NODE_ENV === 'production') logger.error(msg);
+const FROM = env.MAIL_FROM ? parseAddress(env.MAIL_FROM) : null;
+const REPLY_TO = env.MAIL_REPLY_TO;
+const enabled = Boolean(FROM && env.CF_ACCOUNT_ID && env.CF_EMAIL_API_TOKEN);
+const SEND_URL = enabled
+  ? `https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(env.CF_ACCOUNT_ID)}/email/sending/send`
+  : null;
+
+if (!enabled) {
+  const msg = 'mail.disabled — MAIL_FROM, CF_ACCOUNT_ID or CF_EMAIL_API_TOKEN is not set; emails will be logged and skipped';
+  if (isProd) logger.error(msg);
   else logger.warn(msg);
 }
+
+// Sends one message. Resolves to { delivered, id?, error? }; never throws.
+const deliver = async ({ to, subject, text, html }) => {
+  let res;
+  let body = null;
+  try {
+    res = await fetch(SEND_URL, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${env.CF_EMAIL_API_TOKEN}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: FROM,
+        to,
+        ...(REPLY_TO ? { reply_to: REPLY_TO } : {}),
+        subject,
+        text,
+        ...(html ? { html } : {}),
+      }),
+      signal: AbortSignal.timeout(SEND_TIMEOUT_MS),
+    });
+    body = await res.json().catch(() => null);
+  } catch (err) {
+    return { delivered: false, error: `${err.name}: ${err.message}` };
+  }
+
+  if (!res.ok || !body?.success) {
+    const first = body?.errors?.[0];
+    const error = first ? `${first.code} ${first.message}` : `HTTP ${res.status}`;
+    return { delivered: false, error, status: res.status };
+  }
+
+  // A 200 can still report the recipient as bounced or suppressed.
+  const result = body.result ?? {};
+  const rejected = [...(result.permanent_bounces ?? []), ...(result.suppressed_recipients ?? [])];
+  if (rejected.length) {
+    return { delivered: false, id: result.message_id, error: 'recipient bounced or suppressed' };
+  }
+  return { delivered: true, id: result.message_id };
+};
+
+// Login page of the portal, included in credential emails.
+const loginUrl = () => (env.APP_URL ? `${env.APP_URL.replace(/\/+$/, '')}/vortex/login` : null);
 
 // User-supplied values (names, rejection reasons) must never be interpreted
 // as HTML inside the email body.
@@ -78,32 +137,27 @@ const credBlock = ({ email, password }) => `
   </div>
 `;
 
+// Login link block for credential emails (empty when APP_URL is unset).
+const loginButton = () => {
+  const url = loginUrl();
+  if (!url) return '';
+  return `
+  <p style="margin:0 0 20px 0;">
+    <a href="${escapeHtml(url)}" style="display:inline-block;padding:10px 18px;background:#22d3ee;color:#0a0a0a;font-size:13px;font-weight:bold;text-decoration:none;border-radius:4px;">Log in to Vortex</a>
+  </p>
+`;
+};
+const loginLine = () => (loginUrl() ? `Log in at: ${loginUrl()}\n\n` : '');
+
 export const sendMail = async ({ to, subject, text, html }) => {
-  if (!ses) {
-    logger.warn('mail.skipped — MAIL_FROM not set', { to, subject });
+  if (!enabled) {
+    logger.warn('mail.skipped — mail is not configured', { to, subject });
     return { delivered: false, reason: 'not-configured' };
   }
-  try {
-    const out = await ses.send(new SendEmailCommand({
-      FromEmailAddress: FROM,
-      Destination: { ToAddresses: [to] },
-      ...(REPLY_TO ? { ReplyToAddresses: [REPLY_TO] } : {}),
-      Content: {
-        Simple: {
-          Subject: { Data: subject, Charset: 'UTF-8' },
-          Body: {
-            Text: { Data: text, Charset: 'UTF-8' },
-            ...(html ? { Html: { Data: html, Charset: 'UTF-8' } } : {}),
-          },
-        },
-      },
-    }));
-    logger.info('mail.sent', { to, subject, id: out.MessageId });
-    return { delivered: true, id: out.MessageId };
-  } catch (err) {
-    logger.error('mail.failed', { to, subject, err: `${err.name}: ${err.message}` });
-    return { delivered: false, error: err.message };
-  }
+  const out = await deliver({ to, subject, text, html });
+  if (out.delivered) logger.info('mail.sent', { to, subject, id: out.id });
+  else logger.error('mail.failed', { to, subject, err: out.error, status: out.status, id: out.id });
+  return out;
 };
 
 export const sendVerificationApprovedMail = ({ to, fullName, password }) =>
@@ -116,12 +170,13 @@ export const sendVerificationApprovedMail = ({ to, fullName, password }) =>
       `Use the credentials below to log in:\n\n` +
       `  Email:    ${to}\n` +
       `  Password: ${password}\n\n` +
+      loginLine() +
       `Keep this password safe — it is your only credential.\n` +
       `If you lose it, contact the organizers to reissue.\n`,
     html: wrapHtml({
       heading: `Welcome, ${escapeHtml(fullName)}.`,
       intro: 'Your registration has been verified. You can now log in to Vortex with the credentials below.',
-      body: credBlock({ email: to, password }),
+      body: credBlock({ email: to, password }) + loginButton(),
       footer: 'Keep this password safe — it is your only login credential. If you lose it, contact the organizers to reissue a new one.',
     }),
   });
@@ -154,11 +209,12 @@ export const sendPasswordReissuedMail = ({ to, fullName, password }) =>
       `An organizer issued you a new password for Vortex.\n\n` +
       `  Email:    ${to}\n` +
       `  Password: ${password}\n\n` +
+      loginLine() +
       `Your previous password no longer works.\n`,
     html: wrapHtml({
       heading: 'New password issued',
       intro: `Hi ${escapeHtml(fullName)}, an organizer issued you a new password. Use the credentials below to log in.`,
-      body: credBlock({ email: to, password }),
+      body: credBlock({ email: to, password }) + loginButton(),
       footer: 'Your previous password no longer works — use this new one to log in.',
     }),
   });
@@ -189,11 +245,12 @@ export const sendAccessRestoredMail = ({ to, fullName, password }) =>
       `Use the credentials below to log in again:\n\n` +
       `  Email:    ${to}\n` +
       `  Password: ${password}\n\n` +
+      loginLine() +
       `Your previous revoked password no longer works.\n`,
     html: wrapHtml({
       heading: 'Access restored',
       intro: `Hi ${escapeHtml(fullName)}, an organizer restored your access. Use the credentials below to log back in.`,
-      body: credBlock({ email: to, password }),
+      body: credBlock({ email: to, password }) + loginButton(),
       footer: 'Your previous password no longer works — use this new one to log in.',
     }),
   });
