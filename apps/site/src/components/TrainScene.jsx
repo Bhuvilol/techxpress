@@ -330,13 +330,6 @@ export default function TrainScene({ onComplete }) {
     // The train's X position needed to align its door with targetDoorX
     const trainFinalX = targetDoorX - originX;
 
-    console.log('--- SYNC DEBUG ---', {
-      pivotX,
-      trainFinalX,
-      originX,
-      isMobile
-    });
-
     // Reset positions
     gsap.set(tracksImg, { x: 0 });
     gsap.set(closedImg, { opacity: 0 });

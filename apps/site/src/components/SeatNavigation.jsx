@@ -50,6 +50,12 @@ export default function SeatNavigation({ isVisible, onNavigate }) {
     }, 420);
   };
 
+  // The cards are role="button" divs, so give them the keyboard behaviour a
+  // real button has: Enter and Space activate.
+  const handleOptionKeyDown = (e, destination) => {
+    if (e.key === 'Enter' || e.key === ' ') handleOptionClick(e, destination);
+  };
+
   return (
     <div className="seat-navigation-layer">
       {/* Central Cartoon Hanging Information Board - Responsive Centered Layout */}
@@ -115,6 +121,7 @@ export default function SeatNavigation({ isVisible, onNavigate }) {
                   transitioningTo === 'about' ? 'selected-transition' : ''
                 }`}
                 onClick={(e) => handleOptionClick(e, 'about')}
+                onKeyDown={(e) => handleOptionKeyDown(e, 'about')}
               >
                 <div className="option-icon-box icon-about">
                   <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
@@ -141,6 +148,7 @@ export default function SeatNavigation({ isVisible, onNavigate }) {
                   transitioningTo === 'register' ? 'selected-transition' : ''
                 }`}
                 onClick={(e) => handleOptionClick(e, 'register')}
+                onKeyDown={(e) => handleOptionKeyDown(e, 'register')}
               >
                 <div className="option-icon-box icon-register">
                   <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
@@ -166,6 +174,7 @@ export default function SeatNavigation({ isVisible, onNavigate }) {
                   transitioningTo === 'ask' ? 'selected-transition' : ''
                 }`}
                 onClick={(e) => handleOptionClick(e, 'ask')}
+                onKeyDown={(e) => handleOptionKeyDown(e, 'ask')}
               >
                 <div className="option-icon-box icon-ask">
                   <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">

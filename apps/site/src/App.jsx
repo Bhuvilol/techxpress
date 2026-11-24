@@ -6,11 +6,13 @@ import InteriorScene from './components/InteriorScene';
 import AboutPage from './components/content/AboutPage';
 import AskRajesh from './components/content/AskRajesh';
 
-const TICKETING_URL = 'https://vortex-app.bhuvism003.workers.dev/';
+// The VORTEX portal is a separate app on the same domain, so going there is a
+// full page load, not a client-side route change.
+const REGISTER_PATH = '/vortex/register';
 
-function TicketingRedirect() {
+function RegisterRedirect() {
   useEffect(() => {
-    window.location.replace(TICKETING_URL);
+    window.location.replace(REGISTER_PATH);
   }, []);
 
   return null;
@@ -38,7 +40,7 @@ export default function App() {
         <Route path="/interior" element={
           <InteriorScene onNavigate={(path) => {
             if (path === 'register') {
-              window.location.assign(TICKETING_URL);
+              window.location.assign(REGISTER_PATH);
               return;
             }
             navigate(`/${path}`);
@@ -47,7 +49,7 @@ export default function App() {
 
         {/* Destination Content Pages */}
         <Route path="/about" element={<AboutPage onBack={() => navigate('/interior')} />} />
-        <Route path="/register" element={<TicketingRedirect />} />
+        <Route path="/register" element={<RegisterRedirect />} />
         <Route path="/ask" element={<AskRajesh onBack={() => navigate('/interior')} />} />
       </Routes>
     </div>
