@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { NavLink, Outlet, Link, useLocation } from 'react-router-dom';
 import {
-  Infinity, Users, ShieldCheck, Settings, Lock, Megaphone,
-  History, Layers, ListChecks, LogOut, Menu, X, FlaskConical, Database, IdCard
+  Infinity as InfinityIcon, Users, ShieldCheck, Settings, Lock, Megaphone,
+  History, Layers, ListChecks, LogOut, Menu, FlaskConical, Database, IdCard
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext.jsx';
 import { cn } from '../../utils/cn.js';
@@ -48,7 +48,7 @@ export const AdminShell = () => {
         isOpen ? "translate-x-0" : "-translate-x-full"
       )}>
         <Link to="/" onClick={close} className="group flex items-center gap-3 border-b border-border-dim px-6 py-5 transition-colors duration-160 hover:bg-bg-surface-2">
-          <Infinity size={22} className="text-accent-cyan transition-transform duration-160 group-hover:scale-110" strokeWidth={2.5} />
+          <InfinityIcon size={22} className="text-accent-cyan transition-transform duration-160 group-hover:scale-110" strokeWidth={2.5} />
           <span className="font-sans text-[13px] font-black tracking-[0.22em] text-text-primary">
             VORTEX <span className="text-text-dim">·</span> <span className="text-accent-cyan">ADMIN</span>
           </span>
@@ -102,7 +102,7 @@ export const AdminShell = () => {
         {/* Mobile Header */}
         <header className="flex h-16 items-center justify-between border-b border-border-dim bg-bg-void/90 px-6 backdrop-blur-md md:hidden">
           <div className="flex items-center gap-2">
-            <Infinity size={22} className="text-accent-cyan" />
+            <InfinityIcon size={22} className="text-accent-cyan" />
             <span className="font-sans text-[13px] font-black tracking-[0.18em] text-text-primary">Admin</span>
           </div>
           <button

@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import {
-  Gavel, Lock, Search, Send, CheckCircle2, Eye,
+  Gavel, Lock, Search, Send, CheckCircle2,
 } from 'lucide-react';
 import { api } from '../../lib/api.js';
 import { useApi } from '../../hooks/useApi.js';
@@ -215,7 +215,6 @@ const ViewModal = ({ open, onClose, team, round, evalRow }) => {
 // ── Page ─────────────────────────────────────────────────────────────────
 export const JuryDashboardPage = () => {
   const { user } = useAuth();
-  const toast = useToast();
   const [filter, setFilter] = useState('');
   // Active modal target: { team, round, evalRow, mine }
   const [active, setActive] = useState(null);

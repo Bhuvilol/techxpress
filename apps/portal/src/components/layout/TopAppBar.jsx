@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { NavLink, Link, useLocation } from 'react-router-dom';
-import { Infinity, LogOut, Menu, X } from 'lucide-react';
+import { Infinity as InfinityIcon, LogOut, Menu, X } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext.jsx';
 import { cn } from '../../utils/cn.js';
 import { homePathForRole } from '../../utils/authHome.js';
@@ -54,7 +54,7 @@ export const TopAppBar = () => {
     <header className="sticky top-0 z-50 border-b border-border-dim bg-bg-void/80 backdrop-blur-xl">
       <div className="mx-auto flex h-16 max-w-[1400px] items-center justify-between gap-4 px-6">
         <Link to="/" onClick={closeMenu} className="group flex items-center gap-3 transition-opacity duration-160 hover:opacity-80">
-          <Infinity size={28} className="text-accent-cyan transition-transform duration-160 group-hover:scale-110" strokeWidth={2.5} />
+          <InfinityIcon size={28} className="text-accent-cyan transition-transform duration-160 group-hover:scale-110" strokeWidth={2.5} />
           <span className="font-sans text-[15px] font-black tracking-[0.22em] text-text-primary">VORTEX</span>
           {isAuth && user && (
             <span className="hidden sm:inline font-mono text-[11px] text-text-dim truncate max-w-[140px]">

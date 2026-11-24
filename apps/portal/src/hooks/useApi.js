@@ -27,7 +27,6 @@ export const useApi = (fetcher, deps = [], { refetchOnFocus = true, pollMs } = {
     } finally {
       setLoading(false);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {

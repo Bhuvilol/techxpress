@@ -1,7 +1,6 @@
 import { Link } from 'react-router-dom';
 import { ArrowRight, Trophy, Users, FileText, Gavel, Activity, Shield } from 'lucide-react';
 import { ScrambleText } from '../../components/ui/ScrambleText.jsx';
-import { NeonBorderCard } from '../../components/ui/NeonBorderCard.jsx';
 import { useAuth } from '../../contexts/AuthContext.jsx';
 import { homePathForRole } from '../../utils/authHome.js';
 
