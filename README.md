@@ -29,6 +29,17 @@ npm run build:local   # dist/ (site) + dist/vortex/ (portal)
 npm run preview       # wrangler dev on :8787
 ```
 
+## Documentation
+
+| | |
+|---|---|
+| [docs/DEPLOY.md](docs/DEPLOY.md) | Hosting, first-time setup, releases, domain and email |
+| [docs/RUNBOOK.md](docs/RUNBOOK.md) | Health checks, logs, rollback, incidents, launch-day steps |
+| [docs/CREDENTIALS.md](docs/CREDENTIALS.md) | Accounts and where each secret lives (no values) |
+| [infra/gcp/README.md](infra/gcp/README.md) | Google Cloud setup script |
+| [docs/VORTEX.md](docs/VORTEX.md) | What the VORTEX platform does, and its code layout |
+| [docs/KNOWN_ISSUES.md](docs/KNOWN_ISSUES.md) | Open issues by launch phase |
+
 ## License
 
 [AGPL-3.0](LICENSE).

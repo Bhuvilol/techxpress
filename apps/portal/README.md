@@ -1,15 +1,13 @@
-# Vortex — Frontend
+# VORTEX portal (frontend)
 
-A React 19 + Vite + Tailwind single-page app, deployed as a static
-**Cloudflare Worker** (`vortex-app`). See the [root README](../README.md) for
-the whole system.
+A React 19 + Vite + Tailwind single-page app, served under **`/vortex`** on the TechXpress domain by the shared Cloudflare Worker (see the [root README](../../README.md) and [docs/DEPLOY.md](../../docs/DEPLOY.md)).
 
 ## Run
 
 ```bash
 npm install
-npm run dev        # http://localhost:5173, proxies /api and /socket.io to http://127.0.0.1:3001
-npm run build      # production bundle in dist/
+npm run dev        # http://localhost:5174/vortex/, proxies /api and /socket.io to http://127.0.0.1:3001
+npm run build      # production bundle in dist/ (the root build copies it to dist/vortex/)
 npm run lint
 ```
 
@@ -17,21 +15,18 @@ npm run lint
 
 | Variable | Where | Meaning |
 |---|---|---|
-| `VITE_API_URL` | `.env` locally; a **build variable** in Cloudflare | Backend base URL, e.g. `https://api.3-6-239-100.sslip.io`. Empty means same origin (Docker/nginx and the Vite dev proxy) |
+| `VITE_API_URL` | `.env` locally; a **build variable** in Cloudflare Workers Builds | API base URL (the Cloud Run URL). Empty means same origin, i.e. the Vite dev proxy |
+| `VITE_ENABLE_TESTING` | `.env` locally only | `true` shows Admin → Testing (bulk test data). Leave unset in production |
 
-`VITE_API_URL` is baked in at **build time**. After changing it in
-Cloudflare, retry the build.
+Both are baked in at **build time**. After changing one in Cloudflare, trigger a new build.
 
-## Deploy
+## Base path
 
-- **Cloudflare Workers Builds** watches `main` (root directory `frontend`),
-  runs `npm ci && npm run build`, then `npx wrangler deploy`.
-- `wrangler.jsonc` sets the Worker name (`vortex-app`) and the SPA fallback,
-  so deep links like `/teams` load `index.html`.
-- **Local Docker image:** `Dockerfile` builds the bundle into nginx
-  (`nginx.conf` proxies `/api` and `/socket.io` to the backend container).
+`vite.config.js` sets `base: '/vortex/'` and `main.jsx` uses `<BrowserRouter basename="/vortex">`, so routes and `<Link>`s are written without the prefix (`/teams`, not `/vortex/teams`). Links **out** of the portal (the "← TechXpress" link to the train site) must be plain `<a href>` tags, because the router would add the prefix.
 
 ## Routes
+
+Paths below are relative to `/vortex`.
 
 | Path | Who | Page |
 |---|---|---|
@@ -43,7 +38,7 @@ Cloudflare, retry the build.
 | `/teams` | student | My Team: create/join, members, "Action needed" alerts, leader queues, **team chat** |
 | `/jury` | jury | Scoring board |
 | `/coordinator` | coordinator | Institution verification queue |
-| `/admin/*` | admin | Overview, Verification, Registry, Teams, Rules, Rounds, Taxonomy, Broadcast, Audit, Testing |
+| `/admin/*` | admin | Overview, Verification, Registry, Staff (staff login codes), Teams, Rules, Rounds, Taxonomy, Broadcast, Audit, Testing (only with `VITE_ENABLE_TESTING=true`) |
 
 ## Code layout
 

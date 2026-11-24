@@ -1,16 +1,28 @@
-# React + Vite
+# TechXpress train experience
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+The animated, story-style landing site served at `/` on the TechXpress domain. React 19, Vite, GSAP + ScrollTrigger, Lenis smooth scrolling, react-router 7, plain CSS.
 
-Currently, two official plugins are available:
+## Run
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+```bash
+npm install
+npm run dev      # http://localhost:5173
+npm run build    # dist/ (the root build copies it to the Worker's dist/)
+npm run lint
+```
 
-## React Compiler
+## Routes
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+| Path | Page |
+|---|---|
+| `/` | `TrainScene`: loading gate, the train arrives, station master Rajesh speaks; scroll or double-tap to enter |
+| `/interior` | `InteriorScene`: carriage interior with the hanging sign (About, Register, Ask) |
+| `/about` | About page |
+| `/ask` | Ask Rajesh (chat mock-up) |
+| `/register` | Redirects to the VORTEX portal at `/vortex/register` (full page load: the portal is a separate app) |
 
-## Expanding the ESLint configuration
+## Notes
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+- Lenis and the global styles in `src/index.css` (hidden scrollbars, body overflow) apply to this app only; the portal is a separate bundle.
+- `public/_headers` is copied to the root of the Worker's `dist/` and sets caching for **both** apps: hashed assets under `/assets/` and `/vortex/assets/` are immutable, page shells are `no-cache`.
+- `source-assets/` holds the original artwork and video; it isn't part of the build.
