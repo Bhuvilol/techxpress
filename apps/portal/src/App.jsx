@@ -27,6 +27,7 @@ import { AdminBroadcastPage }    from './pages/admin/AdminBroadcastPage.jsx';
 import { AdminAuditPage }        from './pages/admin/AdminAuditPage.jsx';
 import { AdminTestingPage }      from './pages/admin/AdminTestingPage.jsx';
 import { AdminRegistryPage }     from './pages/admin/AdminRegistryPage.jsx';
+import { AdminStaffPage }        from './pages/admin/AdminStaffPage.jsx';
 import { TESTING_ENABLED }       from './lib/features.js';
 import { CoordinatorVerificationPage } from './pages/coordinator/CoordinatorVerificationPage.jsx';
 
@@ -52,6 +53,7 @@ export const App = () => (
       <Route path="/admin"               element={<AdminOverviewPage />} />
       <Route path="/admin/verification"  element={<AdminVerificationPage />} />
       <Route path="/admin/registry"      element={<AdminRegistryPage />} />
+      <Route path="/admin/staff"         element={<AdminStaffPage />} />
       <Route path="/admin/teams"         element={<AdminTeamsPage />} />
       <Route path="/admin/rules"         element={<AdminRulesPage />} />
       <Route path="/admin/rounds"        element={<AdminRoundsPage />} />
