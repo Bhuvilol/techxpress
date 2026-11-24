@@ -53,12 +53,19 @@ app.use(
   }),
 );
 
-// Generous JSON limit — registration carries a base64 photo until we move to
-// object storage. Tune downward once uploads are externalized.
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
-
+// Before the body parsers, so requests they reject (413, bad JSON) are logged.
 app.use(requestLog);
+
+// Request bodies are small JSON (the profile photo is a URL, not an upload),
+// so cap them at 100 kb. The only exception is the testing import, which
+// parses its own larger body and exists only when ENABLE_TESTING_IMPORT=true.
+const TESTING_PATH = '/api/admin/testing';
+const smallJson = express.json({ limit: '100kb' });
+const smallForm = express.urlencoded({ extended: true, limit: '100kb' });
+app.use((req, res, next) => {
+  if (env.ENABLE_TESTING_IMPORT && req.path.startsWith(TESTING_PATH)) return next();
+  smallJson(req, res, (err) => (err ? next(err) : smallForm(req, res, next)));
+});
 
 // Readiness (checks the database) and liveness probes — see routes/health.js.
 app.use('/api/health', healthRoutes);
@@ -82,7 +89,10 @@ app.use('/api/leaderboard', leaderboardRoutes);
 app.use('/api/broadcast', broadcastPublicRouter);
 app.use('/api/admin/broadcast', broadcastAdminRouter);
 app.use('/api/admin/audit-logs', adminAuditRoutes);
-app.use('/api/admin/testing', adminTestingRoutes);
+if (env.ENABLE_TESTING_IMPORT) {
+  app.use(TESTING_PATH, express.json({ limit: '5mb' }), adminTestingRoutes);
+  logger.warn('testing import enabled — keep ENABLE_TESTING_IMPORT off in production');
+}
 app.use('/api/taxonomy', taxonomyPublicRouter);
 app.use('/api/admin/taxonomy', taxonomyAdminRouter);
 app.use('/api/awards', awardsRoutes);

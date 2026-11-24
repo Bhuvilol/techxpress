@@ -5,7 +5,11 @@ const threshold = LEVELS[env.LOG_LEVEL];
 
 const emit = (level, msg, meta) => {
   if (LEVELS[level] < threshold) return;
-  const record = { ts: new Date().toISOString(), level, msg, ...meta };
+  // `severity` is the field Cloud Logging reads for the log level; `message`
+  // becomes the entry's summary line.
+  const record = isProd
+    ? { severity: level.toUpperCase(), message: msg, ts: new Date().toISOString(), ...meta }
+    : { ts: new Date().toISOString(), level, msg, ...meta };
   const line = isProd ? JSON.stringify(record) : formatPretty(record);
   (level === 'error' || level === 'warn' ? process.stderr : process.stdout).write(line + '\n');
 };

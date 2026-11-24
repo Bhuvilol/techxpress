@@ -1,42 +1,35 @@
-# Build stage
-FROM node:20-slim AS builder
+# VORTEX API image for Cloud Run. The same image runs:
+#   - the service:          node src/index.js          (default CMD)
+#   - the migration job:    npx prisma migrate deploy
+#   - the seed job:         node prisma/seed.js
+# Never run `prisma db push` against a database with real data — it can drop
+# columns. Schema changes are migrations in prisma/migrations, reviewed in PRs.
 
-# Install OpenSSL for Prisma
-RUN apt-get update -y && apt-get install -y openssl
-
+FROM node:22-slim AS base
+# OpenSSL for Prisma; CA certificates for outbound HTTPS (Cloudflare email).
+RUN apt-get update -y \
+ && apt-get install -y --no-install-recommends openssl ca-certificates \
+ && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 
-COPY package*.json ./
-COPY prisma ./prisma/
+# Install production dependencies (the Prisma CLI is one, for the jobs) and
+# generate the Prisma client.
+FROM base AS deps
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev --no-audit --no-fund
+COPY prisma ./prisma
 COPY prisma.config.js ./
-
-RUN npm install
 RUN npx prisma generate
 
-COPY . .
+FROM base AS runner
+ENV NODE_ENV=production \
+    PORT=8080
+COPY --from=deps --chown=node:node /app/node_modules ./node_modules
+COPY --chown=node:node package.json package-lock.json prisma.config.js ./
+COPY --chown=node:node prisma ./prisma
+COPY --chown=node:node src ./src
 
-# Final stage
-FROM node:20-slim AS runner
-
-# Install OpenSSL for Prisma in the final stage too
-RUN apt-get update -y && apt-get install -y openssl
-
-WORKDIR /app
-
-COPY --from=builder /app/package*.json ./
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/prisma ./prisma
-COPY --from=builder /app/prisma.config.js ./
-COPY --from=builder /app/src ./src
-
-ENV NODE_ENV=production
-ENV PORT=3001
-
-EXPOSE 3001
-
-# The container only starts the app. Schema changes are applied as a separate
-# deploy step BEFORE the new container starts:
-#   docker compose run --rm backend npx prisma migrate deploy
-# Never run `prisma db push` against a database with real data — it can drop
-# columns. Migrations live in prisma/migrations and are reviewed in PRs.
+# Run as the image's unprivileged user, not root.
+USER node
+EXPOSE 8080
 CMD ["node", "src/index.js"]

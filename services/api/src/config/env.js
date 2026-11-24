@@ -10,7 +10,8 @@ const schema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   PORT: z.coerce.number().int().positive().default(3001),
   // Number of reverse proxies in front of the app, so req.ip is the real client
-  // IP (used by rate limiting). 1 = Caddy only; 2 = Cloudflare → Caddy.
+  // IP (used by rate limiting). 1 = Cloud Run's Google front end, or the Vite
+  // dev proxy. Check the `ip` field in the http logs after any change.
   TRUST_PROXY_HOPS: z.coerce.number().int().min(0).max(5).default(1),
   LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error']).default('info'),
 
@@ -23,13 +24,15 @@ const schema = z.object({
 
   CORS_ORIGIN: z
     .string()
-    .default('http://localhost:80,http://localhost:5173')
+    .default('http://localhost:5173,http://localhost:5174,http://localhost:8787')
     .transform((s) => s.split(',').map((o) => o.trim()).filter(Boolean)),
 
-  ADMIN_SEED_EMAIL: z.string().email().optional(),
-  ADMIN_SEED_PASSWORD: z.string().min(7).optional(),
-  JURY_SEED_PASSWORD: z.string().min(7).optional(),
-  COORDINATOR_SEED_PASSWORD: z.string().min(7).optional(),
+  // Mount /api/admin/testing (bulk test-data import). Off unless explicitly
+  // "true"; keep it off in production.
+  ENABLE_TESTING_IMPORT: z
+    .enum(['true', 'false', ''])
+    .default('false')
+    .transform((v) => v === 'true'),
 
   // Public URL of the website (no trailing slash), e.g. https://your-domain.
   // Used for links in emails: ${APP_URL}/vortex/login.
