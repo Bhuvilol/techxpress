@@ -43,6 +43,9 @@ PLACEHOLDER_IMAGE="us-docker.pkg.dev/cloudrun/container/hello"
 gc() { gcloud --project "$PROJECT_ID" --quiet "$@"; }
 step() { printf '\n\033[1m== %s\033[0m\n' "$*"; }
 note() { printf '   %s\n' "$*"; }
+# Resource names only: gcloud sometimes prints warnings (e.g. after an
+# auto-update) on stdout, which would otherwise end up in captured values.
+names() { grep -E '^projects/' | head -1 || true; }
 has_version() { [[ -n "$(gc secrets versions list "$1" --filter='state=ENABLED' --limit=1 --format='value(name)' 2>/dev/null)" ]]; }
 random_secret() { openssl rand -base64 "$1" | tr -d '\n/+=' ; }
 
@@ -268,22 +271,22 @@ monitoring() {
 
   step "Email notification channel"
   local channel
-  channel="$(gc beta monitoring channels list --filter="type=\"email\" AND labels.email_address=\"$ALERT_EMAIL\"" --format='value(name)' | head -1)"
+  channel="$(gc beta monitoring channels list --filter="type=\"email\" AND labels.email_address=\"$ALERT_EMAIL\"" --format='value(name)' | names)"
   if [[ -z "$channel" ]]; then
     channel="$(gc beta monitoring channels create --display-name "TechXpress alerts" --type email \
-      --channel-labels "email_address=$ALERT_EMAIL" --format='value(name)')"
+      --channel-labels "email_address=$ALERT_EMAIL" --format='value(name)' | names)"
   fi
   note "$channel"
 
   step "Uptime check on $url/api/health (every minute)"
   local check
-  check="$(gc monitoring uptime list-configs --filter='displayName="vortex-api-health"' --format='value(name)' | head -1)"
+  check="$(gc monitoring uptime list-configs --filter='displayName="vortex-api-health"' --format='value(name)' | names)"
   if [[ -z "$check" ]]; then
     gc monitoring uptime create vortex-api-health \
       --resource-type uptime-url --resource-labels "host=$host,project_id=$PROJECT_ID" \
       --protocol https --path /api/health --period 1 --timeout 10 \
       --matcher-type contains-string --matcher-content '"db":"ok"'
-    check="$(gc monitoring uptime list-configs --filter='displayName="vortex-api-health"' --format='value(name)' | head -1)"
+    check="$(gc monitoring uptime list-configs --filter='displayName="vortex-api-health"' --format='value(name)' | names)"
   fi
   local check_id="${check##*/}"
 
@@ -300,7 +303,7 @@ monitoring() {
   "conditions": [ $2 ]
 }
 JSON
-    if [[ -n "$(gc beta monitoring policies list --filter="displayName=\"$1\"" --format='value(name)')" ]]; then
+    if [[ -n "$(gc beta monitoring policies list --filter="displayName=\"$1\"" --format='value(name)' | names)" ]]; then
       note "exists: $1"
     else
       gc beta monitoring policies create --policy-from-file "$file" >/dev/null
