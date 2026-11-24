@@ -1,0 +1,48 @@
+# Local development only. Production runs on Cloud Run + Cloud SQL.
+#
+#   docker compose up -d db          Postgres only (then `npm run dev:api` on the host)
+#   docker compose --profile api up  Postgres + the API container (tests the image)
+#
+# Every value here is a throwaway local default, never a real credential.
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: vortex_user
+      POSTGRES_PASSWORD: vortex_password
+      POSTGRES_DB: vortex_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vortex_user -d vortex_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    profiles: ["api"]
+    build:
+      context: ./services/api
+    environment:
+      NODE_ENV: production
+      PORT: 8080
+      LOG_LEVEL: info
+      TRUST_PROXY_HOPS: 0
+      DATABASE_URL: postgresql://vortex_user:vortex_password@db:5432/vortex_db?schema=public
+      ACCESS_TOKEN_SECRET: local-only-access-token-secret-change-me-48chars
+      ACCESS_TOKEN_EXPIRY: 8h
+      BCRYPT_ROUNDS: 10
+      CORS_ORIGIN: http://localhost:5173,http://localhost:5174,http://localhost:8787
+      APP_URL: http://localhost:8787
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  postgres_data:

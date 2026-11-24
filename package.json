@@ -1,0 +1,23 @@
+{
+  "name": "techxpress",
+  "private": true,
+  "type": "module",
+  "license": "AGPL-3.0-only",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "setup": "npm ci && npm --prefix apps/site ci && npm --prefix apps/portal ci && npm --prefix services/api ci",
+    "dev:site": "npm --prefix apps/site run dev",
+    "dev:portal": "npm --prefix apps/portal run dev",
+    "dev:db": "docker compose up -d db",
+    "dev:api": "docker compose up -d db && npm --prefix services/api run dev",
+    "build": "node scripts/build.mjs",
+    "build:local": "node scripts/build.mjs --no-install",
+    "preview": "wrangler dev",
+    "lint": "npm --prefix apps/site run lint && npm --prefix apps/portal run lint"
+  },
+  "devDependencies": {
+    "wrangler": "^4.166.0"
+  }
+}
