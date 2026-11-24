@@ -7,7 +7,7 @@
     "node": ">=22"
   },
   "scripts": {
-    "setup": "npm ci && npm --prefix apps/site ci && npm --prefix apps/portal ci && npm --prefix services/api ci",
+    "setup": "npm ci && npm --prefix apps/site ci && npm --prefix apps/portal ci && npm --prefix services/api ci && npm --prefix services/api exec prisma generate",
     "dev:site": "npm --prefix apps/site run dev",
     "dev:portal": "npm --prefix apps/portal run dev",
     "dev:db": "docker compose up -d db",

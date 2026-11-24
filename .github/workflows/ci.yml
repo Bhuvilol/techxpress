@@ -76,6 +76,9 @@ jobs:
       - name: Validate the Prisma schema
         run: npx prisma validate
 
+      - name: Generate the Prisma client
+        run: npx prisma generate
+
       - name: Apply every migration to an empty database
         run: npx prisma migrate deploy
 
