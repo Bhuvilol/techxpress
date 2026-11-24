@@ -3,6 +3,9 @@ import react from '@vitejs/plugin-react';
 import path from 'node:path';
 
 export default defineConfig({
+  // The portal is served under /vortex/ on the TechXpress domain; the train
+  // site owns /. Asset URLs and the router basename (main.jsx) follow this.
+  base: '/vortex/',
   plugins: [react()],
   resolve: {
     alias: {
@@ -10,7 +13,8 @@ export default defineConfig({
     },
   },
   server: {
-    port: 5173,
+    port: 5174,
+    strictPort: true,
     proxy: {
       // Dev convenience — bypasses CORS during `npm run dev`. Production
       // build hits VITE_API_URL directly.

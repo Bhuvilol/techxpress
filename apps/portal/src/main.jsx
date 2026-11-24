@@ -10,7 +10,8 @@ import './index.css';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <BrowserRouter>
+    {/* Served under /vortex on the TechXpress domain (see vite.config.js base). */}
+    <BrowserRouter basename="/vortex">
       <ToastProvider>
         <AuthProvider>
           <BroadcastProvider>

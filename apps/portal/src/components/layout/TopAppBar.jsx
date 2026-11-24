@@ -20,6 +20,22 @@ const NavItem = ({ to, children, onClick }) => (
   </NavLink>
 );
 
+// Back to the TechXpress train site, which is a separate app at the domain
+// root: a plain <a> (full page load), not a router <Link>, because the
+// router's basename would turn "/" into "/vortex/".
+const TechXpressLink = () => (
+  <a
+    href="/"
+    className={cn(
+      'rounded-sm px-3 py-2 font-sans text-[13px] font-medium transition-all duration-160 ease-out-expo',
+      'text-text-dim hover:text-text-primary hover:bg-bg-surface-2',
+      'w-full md:w-auto md:text-center',
+    )}
+  >
+    ← TechXpress
+  </a>
+);
+
 export const TopAppBar = () => {
   const { user, isAuth, logout } = useAuth();
   const { pathname } = useLocation();
@@ -49,6 +65,7 @@ export const TopAppBar = () => {
 
         {/* Desktop Nav */}
         <nav className="hidden items-center gap-1 md:flex">
+          <TechXpressLink />
           <NavItem to="/leaderboard">Leaderboard</NavItem>
           <NavItem to="/problem-statements">Problems</NavItem>
           <NavItem to="/awards">Awards</NavItem>
@@ -94,6 +111,7 @@ export const TopAppBar = () => {
         isOpen ? 'h-[calc(100vh-64px)] opacity-100' : 'h-0 overflow-hidden opacity-0',
       )}>
         <nav className="flex flex-col gap-2 p-6">
+          <TechXpressLink />
           <div className="kicker mb-2"><span className="h-1.5 w-1.5 rounded-full bg-accent-cyan" />Command Center</div>
           <NavItem to="/leaderboard" onClick={closeMenu}>Leaderboard</NavItem>
           <NavItem to="/problem-statements" onClick={closeMenu}>Problems</NavItem>

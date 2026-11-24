@@ -6,8 +6,9 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext.jsx';
 import { cn } from '../../utils/cn.js';
+import { TESTING_ENABLED } from '../../lib/features.js';
 
-const NAV = [
+const ALL_NAV = [
   { to: '/admin',                end: true, label: 'Overview',     icon: Layers   },
   { to: '/admin/verification',              label: 'Verification', icon: ShieldCheck },
   { to: '/admin/registry',                  label: 'Registry',     icon: Database  },
@@ -18,8 +19,10 @@ const NAV = [
   { to: '/admin/taxonomy',                  label: 'Taxonomy',     icon: ListChecks },
   { to: '/admin/broadcast',                 label: 'Broadcast',    icon: Megaphone },
   { to: '/admin/audit',                     label: 'Audit Log',    icon: History   },
-  { to: '/admin/testing',                   label: 'Testing',      icon: FlaskConical },
+  { to: '/admin/testing',                   label: 'Testing',      icon: FlaskConical, testingOnly: true },
 ];
+
+const NAV = ALL_NAV.filter((item) => TESTING_ENABLED || !item.testingOnly);
 
 
 export const AdminShell = () => {

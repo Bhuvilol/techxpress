@@ -5,7 +5,8 @@ import { storage } from './storage.js';
 // — and reuse the same socket across the app. On logout we disconnect and
 // drop the reference so the next login forces a fresh handshake.
 
-const BASE = import.meta.env.VITE_API_URL ?? window.location.origin;
+// Empty or unset VITE_API_URL means "same origin" (the Vite dev proxy).
+const BASE = import.meta.env.VITE_API_URL || window.location.origin;
 
 let socket = null;
 
