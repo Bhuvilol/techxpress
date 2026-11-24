@@ -158,12 +158,25 @@ model User {
   broadcastsSent      Broadcast[]
   auditEntries        AuditLog[]
   teamMessages        TeamMessage[]
+  staffCredential     StaffCredential?
 
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
 
   @@index([verificationStatus])
   @@index([role])
+}
+
+// Readable login code for a staff account (JURY, COORDINATOR, ADMIN), shown
+// to admins on Admin → Staff so they can hand it over. Students never get a
+// row. Kept in its own table so no query on User can return it by accident;
+// only the admin staff endpoint reads it. Login still checks User.passwordHash.
+model StaffCredential {
+  userId    String   @id
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  password  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model CollegeRegistry {

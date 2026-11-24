@@ -28,6 +28,7 @@ import leaderboardRoutes from './routes/leaderboard.js';
 import { publicRouter as broadcastPublicRouter, adminRouter as broadcastAdminRouter } from './routes/broadcast.js';
 import adminAuditRoutes from './routes/adminAudit.js';
 import adminTestingRoutes from './routes/adminTesting.js';
+import adminStaffRoutes from './routes/adminStaff.js';
 import { publicRouter as taxonomyPublicRouter, adminRouter as taxonomyAdminRouter } from './routes/taxonomy.js';
 import awardsRoutes from './routes/awards.js';
 import studentsRoutes from './routes/students.js';
@@ -89,6 +90,7 @@ app.use('/api/leaderboard', leaderboardRoutes);
 app.use('/api/broadcast', broadcastPublicRouter);
 app.use('/api/admin/broadcast', broadcastAdminRouter);
 app.use('/api/admin/audit-logs', adminAuditRoutes);
+app.use('/api/admin/staff', adminStaffRoutes);
 if (env.ENABLE_TESTING_IMPORT) {
   app.use(TESTING_PATH, express.json({ limit: '5mb' }), adminTestingRoutes);
   logger.warn('testing import enabled — keep ENABLE_TESTING_IMPORT off in production');
