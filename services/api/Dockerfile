@@ -23,7 +23,8 @@ RUN npx prisma generate
 
 FROM base AS runner
 ENV NODE_ENV=production \
-    PORT=8080
+    PORT=8080 \
+    NPM_CONFIG_UPDATE_NOTIFIER=false
 COPY --from=deps --chown=node:node /app/node_modules ./node_modules
 COPY --chown=node:node package.json package-lock.json prisma.config.js ./
 COPY --chown=node:node prisma ./prisma
