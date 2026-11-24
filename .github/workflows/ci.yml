@@ -1,0 +1,97 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  frontend:
+    name: Frontend (lint + build)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            apps/site/package-lock.json
+            apps/portal/package-lock.json
+
+      - name: Install
+        run: |
+          npm ci --no-audit --no-fund
+          npm --prefix apps/site ci --no-audit --no-fund
+          npm --prefix apps/portal ci --no-audit --no-fund
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build both apps into dist/
+        run: node scripts/build.mjs --no-install
+        env:
+          VITE_API_URL: https://api.example.invalid
+
+  api:
+    name: API (schema, migrations, seed, image)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: vortex_user
+          POSTGRES_PASSWORD: vortex_password
+          POSTGRES_DB: vortex_db
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U vortex_user -d vortex_db"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: postgresql://vortex_user:vortex_password@localhost:5432/vortex_db?schema=public
+    defaults:
+      run:
+        working-directory: services/api
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: services/api/package-lock.json
+
+      - name: Install
+        run: npm ci --no-audit --no-fund
+
+      - name: Validate the Prisma schema
+        run: npx prisma validate
+
+      - name: Apply every migration to an empty database
+        run: npx prisma migrate deploy
+
+      - name: Migrations match the schema (no drift)
+        run: |
+          diff=$(npx prisma migrate diff --from-config-datasource --to-schema prisma/schema.prisma --script)
+          echo "$diff"
+          echo "$diff" | grep -q "empty migration" || { echo "::error::schema.prisma has changes with no migration"; exit 1; }
+
+      - name: Seed twice (idempotent)
+        run: |
+          npm run db:seed:dev
+          npm run db:seed:dev
+
+      - name: Check every source file parses
+        run: find src prisma -name '*.js' -print0 | xargs -0 -n1 node --check
+
+      - name: Build the image
+        run: docker build -t vortex-api:ci .

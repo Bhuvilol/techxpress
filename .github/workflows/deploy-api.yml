@@ -1,0 +1,86 @@
+name: Deploy API
+
+# Builds the API image, runs migrations as a Cloud Run job, deploys the
+# service, then checks /api/health. Signs in to GCP through Workload Identity
+# Federation: no keys are stored in GitHub. GCP only trusts tokens from this
+# repository's main branch (see infra/gcp/setup.sh).
+#
+# Repository variables (Settings → Secrets and variables → Actions → Variables):
+#   GCP_PROJECT_ID, GCP_REGION, WIF_PROVIDER, DEPLOYER_SA
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - services/api/**
+      - .github/workflows/deploy-api.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+# Never run two deploys at once, and never cancel one halfway (it may be
+# between migrating and deploying).
+concurrency:
+  group: deploy-api
+  cancel-in-progress: false
+
+env:
+  PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+  REGION: ${{ vars.GCP_REGION }}
+  SERVICE: vortex-api
+  IMAGE: ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/techxpress/vortex-api:${{ github.sha }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Sign in to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.WIF_PROVIDER }}
+          service_account: ${{ vars.DEPLOYER_SA }}
+
+      - uses: google-github-actions/setup-gcloud@v2
+
+      - name: Build and push the image
+        run: |
+          gcloud auth configure-docker "$REGION-docker.pkg.dev" --quiet
+          docker build -t "$IMAGE" services/api
+          docker push "$IMAGE"
+
+      - name: Run migrations (stops the deploy if they fail)
+        run: |
+          gcloud run jobs update vortex-migrate --image "$IMAGE" --region "$REGION" --quiet
+          gcloud run jobs execute vortex-migrate --region "$REGION" --wait
+
+      - name: Point the seed job at the new image
+        run: |
+          if gcloud run jobs describe vortex-seed --region "$REGION" >/dev/null 2>&1; then
+            gcloud run jobs update vortex-seed --image "$IMAGE" --region "$REGION" --quiet
+          else
+            echo "vortex-seed job not created yet; skipping"
+          fi
+
+      - name: Deploy the service
+        run: |
+          echo "Previous revision: $(gcloud run services describe "$SERVICE" --region "$REGION" --format 'value(status.latestReadyRevisionName)')"
+          gcloud run deploy "$SERVICE" --image "$IMAGE" --region "$REGION" --quiet
+
+      - name: Smoke test /api/health
+        run: |
+          url=$(gcloud run services describe "$SERVICE" --region "$REGION" --format 'value(status.url)')
+          for attempt in 1 2 3 4 5 6; do
+            body=$(curl -fsS --max-time 10 "$url/api/health" || true)
+            echo "attempt $attempt: $body"
+            if echo "$body" | grep -q '"status":"ok"' && echo "$body" | grep -q '"db":"ok"'; then
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "::error::API health check failed. Roll back with: gcloud run services update-traffic $SERVICE --region $REGION --to-revisions=<previous revision above>=100"
+          exit 1
