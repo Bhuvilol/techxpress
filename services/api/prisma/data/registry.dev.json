@@ -1,0 +1,50 @@
+[
+  {
+    "registrationNo": "2026-VRTX-100",
+    "fullName": "Alice Vance",
+    "email": "alice.vance@example.test",
+    "institution": "ITER | SOA"
+  },
+  {
+    "registrationNo": "2026-VRTX-101",
+    "fullName": "Bob Smith",
+    "email": "bob.smith@example.test",
+    "institution": "SPS | SOA"
+  },
+  {
+    "registrationNo": "2026-VRTX-102",
+    "fullName": "Carla Mendes",
+    "email": "carla.mendes@example.test",
+    "institution": "SNC | SOA"
+  },
+  {
+    "registrationNo": "2026-VRTX-103",
+    "fullName": "Devraj Patil",
+    "email": "devraj.patil@example.test",
+    "institution": "IMS & SUM | SOA"
+  },
+  {
+    "registrationNo": "2026-VRTX-104",
+    "fullName": "Esha Nair",
+    "email": "esha.nair@example.test",
+    "institution": "IDS | SOA"
+  },
+  {
+    "registrationNo": "2026-VRTX-105",
+    "fullName": "Farhan Iqbal",
+    "email": "farhan.iqbal@example.test",
+    "institution": "SNIL | SOA"
+  },
+  {
+    "registrationNo": "2026-VRTX-106",
+    "fullName": "Gita Roy",
+    "email": "gita.roy@example.test",
+    "institution": "IAS | SOA"
+  },
+  {
+    "registrationNo": "2026-VRTX-107",
+    "fullName": "Hari Menon",
+    "email": "hari.menon@example.test",
+    "institution": "IVS & AH | SOA"
+  }
+]

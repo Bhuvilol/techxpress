@@ -1,0 +1,6 @@
+[
+  { "fullName": "Jury Alpha", "email": "jury.alpha@example.test", "role": "JURY" },
+  { "fullName": "Jury Bravo", "email": "jury.bravo@example.test", "role": "JURY" },
+  { "fullName": "ITER Coordinator", "email": "coordinator.iter@example.test", "role": "COORDINATOR", "institution": "ITER | SOA" },
+  { "fullName": "SPS Coordinator", "email": "coordinator.sps@example.test", "role": "COORDINATOR", "institution": "SPS | SOA" }
+]

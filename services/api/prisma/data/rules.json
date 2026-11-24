@@ -1,0 +1,10 @@
+{
+  "minTeamSize": 3,
+  "maxTeamSize": 5,
+  "minFemaleMembers": 1,
+  "minDomainExperts": 1,
+  "registrationOpen": false,
+  "teamFormationOpen": true,
+  "leaderboardVisible": false,
+  "showMarks": false
+}

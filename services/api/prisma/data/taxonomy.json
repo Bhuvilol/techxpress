@@ -1,0 +1,192 @@
+{
+  "institutions": [
+    "ITER | SOA",
+    "SPS | SOA",
+    "SNC | SOA",
+    "IMS & SUM | SOA",
+    "IDS | SOA",
+    "SNIL | SOA",
+    "IAS | SOA",
+    "IVS & AH | SOA",
+    "IBCS | SOA",
+    "SHM | SOA"
+  ],
+  "domains": [
+    "Healthcare & Medical Technology",
+    "Pharmaceutical Innovation",
+    "Nursing & Patient Care",
+    "Mental Health & Wellness",
+    "Dental Healthcare",
+    "Agriculture & Smart Farming",
+    "Veterinary & Animal Welfare",
+    "Food Technology",
+    "Environmental Sustainability",
+    "Climate & Green Technology",
+    "Legal Technology",
+    "Cybersecurity & Digital Safety",
+    "Artificial Intelligence",
+    "Education Technology",
+    "Business & Finance",
+    "Marketing & Consumer Experience",
+    "Hospitality & Tourism",
+    "Smart Campus Solutions",
+    "Social Impact & Community Development",
+    "E-Commerce & Retail",
+    "Productivity & Workflow Automation",
+    "Research & Innovation",
+    "IoT & Smart Devices",
+    "Public Health Systems",
+    "Women Safety & Empowerment",
+    "Accessibility & Inclusion",
+    "Rural Development",
+    "Supply Chain & Logistics",
+    "Open Innovation"
+  ],
+  "problemStatements": [
+    {
+      "domain": "Healthcare & Medical Technology",
+      "title": "Remote triage assistant for primary care",
+      "description": "Build a multilingual intake workflow that prioritizes patients using symptoms, vitals, and urgency rules."
+    },
+    {
+      "domain": "Pharmaceutical Innovation",
+      "title": "Cold-chain visibility for essential medicines",
+      "description": "Track temperature excursions across storage and transit with automated alerting for quality teams."
+    },
+    {
+      "domain": "Nursing & Patient Care",
+      "title": "Bedside handover companion for nursing shifts",
+      "description": "Design a structured handover tool that captures vitals, medications, and care notes with offline support and audit history."
+    },
+    {
+      "domain": "Mental Health & Wellness",
+      "title": "Early burnout signal detection for students",
+      "description": "Design a privacy-conscious wellbeing check-in system with escalation pathways and self-help interventions."
+    },
+    {
+      "domain": "Dental Healthcare",
+      "title": "AI-assisted dental imaging triage",
+      "description": "Help dental clinicians prioritize X-ray reviews by flagging cavities, bone loss, and abnormalities with confidence scores."
+    },
+    {
+      "domain": "Agriculture & Smart Farming",
+      "title": "Precision irrigation for smallholder farms",
+      "description": "Use soil, weather, and crop signals to recommend irrigation schedules that reduce water waste."
+    },
+    {
+      "domain": "Veterinary & Animal Welfare",
+      "title": "Livestock health monitoring for rural vets",
+      "description": "Build a low-bandwidth field tool that lets para-vets log symptoms, track outbreaks, and request remote consults."
+    },
+    {
+      "domain": "Food Technology",
+      "title": "Shelf-life prediction for perishable inventory",
+      "description": "Combine packaging data, storage conditions, and supply timelines to predict spoilage and reduce food waste in retail."
+    },
+    {
+      "domain": "Environmental Sustainability",
+      "title": "Smart waste segregation feedback loop",
+      "description": "Prototype a vision-assisted waste sorting system that improves recycling compliance on campus."
+    },
+    {
+      "domain": "Climate & Green Technology",
+      "title": "Hyperlocal air quality reporter",
+      "description": "Aggregate low-cost sensor readings into ward-level air quality dashboards with health-impact guidance for residents."
+    },
+    {
+      "domain": "Legal Technology",
+      "title": "Plain-language explainer for legal notices",
+      "description": "Convert dense legal documents into structured summaries, obligations, and timelines that non-lawyers can act on."
+    },
+    {
+      "domain": "Cybersecurity & Digital Safety",
+      "title": "Phishing-resistant SSO for student portals",
+      "description": "Build a passkey-based SSO with attested device binding and risk-based recovery flows."
+    },
+    {
+      "domain": "Artificial Intelligence",
+      "title": "On-device speech-to-action assistant",
+      "description": "Create a low-latency assistant that converts natural speech into reliable actions on constrained devices."
+    },
+    {
+      "domain": "Education Technology",
+      "title": "Adaptive practice for foundational math gaps",
+      "description": "Diagnose conceptual gaps from short assessments and generate targeted practice that moves at each learner's pace."
+    },
+    {
+      "domain": "Business & Finance",
+      "title": "Cashflow forecasting for micro-businesses",
+      "description": "Help small shop owners project the next 30 days of cashflow from invoices, receipts, and seasonality patterns."
+    },
+    {
+      "domain": "Marketing & Consumer Experience",
+      "title": "Sentiment-aware product feedback inbox",
+      "description": "Cluster reviews and support tickets into themes ranked by emotional intensity and business impact."
+    },
+    {
+      "domain": "Hospitality & Tourism",
+      "title": "Itinerary builder for off-season travel",
+      "description": "Recommend personalized multi-day itineraries that surface lesser-known destinations and balance cost, distance, and weather."
+    },
+    {
+      "domain": "Smart Campus Solutions",
+      "title": "Predictive maintenance for campus infrastructure",
+      "description": "Use equipment telemetry to forecast failures in lifts, labs, and utilities before outages occur."
+    },
+    {
+      "domain": "Social Impact & Community Development",
+      "title": "Volunteer matching for hyperlocal causes",
+      "description": "Match volunteers to nearby NGOs by skill, time slot, and cause area, with verified impact tracking."
+    },
+    {
+      "domain": "E-Commerce & Retail",
+      "title": "Returns intelligence for D2C brands",
+      "description": "Surface root causes of returns from product, fit, and review signals so brands can fix listings and reduce reverse logistics."
+    },
+    {
+      "domain": "Productivity & Workflow Automation",
+      "title": "Meeting-to-action distiller",
+      "description": "Turn long meeting transcripts into prioritized action items with owners, deadlines, and follow-up nudges."
+    },
+    {
+      "domain": "Research & Innovation",
+      "title": "Literature gap finder for student researchers",
+      "description": "Help undergrads spot under-explored sub-topics in a field by clustering recent papers and surfacing thin citation areas."
+    },
+    {
+      "domain": "IoT & Smart Devices",
+      "title": "Edge-managed energy budget for shared spaces",
+      "description": "Coordinate appliances and lighting in shared housing to stay within an agreed energy budget without manual scheduling."
+    },
+    {
+      "domain": "Public Health Systems",
+      "title": "Outbreak-pattern dashboard for district health offices",
+      "description": "Aggregate clinic-level case data into early-warning signals that respect privacy and work over intermittent connectivity."
+    },
+    {
+      "domain": "Women Safety & Empowerment",
+      "title": "Safe-route escort and rapid alert network",
+      "description": "Develop a route-aware system for emergency escalation, volunteer response, and evidence capture."
+    },
+    {
+      "domain": "Accessibility & Inclusion",
+      "title": "Real-time captioning for classroom lectures",
+      "description": "Deliver low-latency captions and glossary support for hearing-impaired students, with teacher controls for terminology."
+    },
+    {
+      "domain": "Rural Development",
+      "title": "Last-mile service request board for panchayats",
+      "description": "Let villagers raise civic requests by voice or SMS and route them to the right department with transparent SLAs."
+    },
+    {
+      "domain": "Supply Chain & Logistics",
+      "title": "Real-time warehouse routing under congestion",
+      "description": "Optimize picking and movement paths using live aisle conditions, queueing data, and operational constraints."
+    },
+    {
+      "domain": "Open Innovation",
+      "title": "Open challenge: pick a real campus problem and ship a 48-hour prototype",
+      "description": "Identify a friction point you observe daily on campus, scope it tightly, and ship a working prototype with a 2-minute demo. Judged on problem clarity and execution."
+    }
+  ]
+}
