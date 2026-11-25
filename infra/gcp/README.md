@@ -46,7 +46,8 @@ At the end it prints the four GitHub repository variables. Add them under **Sett
 ### 4. Add the remaining secrets
 Type values at a hidden prompt so they never land in shell history:
 ```sh
-add_secret() { read -rs -p "$1: " v && echo && printf '%s' "$v" | gcloud secrets versions add "$1" --data-file=- && unset v; }
+# Works in bash and zsh (macOS default): prompt with printf, read silently.
+add_secret() { printf '%s: ' "$1"; IFS= read -rs v && echo && printf '%s' "$v" | gcloud secrets versions add "$1" --data-file=- && unset v; }
 
 add_secret ADMIN_SEED_PASSWORD     # 12+ characters, unique
 add_secret CF_EMAIL_API_TOKEN      # Cloudflare token with only "Email Sending Write"
