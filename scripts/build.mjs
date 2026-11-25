@@ -7,8 +7,9 @@
 //   node scripts/build.mjs               install each app (npm ci), then build
 //   node scripts/build.mjs --no-install  build with the node_modules already there
 //
-// The portal needs VITE_API_URL at build time (the Cloud Run URL in
-// production). It is read from the environment, as Vite normally does.
+// The site (its registration form) and the portal both need VITE_API_URL at
+// build time (the Cloud Run URL in production). It is read from the
+// environment, as Vite normally does.
 
 import { spawnSync } from 'node:child_process';
 import { cpSync, existsSync, rmSync } from 'node:fs';
@@ -34,7 +35,7 @@ const run = (cwd, args) => {
 };
 
 if (!process.env.VITE_API_URL) {
-  console.warn('warning: VITE_API_URL is not set; the portal will call the API on its own origin.');
+  console.warn('warning: VITE_API_URL is not set; the site (registration) and the portal will call the API on their own origin, which the Worker does not serve.');
 }
 
 for (const app of apps) {

@@ -80,7 +80,7 @@ const INITIAL_FORM = {
   email: '',
   registrationNo: '',
   phone: '',
-  gender: 'MALE',
+  gender: '', // no default: a guessed value would feed the team gender rules
   idCard: '',
   institutionId: '',
   preferredDomains: [],
@@ -715,6 +715,7 @@ export default function RegisterPage({ onBack }) {
 
                 <FieldWrap field="gender" label="GENDER" required error={errors.gender}>
                   <select value={form.gender} onChange={setField('gender')} disabled={busy}>
+                    <option value="" disabled>Select gender</option>
                     <option value="MALE">Male</option>
                     <option value="FEMALE">Female</option>
                     <option value="OTHER">Other / Prefer not to say</option>
