@@ -4,6 +4,7 @@ import { auditService } from '../services/audit.service.js';
 import {
   sendVerificationApprovedMail,
   sendVerificationRejectedMail,
+  sendReregisterRequestMail,
 } from '../utils/mail.js';
 
 // A coordinator assigned to an institution only sees and acts on students
@@ -85,4 +86,37 @@ export const reject = async (req, res) => {
 export const idCard = async (req, res) => {
   const card = await userService.getIdCard(req.params.id, { institutionId: requireCoordinatorInstitutionId(req) });
   sendIdCard(res, card);
+};
+
+// The ID card (or other details) can't be verified: remove the pending
+// registration and email the student to register again.
+export const requestReregistration = async (req, res) => {
+  const snapshot = await userService.removeForReregistration(req.params.id, { institutionId: requireCoordinatorInstitutionId(req) });
+  const mail = await sendReregisterRequestMail({
+    to: snapshot.email,
+    fullName: snapshot.fullName,
+    note: req.body.note,
+  });
+
+  auditService.record({
+    actorId: req.user.id,
+    action: 'USER_REJECTED',
+    entityType: 'User',
+    entityId: snapshot.id,
+    details: {
+      kind: 'REREGISTER_REQUESTED',
+      email: snapshot.email,
+      registrationNo: snapshot.registrationNo,
+      note: req.body.note ?? null,
+      via: 'COORDINATOR',
+      emailDelivered: mail.delivered,
+    },
+  });
+
+  res.json({
+    message: mail.delivered
+      ? 'Registration removed and the student was emailed to register again'
+      : 'Registration removed, but the email could not be sent. Contact the student directly',
+    emailDelivered: mail.delivered,
+  });
 };

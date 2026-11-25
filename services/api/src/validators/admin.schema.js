@@ -9,6 +9,11 @@ export const rejectBodySchema = z.object({
   reason: z.string().trim().max(500).optional(),
 });
 
+// "Ask to re-register": optional note for the student (e.g. what was unclear).
+export const reregisterBodySchema = z.object({
+  note: z.string().trim().max(500).optional(),
+});
+
 export const listStudentsQuerySchema = z.object({
   status: z.enum(['PENDING', 'VERIFIED', 'REJECTED', 'REVOKED']).optional(),
   search: z.string().trim().max(120).optional().transform((v) => v || undefined),

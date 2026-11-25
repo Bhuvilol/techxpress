@@ -5,6 +5,7 @@ import { ah } from '../utils/asyncHandler.js';
 import {
   userIdParamSchema,
   rejectBodySchema,
+  reregisterBodySchema,
   listStudentsQuerySchema,
   lookupByRegistrationNoQuerySchema,
 } from '../validators/admin.schema.js';
@@ -19,6 +20,7 @@ import {
   restore,
   reissue,
   idCard,
+  requestReregistration,
 } from '../controllers/adminVerification.controller.js';
 
 const router = Router();
@@ -39,6 +41,9 @@ router.post('/students/:id/approve',
 
 router.post('/students/:id/reject',
   validate({ params: userIdParamSchema, body: rejectBodySchema }), ah(reject));
+
+router.post('/students/:id/request-reregistration',
+  validate({ params: userIdParamSchema, body: reregisterBodySchema }), ah(requestReregistration));
 
 router.post('/students/:id/revoke',
   validate({ params: userIdParamSchema }), ah(revoke));
