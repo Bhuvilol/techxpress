@@ -573,7 +573,7 @@ export const RegistrationPage = () => {
                 field="domainId" label={requiredLabel('Preferred Domain')}
                 field="preferredDomains"
                 error={errors.domainId ?? errors.preferredDomains}
-                hint="Your first pick is your primary domain, used for team formation and qualification."
+                hint="Pick up to 4. Your first pick (#1) is your primary domain, used for team formation and qualification."
               >
                 {domLoading ? (
                   <div className="input-glass flex h-12 items-center gap-2 text-white/40"><Spinner size={12} /> Loading...</div>
