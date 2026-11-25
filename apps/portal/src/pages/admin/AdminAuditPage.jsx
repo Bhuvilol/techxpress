@@ -9,6 +9,7 @@ import { Empty } from '../../components/ui/Empty.jsx';
 import { CardSkeleton } from '../../components/ui/Skeleton.jsx';
 import { Badge } from '../../components/ui/Badge.jsx';
 import { StatTile } from '../../components/ui/StatTile.jsx';
+import { Pagination } from '../../components/ui/Pagination.jsx';
 import { formatDate, titleCase } from '../../utils/format.js';
 
 const ACTIONS = [
@@ -27,7 +28,8 @@ const ACTIONS = [
 ];
 
 const ACTOR_ROLES = ['', 'ADMIN', 'JURY', 'COORDINATOR', 'STUDENT'];
-const LIMITS = [100, 250, 500];
+// Entries per page (the API pages the list; the export ignores this).
+const PAGE_SIZE = 100;
 
 const ACTION_TONE = {
   USER_VERIFIED: 'live',
@@ -55,8 +57,8 @@ export const AdminAuditPage = () => {
     actorRole: '',
     since: '',
     until: '',
-    limit: 250,
   });
+  const [page, setPage] = useState(1);
 
   const query = useMemo(() => ({
     q: filters.q || undefined,
@@ -66,25 +68,32 @@ export const AdminAuditPage = () => {
     actorRole: filters.actorRole || undefined,
     since: filters.since || undefined,
     until: filters.until ? `${filters.until}T23:59:59.999` : undefined,
-    limit: filters.limit,
   }), [filters]);
 
   const { data, loading } = useApi(
-    () => api.get('/api/admin/audit-logs', { query }),
-    [query],
+    () => api.get('/api/admin/audit-logs', { query: { ...query, page, limit: PAGE_SIZE } }),
+    [query, page],
   );
 
   const stats = useMemo(() => {
     const entries = data?.entries ?? [];
     return {
-      count: entries.length,
+      count: data?.total ?? entries.length,
       actors: new Set(entries.map((entry) => entry.actor?.id).filter(Boolean)).size,
       actions: new Set(entries.map((entry) => entry.action)).size,
       systemEvents: entries.filter((entry) => !entry.actor).length,
     };
   }, [data]);
 
-  const update = (key, value) => setFilters((prev) => ({ ...prev, [key]: value }));
+  // Changing a filter goes back to the first page.
+  const update = (key, value) => {
+    setFilters((prev) => ({ ...prev, [key]: value }));
+    setPage(1);
+  };
+  const goToPage = (next) => {
+    setPage(next);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   const resetFilters = () => {
     setFilters({
@@ -95,14 +104,15 @@ export const AdminAuditPage = () => {
       actorRole: '',
       since: '',
       until: '',
-      limit: 250,
     });
+    setPage(1);
   };
 
   const exportXlsx = async () => {
     const token = storage.getToken();
     try {
-      const qs = new URLSearchParams(Object.entries(query).filter(([, value]) => value !== undefined && value !== ''));
+      // The export covers every matching entry (up to 5000), not just this page.
+      const qs = new URLSearchParams(Object.entries({ ...query, limit: 5000 }).filter(([, value]) => value !== undefined && value !== ''));
       const res = await fetch(`${API_BASE}/api/admin/audit-logs/export.xlsx?${qs.toString()}`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
@@ -139,10 +149,10 @@ export const AdminAuditPage = () => {
       />
 
       <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatTile icon={History} label="Visible Entries" value={stats.count} hint="After current filters" />
-        <StatTile icon={UserRound} label="Actors" value={stats.actors} hint="Distinct users in result" />
-        <StatTile icon={Filter} label="Action Types" value={stats.actions} hint="Distinct action categories" />
-        <StatTile icon={Database} label="System Events" value={stats.systemEvents} hint="Rows without an actor" />
+        <StatTile icon={History} label="Matching Entries" value={stats.count} hint="All pages, after current filters" />
+        <StatTile icon={UserRound} label="Actors" value={stats.actors} hint="Distinct users on this page" />
+        <StatTile icon={Filter} label="Action Types" value={stats.actions} hint="Distinct actions on this page" />
+        <StatTile icon={Database} label="System Events" value={stats.systemEvents} hint="Rows without an actor, this page" />
       </div>
 
       <div className="mb-8 grid gap-3 rounded-none border border-white/5 bg-[#050505] p-4 lg:grid-cols-6">
@@ -188,12 +198,6 @@ export const AdminAuditPage = () => {
           <input className="input-glass !h-11" type="date" value={filters.until} onChange={(e) => update('until', e.target.value)} />
         </label>
 
-        <label className="flex flex-col gap-1">
-          <span className="font-mono text-[10px] uppercase tracking-[0.15em] text-white/35">Row limit</span>
-          <select className="select-glass !h-11" value={filters.limit} onChange={(e) => update('limit', Number(e.target.value))}>
-            {LIMITS.map((value) => <option key={value} value={value}>{value} rows</option>)}
-          </select>
-        </label>
       </div>
 
       {loading && <CardSkeleton rows={5} />}
@@ -265,6 +269,15 @@ export const AdminAuditPage = () => {
               </tbody>
             </table>
           </div>
+          <Pagination
+            className="border-t border-white/5 px-4 py-3"
+            page={data.page}
+            totalPages={data.totalPages}
+            total={data.total}
+            limit={data.pageSize}
+            onPageChange={goToPage}
+            itemLabel="entries"
+          />
         </div>
       )}
     </>
