@@ -6,9 +6,10 @@ import InteriorScene from './components/InteriorScene';
 import AboutPage from './components/content/AboutPage';
 import AskRajesh from './components/content/AskRajesh';
 
-// The VORTEX portal is a separate app on the same domain, so going there is a
-// full page load, not a client-side route change.
-const REGISTER_PATH = '/vortex/register';
+// "Register" opens the VORTEX portal's home page. The portal is a separate app
+// on the same domain, so going there is a full page load, not a client-side
+// route change.
+const REGISTER_PATH = '/vortex/';
 
 function RegisterRedirect() {
   useEffect(() => {

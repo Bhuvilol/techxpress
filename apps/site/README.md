@@ -19,7 +19,7 @@ npm run lint
 | `/interior` | `InteriorScene`: carriage interior with the hanging sign (About, Register, Ask) |
 | `/about` | About page |
 | `/ask` | Ask Rajesh (chat mock-up) |
-| `/register` | Redirects to the VORTEX portal at `/vortex/register` (full page load: the portal is a separate app) |
+| `/register` | Redirects to the VORTEX portal home at `/vortex/` (full page load: the portal is a separate app). The sign's Register button goes there too |
 
 ## Notes
 
