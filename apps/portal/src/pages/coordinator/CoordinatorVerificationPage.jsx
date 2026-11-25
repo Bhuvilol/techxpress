@@ -22,6 +22,9 @@ export const CoordinatorVerificationPage = () => {
   // A coordinator without an institution reviews every institution.
   const scoped = Boolean(user?.institution?.name);
   const [tab, setTab] = useState('PENDING');
+  const [search, setSearch] = useState('');
+  const [reject, setReject] = useState(null);
+  const [idCardFor, setIdCardFor] = useState(null);
   // Coordinators without an institution can narrow the lists to one.
   const [filterInstitutionId, setFilterInstitutionId] = useState('');
   const institutions = useApi(
@@ -33,9 +36,6 @@ export const CoordinatorVerificationPage = () => {
   const filterName = institutionOptions.find?.((i) => i.id === filterInstitutionId)?.name;
   const institutionName = user?.institution?.name ?? filterName ?? 'All institutions';
   const listQuery = { search, institutionId: scoped ? undefined : filterInstitutionId || undefined };
-  const [search, setSearch] = useState('');
-  const [reject, setReject] = useState(null);
-  const [idCardFor, setIdCardFor] = useState(null);
 
   const pending = useApi(
     () => api.get('/api/coordinator/verification/pending', { query: listQuery }),
