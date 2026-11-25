@@ -80,7 +80,8 @@ describe('validateRegistration', () => {
   it('year / semester must be one of the dropdown options', () => {
     expect(validateRegistration(validForm({ yearSemester: '3rd Year / Semester 6' }))).toEqual({});
     expect(validateRegistration(validForm({ yearSemester: '3rd year, sem 6' })).yearSemester).toMatch(/Select your year/);
-    expect(validateRegistration(validForm({ yearSemester: '5th Year / Semester 9' })).yearSemester).toBeTruthy();
+    expect(validateRegistration(validForm({ yearSemester: '6th Year / Semester 12' }))).toEqual({});
+    expect(validateRegistration(validForm({ yearSemester: '6th Year / Semester 13' })).yearSemester).toBeTruthy();
   });
 
   it('checks the email shape', () => {

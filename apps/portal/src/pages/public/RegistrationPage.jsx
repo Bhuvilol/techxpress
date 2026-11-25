@@ -173,6 +173,10 @@ const YEAR_SEMESTER_OPTIONS = [
   '3rd Year / Semester 6',
   '4th Year / Semester 7',
   '4th Year / Semester 8',
+  '5th Year / Semester 9',
+  '5th Year / Semester 10',
+  '6th Year / Semester 11',
+  '6th Year / Semester 12',
 ];
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
