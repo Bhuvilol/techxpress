@@ -128,6 +128,41 @@ const isValidUrl = (value) => {
   }
 };
 
+export // Profile links must point at the right site. Same rules as the server
+// (services/api/src/utils/profileLinks.js).
+const parseLink = (value) => {
+  try {
+    const u = new URL(value);
+    return u.protocol === 'https:' || u.protocol === 'http:' ? u : null;
+  } catch {
+    return null;
+  }
+};
+const onHost = (u, host) => u.hostname === host || u.hostname.endsWith(`.${host}`);
+const GITHUB_USER = /^[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?$/;
+
+const isLinkedInProfile = (value) => {
+  const u = parseLink(value);
+  return Boolean(u && onHost(u, 'linkedin.com') && /^\/in\/[^/]+\/?$/i.test(u.pathname));
+};
+const isGitHubProfile = (value) => {
+  const u = parseLink(value);
+  if (!u || !['github.com', 'www.github.com'].includes(u.hostname)) return false;
+  const [user, ...rest] = u.pathname.split('/').filter(Boolean);
+  return Boolean(user && GITHUB_USER.test(user) && rest.length === 0);
+};
+const isDriveFileLink = (value) => {
+  const u = parseLink(value);
+  return Boolean(u && onHost(u, 'drive.google.com') && /^\/file\/d\/[^/]+/.test(u.pathname));
+};
+
+// Each profile field: the check and the message shown when it fails.
+const PROFILE_CHECKS = {
+  linkedinUrl: { valid: isLinkedInProfile, message: 'LinkedIn' },
+  githubUrl: { valid: isGitHubProfile, message: 'GitHub' },
+  resumeDriveLink: { valid: isDriveFileLink, message: 'Google Drive file' },
+};
+
 export const validateRegistration = (f) => {
   const e = {};
   const name = f.fullName.trim();
@@ -159,7 +194,13 @@ export const validateRegistration = (f) => {
   if (f.nonTechnicalSkills.length > 500) e.nonTechnicalSkills = 'Keep non-technical skills under 500 characters.';
 
   for (const key of URL_FIELDS) {
-    if (f[key] && !isValidUrl(f[key])) e[key] = `Enter a complete link, e.g. ${URL_EXAMPLES[key]}`;
+    if (!f[key]) continue;
+    const profile = PROFILE_CHECKS[key];
+    if (profile) {
+      if (!profile.valid(f[key])) e[key] = `Enter your ${profile.message} link, e.g. ${URL_EXAMPLES[key]}`;
+    } else if (!isValidUrl(f[key])) {
+      e[key] = `Enter a complete link, e.g. ${URL_EXAMPLES[key]}`;
+    }
   }
 
   const bio = f.bio.trim();

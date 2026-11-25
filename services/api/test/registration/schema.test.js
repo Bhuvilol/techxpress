@@ -118,3 +118,51 @@ test('the ID card must be a supported image', () => {
   assert.ok(fieldErrors(validBody({ idCard: 'data:image/gif;base64,AAAA' })).idCard);
   assert.ok(fieldErrors(validBody({ idCard: 'hello' })).idCard);
 });
+
+test('LinkedIn must be a linkedin.com profile link', () => {
+  for (const ok of ['https://linkedin.com/in/asha', 'https://www.linkedin.com/in/asha-k/', 'https://in.linkedin.com/in/asha']) {
+    assert.equal(parsed(validBody({ linkedinUrl: ok })).linkedinUrl, ok);
+  }
+  for (const bad of [
+    'https://linkedin.com/company/acme',
+    'https://linkedin.com/in/',
+    'https://evil-linkedin.com/in/asha',
+    'https://notlinkedin.com/in/asha',
+    'linkedin.com/in/asha',
+    'ftp://linkedin.com/in/asha',
+  ]) {
+    assert.ok(fieldErrors(validBody({ linkedinUrl: bad })).linkedinUrl, `${bad} must be rejected`);
+  }
+});
+
+test('GitHub must be a github.com profile link', () => {
+  for (const ok of ['https://github.com/asha', 'https://github.com/asha-k', 'https://www.github.com/a1b2']) {
+    assert.equal(parsed(validBody({ githubUrl: ok })).githubUrl, ok);
+  }
+  for (const bad of [
+    'https://github.com/asha/repo',
+    'https://github.com/-bad',
+    'https://github.com/bad-',
+    'https://github.com/',
+    'https://gist.github.com/asha',
+    'https://github.com.evil.example/asha',
+    'https://' + 'a'.repeat(40) + '.example.com',
+  ]) {
+    assert.ok(fieldErrors(validBody({ githubUrl: bad })).githubUrl, `${bad} must be rejected`);
+  }
+});
+
+test('the resume must be a Google Drive file link', () => {
+  assert.equal(
+    parsed(validBody({ resumeDriveLink: 'https://drive.google.com/file/d/abc123/view?usp=sharing' })).resumeDriveLink,
+    'https://drive.google.com/file/d/abc123/view?usp=sharing',
+  );
+  for (const bad of [
+    'https://drive.google.com/drive/folders/abc',
+    'https://drive.google.com/',
+    'https://docs.google.com/document/d/abc',
+    'https://example.com/resume.pdf',
+  ]) {
+    assert.ok(fieldErrors(validBody({ resumeDriveLink: bad })).resumeDriveLink, `${bad} must be rejected`);
+  }
+});

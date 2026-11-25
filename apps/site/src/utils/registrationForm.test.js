@@ -113,12 +113,29 @@ describe('validateRegistration', () => {
     expect(validateRegistration(validForm({ technicalSkills: 'x'.repeat(500) }))).toEqual({});
   });
 
-  it('checks each link field only when it is filled, and needs a dotted host', () => {
-    expect(validateRegistration(validForm({ githubUrl: '' }))).toEqual({});
-    expect(validateRegistration(validForm({ githubUrl: 'https://github.com/asha' }))).toEqual({});
-    expect(validateRegistration(validForm({ linkedinUrl: 'https://localhost' })).linkedinUrl).toMatch(/complete link/);
-    expect(validateRegistration(validForm({ linkedinUrl: 'ftp://files.example.com' })).linkedinUrl).toBeTruthy();
-    expect(validateRegistration(validForm({ resumeDriveLink: 'not a url' })).resumeDriveLink).toBeTruthy();
+  it('leaves the link fields empty when they are not filled in', () => {
+    expect(validateRegistration(validForm({ linkedinUrl: '', githubUrl: '', resumeDriveLink: '' }))).toEqual({});
+  });
+
+  it('LinkedIn must be a linkedin.com profile link', () => {
+    expect(validateRegistration(validForm({ linkedinUrl: 'https://linkedin.com/in/asha' }))).toEqual({});
+    for (const bad of ['https://linkedin.com/company/acme', 'https://evil-linkedin.com/in/asha', 'https://localhost', 'ftp://files.example.com']) {
+      expect(validateRegistration(validForm({ linkedinUrl: bad })).linkedinUrl, bad).toMatch(/LinkedIn link/);
+    }
+  });
+
+  it('GitHub must be a github.com profile link', () => {
+    expect(validateRegistration(validForm({ githubUrl: 'https://github.com/asha-k' }))).toEqual({});
+    for (const bad of ['https://github.com/asha/repo', 'https://gist.github.com/asha', 'https://github.com/-bad', 'https://github.com/']) {
+      expect(validateRegistration(validForm({ githubUrl: bad })).githubUrl, bad).toMatch(/GitHub link/);
+    }
+  });
+
+  it('the resume must be a Google Drive file link', () => {
+    expect(validateRegistration(validForm({ resumeDriveLink: 'https://drive.google.com/file/d/abc123/view' }))).toEqual({});
+    for (const bad of ['https://drive.google.com/drive/folders/abc', 'https://example.com/resume.pdf', 'not a url']) {
+      expect(validateRegistration(validForm({ resumeDriveLink: bad })).resumeDriveLink, bad).toMatch(/Google Drive file link/);
+    }
   });
 
   it('checks the bio: required, at most 1000 characters', () => {

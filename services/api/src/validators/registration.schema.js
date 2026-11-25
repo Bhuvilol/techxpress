@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { normalizeRegistrationNo } from '../utils/registrationNo.js';
 import { parseIdCardDataUrl } from '../utils/idCard.js';
+import { isDriveFileLink, isGitHubProfile, isLinkedInProfile } from '../utils/profileLinks.js';
 
 // Human-readable messages: these reach the registration form verbatim when a
 // field fails server-side validation (the form also validates client-side
@@ -13,6 +14,15 @@ const url = (example) => z
   .max(500, 'Link is too long — 500 characters at most.')
   .optional()
   .or(z.literal('').transform(() => undefined));
+
+// A link that must also point at a specific site and path shape.
+const profileUrl = (message, isValid) => z
+  .string()
+  .trim()
+  .max(500, 'Link is too long — 500 characters at most.')
+  .optional()
+  .transform((value) => value || undefined) // empty means not filled in
+  .refine((value) => value === undefined || isValid(value), { message });
 
 const longText = (label, max) => z.string().trim().max(max, `${label} is too long — ${max} characters at most.`).optional();
 const cuidList = z.array(z.string().cuid('Invalid domain selection.'))
@@ -66,10 +76,10 @@ export const registrationSchema = z.object({
   discordId: z.string().trim().max(60, 'Discord ID is too long.').optional(),
   gender: z.enum(['MALE', 'FEMALE', 'OTHER'], { errorMap: () => ({ message: 'Select your gender.' }) }),
   profilePicUrl: url('https://…/photo.jpg'),
-  linkedinUrl: url('https://linkedin.com/in/yourname'),
-  githubUrl: url('https://github.com/yourname'),
+  linkedinUrl: profileUrl('Enter your LinkedIn profile link, e.g. https://linkedin.com/in/yourname', isLinkedInProfile),
+  githubUrl: profileUrl('Enter your GitHub profile link, e.g. https://github.com/yourname', isGitHubProfile),
   portfolioUrl: url('https://yourname.dev'),
-  resumeDriveLink: url('https://drive.google.com/file/d/…'),
+  resumeDriveLink: profileUrl('Enter a Google Drive file link, e.g. https://drive.google.com/file/d/…', isDriveFileLink),
   researchPublicationUrl: url('https://doi.org/…'),
   bio: z.string({ required_error: 'Bio is required.' }).trim()
     .min(1, 'Bio is required — a few lines about what you build, study or care about.')
