@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "start": "node src/index.js",
-    "test": "node --test",
+    "test": "node --test --experimental-test-module-mocks 'src/**/*.test.js' 'test/**/*.test.js'",
     "dev": "node --watch src/index.js",
     "db:migrate": "prisma migrate deploy",
     "db:migrate:dev": "prisma migrate dev",

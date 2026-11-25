@@ -87,7 +87,8 @@ export const userService = {
     const data = { ...fields, registrationNo: normalizeRegistrationNo(fields.registrationNo) };
     const rules = await rulesService.get();
     if (!rules.registrationOpen) {
-      throw Forbidden('Registration is currently closed', { code: 'REGISTRATION_CLOSED' });
+      // Top-level code, like REGISTRY_MISMATCH: clients read `code`, not `details`.
+      throw new AppError(403, 'REGISTRATION_CLOSED', 'Registration is currently closed');
     }
 
     // Institution and domains come from the taxonomy tables. Check them here:
