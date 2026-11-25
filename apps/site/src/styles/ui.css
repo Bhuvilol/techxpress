@@ -1718,8 +1718,8 @@ section > .tt-day:first-child { margin-top: 0; }
   .guide-plate { min-height: 48px; padding: 6px 14px 6px 12px; }
   .guide-plate-en { font-size: 18px; }
   .book-ticket {
-    left: 16px;
-    right: 16px;
+    left: max(16px, calc(50% - 300px));
+    right: max(16px, calc(50% - 300px));
     bottom: calc(16px + var(--txp-safe-b));
     transform: none;
   }
