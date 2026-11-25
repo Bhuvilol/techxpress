@@ -1,5 +1,6 @@
 import { env, isProd } from '../config/env.js';
 import { logger } from './logger.js';
+import { COMMUNITY_LINKS } from '../config/community.js';
 
 // Transactional email via Cloudflare Email Service (REST API).
 //
@@ -123,7 +124,7 @@ const wrapHtml = ({ heading, intro, body, footer }) => `<!doctype html>
               </td>
             </tr>
           </table>
-          <p style="margin:16px 0 0 0;font-size:11px;color:#404040;">You received this because you registered for the Vortex hackathon.</p>
+          <p style="margin:16px 0 0 0;font-size:11px;color:#404040;">You received this because you registered for SOA TECHEXPRESS 2026.</p>
         </td>
       </tr>
     </table>
@@ -149,6 +150,32 @@ const loginButton = () => {
 };
 const loginLine = () => (loginUrl() ? `Log in at: ${loginUrl()}\n\n` : '');
 
+// "Join the community" block for the approval email. Links come from
+// config/community.js; empty ones are left out, and with none set the block
+// disappears entirely.
+const communityLinks = () => [
+  ['WhatsApp group', COMMUNITY_LINKS.whatsapp, '#25d366'],
+  ['Discord server', COMMUNITY_LINKS.discord, '#5865f2'],
+].filter(([, url]) => typeof url === 'string' && /^https:\/\//.test(url.trim()));
+
+const communityBlock = () => {
+  const links = communityLinks();
+  if (!links.length) return '';
+  const buttons = links.map(([label, url, color]) =>
+    `<a href="${escapeHtml(url.trim())}" style="display:inline-block;margin:0 8px 8px 0;padding:10px 16px;background:${color};color:#ffffff;font-size:13px;font-weight:bold;text-decoration:none;border-radius:4px;">Join the ${label}</a>`).join('');
+  return `
+  <div style="margin:4px 0 20px 0;padding:14px 16px;border:1px solid #2a2a2a;border-radius:4px;">
+    <div style="margin:0 0 10px 0;font-size:13px;color:#d4d4d4;">Join the community for announcements, team-finding and help:</div>
+    ${buttons}
+  </div>
+`;
+};
+const communityLines = () => {
+  const links = communityLinks();
+  if (!links.length) return '';
+  return `Join the community:\n${links.map(([label, url]) => `  ${label}: ${url.trim()}`).join('\n')}\n\n`;
+};
+
 export const sendMail = async ({ to, subject, text, html }) => {
   if (!enabled) {
     logger.warn('mail.skipped — mail is not configured', { to, subject });
@@ -171,12 +198,13 @@ export const sendVerificationApprovedMail = ({ to, fullName, password }) =>
       `  Email:    ${to}\n` +
       `  Password: ${password}\n\n` +
       loginLine() +
+      communityLines() +
       `Keep this password safe — it is your only credential.\n` +
       `If you lose it, contact the organizers to reissue.\n`,
     html: wrapHtml({
       heading: `Welcome, ${escapeHtml(fullName)}.`,
       intro: 'Your registration has been verified. You can now log in to Vortex with the credentials below.',
-      body: credBlock({ email: to, password }) + loginButton(),
+      body: credBlock({ email: to, password }) + loginButton() + communityBlock(),
       footer: 'Keep this password safe — it is your only login credential. If you lose it, contact the organizers to reissue a new one.',
     }),
   });
