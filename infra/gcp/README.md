@@ -55,12 +55,15 @@ add_secret CF_EMAIL_API_TOKEN      # Cloudflare token with only "Email Sending W
 # The staff list is JSON; load it from a local file, then delete the file:
 gcloud secrets versions add STAFF_SEED_JSON --data-file=staff.json
 ```
-`staff.json` format (coordinators need an institution that exists in `services/api/prisma/data/taxonomy.json`):
+`staff.json` format:
+- `password` is optional (6+ characters). Without it, the seed issues a random 6-digit code.
+- `institution` is optional. If given, it must exist in `services/api/prisma/data/taxonomy.json`, and the coordinator only sees that institution's students. A coordinator without one sees students from every institution.
 ```json
 [
-  { "fullName": "Asha Rao",   "email": "asha@example.org", "role": "JURY" },
-  { "fullName": "Ravi Kumar", "email": "ravi@example.org", "role": "COORDINATOR", "institution": "ITER | SOA" },
-  { "fullName": "Second Admin", "email": "ops@example.org", "role": "ADMIN" }
+  { "fullName": "Jury 1",        "email": "jury1@example.org",        "role": "JURY",        "password": "jury1@vortex" },
+  { "fullName": "Coordinator 1", "email": "coordinator1@example.org", "role": "COORDINATOR" },
+  { "fullName": "ITER Desk",     "email": "iter@example.org",         "role": "COORDINATOR", "institution": "ITER | SOA" },
+  { "fullName": "Second Admin",  "email": "ops@example.org",          "role": "ADMIN" }
 ]
 ```
 Then re-run `./infra/gcp/setup.sh core`: it attaches the Cloudflare token to the service and creates the `vortex-seed` job.

@@ -9,7 +9,7 @@ Where each account and secret lives. **No values are written in this repository.
 | Who | How they get in | Where the password is |
 |---|---|---|
 | Admin (seeded) | Email `ADMIN_SEED_EMAIL` (in `infra/gcp/config.env` and the `vortex-seed` job) | Secret Manager `ADMIN_SEED_PASSWORD`. Changing the secret later does **not** change an existing admin's password. |
-| Jury, coordinators, extra admins | Created by the seed from the staff list (Secret Manager `STAFF_SEED_JSON`) | A random 6-digit code per person, shown to admins on **Portal → Admin → Staff**. Admins hand it over personally. Never emailed, never printed. |
+| Jury, coordinators, extra admins | Created by the seed from the staff list (Secret Manager `STAFF_SEED_JSON`) | The `password` given for them in the staff list, or a random 6-digit code if none is given. Shown to admins on **Portal → Admin → Staff**; admins hand it over personally. Never emailed, never printed. |
 | Students | Self-register, then a coordinator or admin verifies them | A 6-digit code emailed on approval (and shown once on screen to the approver). Lost? An admin uses **Reissue** on Admin → Verification. |
 
 ### Secrets (GCP Secret Manager, project `<PROJECT_ID>`, region asia-south1)
