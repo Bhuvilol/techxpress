@@ -20,6 +20,19 @@ const cuidList = z.array(z.string().cuid('Invalid domain selection.'))
   .max(4, 'You can pick at most 4 domains.')
   .optional();
 
+// The year / semester choices. Kept in step with the two registration forms
+// (apps/site/src/utils/registrationForm.js and apps/portal RegistrationPage.jsx).
+export const YEAR_SEMESTER_OPTIONS = [
+  '1st Year / Semester 1',
+  '1st Year / Semester 2',
+  '2nd Year / Semester 3',
+  '2nd Year / Semester 4',
+  '3rd Year / Semester 5',
+  '3rd Year / Semester 6',
+  '4th Year / Semester 7',
+  '4th Year / Semester 8',
+];
+
 export const registrationSchema = z.object({
   fullName: z.string().trim()
     .min(2, 'Enter your full name (at least 2 characters).')
@@ -35,9 +48,7 @@ export const registrationSchema = z.object({
   preferredDomains: cuidList,
   track: z.string().trim().min(1).max(80).optional(),
   degree: z.string({ required_error: 'Select your degree.' }).trim().min(1, 'Select your degree.').max(80),
-  yearSemester: z.string({ required_error: 'Enter your year / semester.' }).trim()
-    .min(1, 'Enter your year / semester, e.g. “3rd Year / Semester 6”.')
-    .max(80, 'Year / semester is too long — 80 characters at most.'),
+  yearSemester: z.enum(YEAR_SEMESTER_OPTIONS, { errorMap: () => ({ message: 'Select your year / semester.' }) }),
   contributionAreas: z.array(z.string().trim().min(1).max(80), { required_error: 'Pick at least one area you can contribute to.' })
     .min(1, 'Pick at least one area you can contribute to.')
     .max(12, 'Pick at most 12 contribution areas.'),

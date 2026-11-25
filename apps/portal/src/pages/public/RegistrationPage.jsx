@@ -163,6 +163,18 @@ const FIELD_LABELS = {
   achievements: 'Achievements', hackathonExperience: 'Hackathon experience',
 };
 
+// Same list as the server (services/api/src/validators/registration.schema.js).
+const YEAR_SEMESTER_OPTIONS = [
+  '1st Year / Semester 1',
+  '1st Year / Semester 2',
+  '2nd Year / Semester 3',
+  '2nd Year / Semester 4',
+  '3rd Year / Semester 5',
+  '3rd Year / Semester 6',
+  '4th Year / Semester 7',
+  '4th Year / Semester 8',
+];
+
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
 const normalizeUrl = (value) => {
@@ -202,7 +214,7 @@ const validateRegistration = (f) => {
   if (!f.idCard) e.idCard = 'Upload a photo of your college ID card.';
   if (!f.institutionId) e.institutionId = 'Select your institution from the list.';
   if (!f.preferredDomains.length) e.preferredDomains = 'Pick at least one domain (up to 4). Your first pick is your primary domain.';
-  if (!f.yearSemester.trim()) e.yearSemester = 'Enter your year / semester, e.g. “3rd Year / Semester 6”.';
+  if (!YEAR_SEMESTER_OPTIONS.includes(f.yearSemester)) e.yearSemester = 'Select your year / semester.';
   if (!f.degree) e.degree = 'Select your degree.';
   if (!f.contributionAreas.length) e.contributionAreas = 'Pick at least one area you can contribute to.';
   if (!f.preferredTeamRole) e.preferredTeamRole = 'Select the role you’d like to play in a team.';
@@ -581,7 +593,12 @@ export const RegistrationPage = () => {
             <FormField field="yearSemester" label={requiredLabel('Year / Semester')} error={errors.yearSemester}>
               <div className="group relative">
                 <BookOpen size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20 transition-colors group-focus-within:text-white" />
-                <input className="input-glass !pl-14 h-12 border-white/10 bg-black transition-all focus:border-white" required maxLength={80} value={form.yearSemester} onChange={set('yearSemester')} placeholder="3rd Year / Semester 6" />
+                <select className="select-glass !pl-14 h-12 border-white/10 bg-black transition-all focus:border-white" required value={form.yearSemester} onChange={set('yearSemester')}>
+                  <option value="" disabled>Select year / semester</option>
+                  {YEAR_SEMESTER_OPTIONS.map((option) => (
+                    <option key={option} value={option}>{option}</option>
+                  ))}
+                </select>
               </div>
             </FormField>
 

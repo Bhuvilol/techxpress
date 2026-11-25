@@ -36,6 +36,14 @@ test('the required text fields each report their own message', () => {
   }
 });
 
+test('year / semester must be one of the dropdown options', () => {
+  for (const opt of ['1st Year / Semester 1', '2nd Year / Semester 4', '3rd Year / Semester 6', '4th Year / Semester 8']) {
+    assert.equal(parsed(validBody({ yearSemester: opt })).yearSemester, opt);
+  }
+  assert.ok(fieldErrors(validBody({ yearSemester: '3rd year, sem 6' })).yearSemester);
+  assert.ok(fieldErrors(validBody({ yearSemester: '5th Year / Semester 9' })).yearSemester);
+});
+
 test('full name length is 2 to 120 characters', () => {
   assert.ok(fieldErrors(validBody({ fullName: 'A' })).fullName);
   assert.ok(fieldErrors(validBody({ fullName: 'A'.repeat(121) })).fullName);

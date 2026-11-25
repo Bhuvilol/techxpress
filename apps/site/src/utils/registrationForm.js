@@ -30,6 +30,18 @@ export const INITIAL_FORM = {
   website: '', // honeypot — hidden from humans; must stay empty
 };
 
+// Same list as the server (services/api/src/validators/registration.schema.js).
+export const YEAR_SEMESTER_OPTIONS = [
+  '1st Year / Semester 1',
+  '1st Year / Semester 2',
+  '2nd Year / Semester 3',
+  '2nd Year / Semester 4',
+  '3rd Year / Semester 5',
+  '3rd Year / Semester 6',
+  '4th Year / Semester 7',
+  '4th Year / Semester 8',
+];
+
 export const URL_FIELDS = ['linkedinUrl', 'githubUrl', 'resumeDriveLink', 'researchPublicationUrl'];
 
 export const URL_EXAMPLES = {
@@ -134,7 +146,7 @@ export const validateRegistration = (f) => {
   if (!f.idCard) e.idCard = 'Upload a photo of your college ID card.';
   if (!f.institutionId) e.institutionId = 'Select your institution from the list.';
   if (!f.preferredDomains.length) e.preferredDomains = 'Pick at least one domain (up to 4). Your first pick is primary.';
-  if (!f.yearSemester.trim()) e.yearSemester = 'Enter your year / semester, e.g. "3rd Year / Semester 6".';
+  if (!YEAR_SEMESTER_OPTIONS.includes(f.yearSemester)) e.yearSemester = 'Select your year / semester.';
   if (!f.degree) e.degree = 'Select your degree.';
   if (!f.contributionAreas.length) e.contributionAreas = 'Pick at least one area you can contribute to.';
   else if (f.contributionAreas.length > 12) e.contributionAreas = 'Pick at most 12 contribution areas.';

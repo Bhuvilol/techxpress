@@ -3,6 +3,7 @@ import { api } from '../../lib/api';
 import { compressImage } from '../../utils/imageCompress';
 import { normalizeRegistrationNo } from '../../utils/registrationNo';
 import {
+  YEAR_SEMESTER_OPTIONS,
   FIELD_LABELS,
   INITIAL_FORM,
   FIELD_ORDER,
@@ -609,14 +610,14 @@ export default function RegisterPage({ onBack }) {
                   error={errors.yearSemester}
                   fullWidth
                 >
-                  <input
-                    type="text"
-                    placeholder="3rd Year / Semester 6"
-                    maxLength={80}
-                    value={form.yearSemester}
-                    onChange={setField('yearSemester')}
-                    disabled={busy}
-                  />
+                  <select value={form.yearSemester} onChange={setField('yearSemester')} disabled={busy}>
+                    <option value="" disabled>Select year / semester</option>
+                    {YEAR_SEMESTER_OPTIONS.map((opt) => (
+                      <option key={opt} value={opt}>
+                        {opt}
+                      </option>
+                    ))}
+                  </select>
                 </FieldWrap>
 
                 <FieldWrap
