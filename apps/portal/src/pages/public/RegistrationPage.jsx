@@ -575,18 +575,16 @@ export const RegistrationPage = () => {
                 error={errors.domainId ?? errors.preferredDomains}
                 hint="Your first pick is your primary domain, used for team formation and qualification."
               >
-                <div className="field-box rounded-none border border-white/10 bg-white/[0.02] p-3 sm:p-4 md:p-5">
-                  {domLoading ? (
-                    <div className="input-glass flex h-12 items-center gap-2 text-white/40"><Spinner size={12} /> Loading...</div>
-                  ) : (
-                    <DomainPicker
-                      domains={domData?.domains ?? []}
-                      value={form.preferredDomains}
-                      max={4}
-                      onToggle={setPreferredDomain}
-                    />
-                  )}
-                </div>
+                {domLoading ? (
+                  <div className="input-glass flex h-12 items-center gap-2 text-white/40"><Spinner size={12} /> Loading...</div>
+                ) : (
+                  <DomainPicker
+                    domains={domData?.domains ?? []}
+                    value={form.preferredDomains}
+                    max={4}
+                    onToggle={setPreferredDomain}
+                  />
+                )}
               </FormField>
             </div>
 
