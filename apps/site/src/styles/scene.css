@@ -1,0 +1,123 @@
+/* ── Station scene ──────────────────────────────────────────────────────── */
+
+.station {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  background: #12112a;
+}
+
+.scene-defs {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+
+.scene,
+.layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.layer {
+  will-change: transform;
+}
+
+.layer > svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+/* ── Scene text (real text, placed in scene units) ──────────────────────── */
+
+.t-led {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
+.t-board {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  fill: #151320;
+}
+
+.t-board-hi {
+  font-family: 'Noto Sans Devanagari', sans-serif;
+  font-weight: 700;
+  fill: #151320;
+}
+
+.t-board-small {
+  font-family: 'Barlow Condensed', 'Noto Sans Devanagari', sans-serif;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  fill: #151320;
+}
+
+.t-stencil {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 800;
+  font-size: 26px;
+  letter-spacing: 0.08em;
+}
+
+.t-plate {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 700;
+  font-size: 19px;
+  letter-spacing: 0.08em;
+}
+
+/* ── Ambient loops: transform and opacity only ──────────────────────────── */
+
+.fan-spin { animation: fan-spin 0.9s linear infinite; }
+@keyframes fan-spin { to { transform: rotate(360deg); } }
+
+.twinkle { animation: twinkle 4s ease-in-out infinite; }
+@keyframes twinkle { 50% { opacity: 0.25; } }
+
+.led-scroll { animation: led-scroll 14s linear infinite; }
+@keyframes led-scroll { to { transform: translateX(var(--led-travel)); } }
+
+.tte-wave { animation: tte-wave 3.6s ease-in-out infinite; }
+@keyframes tte-wave {
+  0%, 55%, 100% { transform: rotate(0deg); }
+  62% { transform: rotate(-12deg); }
+  70% { transform: rotate(8deg); }
+  78% { transform: rotate(-10deg); }
+  86% { transform: rotate(4deg); }
+}
+
+.lamp-flicker { animation: lamp-flicker 9s steps(1, end) infinite; }
+@keyframes lamp-flicker {
+  0%, 100% { opacity: 1; }
+  41% { opacity: 0.55; }
+  42% { opacity: 1; }
+  44% { opacity: 0.7; }
+  45% { opacity: 1; }
+}
+
+.dust { animation: dust 7s ease-in-out infinite alternate; }
+@keyframes dust {
+  from { transform: translate(0, 0); opacity: 0.2; }
+  to { transform: translate(14px, -22px); opacity: 0.8; }
+}
+
+.headlight { animation: headlight 3s ease-in-out infinite; }
+@keyframes headlight { 50% { opacity: 0.6; } }
+
+.clock-seconds { animation: clock-seconds 60s steps(60, end) infinite; }
+@keyframes clock-seconds { to { transform: rotate(360deg); } }
+
+/* Pause everything when the tab is hidden; no loops for reduced motion. */
+.scene-paused .station * { animation-play-state: paused !important; }
+
+@media (prefers-reduced-motion: reduce) {
+  .station * { animation: none !important; }
+}
