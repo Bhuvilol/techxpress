@@ -18,3 +18,8 @@
 
 /vortex/index.html
   Cache-Control: no-cache
+
+# The retired service worker must always be re-checked so browsers pick up
+# the version that removes it.
+/sw.js
+  Cache-Control: no-cache
