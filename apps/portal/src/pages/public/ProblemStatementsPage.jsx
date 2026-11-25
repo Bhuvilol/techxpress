@@ -51,7 +51,11 @@ export const ProblemStatementsPage = () => {
   const [search, setSearch] = useState('');
   const [themeId, setThemeId] = useState('');
   const [domainId, setDomainId] = useState('');
-  const [collapsed, setCollapsed] = useState(() => new Set());
+  // Themes start closed. While a search, theme or domain filter is active
+  // they start open instead, so matches are visible straight away. Each mode
+  // remembers which themes the user flipped.
+  const [openedIds, setOpenedIds] = useState(() => new Set());
+  const [closedWhileFiltering, setClosedWhileFiltering] = useState(() => new Set());
 
   const all = useMemo(() => data?.problemStatements ?? [], [data]);
 
@@ -96,11 +100,15 @@ export const ProblemStatementsPage = () => {
 
   const hasFilters = !!(search || themeId || domainId);
   const clearFilters = () => { setSearch(''); setThemeId(''); setDomainId(''); };
-  const toggle = (id) => setCollapsed((prev) => {
+  const flip = (prev, id) => {
     const next = new Set(prev);
     if (next.has(id)) next.delete(id); else next.add(id);
     return next;
-  });
+  };
+  const isOpen = (id) => (hasFilters ? !closedWhileFiltering.has(id) : openedIds.has(id));
+  const toggle = (id) => (hasFilters
+    ? setClosedWhileFiltering((prev) => flip(prev, id))
+    : setOpenedIds((prev) => flip(prev, id)));
 
   return (
     <section className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-12">
@@ -158,7 +166,7 @@ export const ProblemStatementsPage = () => {
 
           <div className="space-y-5">
             {groups.map(({ theme, items }) => {
-              const isCollapsed = collapsed.has(theme.id);
+              const isCollapsed = !isOpen(theme.id);
               const Icon = theme.icon;
               const domainCount = new Set(items.map((ps) => ps.domain?.id)).size;
               return (
@@ -166,6 +174,7 @@ export const ProblemStatementsPage = () => {
                   <button
                     type="button"
                     onClick={() => toggle(theme.id)}
+                    aria-expanded={!isCollapsed}
                     className="flex w-full items-center justify-between gap-3 border-b border-white/5 px-5 py-4 text-left transition-colors hover:bg-white/[0.02]"
                   >
                     <div className="flex min-w-0 items-center gap-3">
