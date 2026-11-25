@@ -403,10 +403,10 @@ export default function RegisterPage({ onBack }) {
                   <strong className="summary-val">{submitted.primaryDomain}</strong>
                 </div>
               )}
-              {user?.id && (
+              {user?.publicId && (
                 <div className="summary-cell">
                   <span className="summary-label">PASSENGER REF</span>
-                  <strong className="summary-val code-mono">{user.id}</strong>
+                  <strong className="summary-val code-mono">{user.publicId}</strong>
                 </div>
               )}
             </div>

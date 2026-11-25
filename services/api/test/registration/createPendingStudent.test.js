@@ -33,6 +33,7 @@ test('creates a PENDING student with no password and the card in the same write'
   assert.equal(data.passwordHash, null);
   assert.equal(data.registrationNo, '2024PS01');
   assert.equal(data.email, 'asha.kumar@college.edu');
+  assert.match(data.publicId, /^TXP-[2-9A-HJKMNP-TV-Z]{4}-[2-9A-HJKMNP-TV-Z]{4}$/, 'every student gets a TXP- id');
   assert.equal(data.idCard.create.mimeType, 'image/jpeg', 'card is created in the same statement');
   assert.equal(user.email, 'asha.kumar@college.edu');
 });

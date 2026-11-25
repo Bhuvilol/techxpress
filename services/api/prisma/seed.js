@@ -6,6 +6,7 @@ import { PrismaPg } from '@prisma/adapter-pg';
 import bcrypt from 'bcrypt';
 import { z } from 'zod';
 import 'dotenv/config';
+import { generatePublicId, USER_PUBLIC_PREFIX } from '../src/utils/publicId.js';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Idempotent seed. Safe to run again: every write is an upsert keyed on a
@@ -210,6 +211,7 @@ const seedAdmin = async ({ email, password }) => {
   }
   await prisma.user.create({
     data: {
+      publicId: generatePublicId(USER_PUBLIC_PREFIX),
       email,
       fullName: 'TechXpress Admin',
       role: 'ADMIN',
@@ -258,6 +260,7 @@ const seedStaff = async ({ source, staff }) => {
         })
         : await tx.user.create({
           data: {
+            publicId: generatePublicId(USER_PUBLIC_PREFIX),
             email: person.email,
             fullName: person.fullName,
             role: person.role,

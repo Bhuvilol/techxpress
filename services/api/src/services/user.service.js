@@ -6,12 +6,14 @@ import { invalidateUserStatus } from '../utils/userStatusCache.js';
 import { membershipService } from './membership.service.js';
 import { normalizeRegistrationNo } from '../utils/registrationNo.js';
 import { registryMismatches } from '../utils/registryMismatch.js';
+import { generatePublicId, USER_PUBLIC_PREFIX } from '../utils/publicId.js';
 
 // Sole owner of User table writes related to the verification lifecycle.
 // Controllers must NOT touch prisma.user directly for these flows.
 
 const PUBLIC_USER_FIELDS = {
   id: true,
+  publicId: true,
   role: true,
   fullName: true,
   email: true,
@@ -124,6 +126,7 @@ export const userService = {
       return await prisma.user.create({
         data: {
           ...data,
+          publicId: generatePublicId(USER_PUBLIC_PREFIX),
           role: 'STUDENT',
           verificationStatus: 'PENDING',
           passwordHash: null,

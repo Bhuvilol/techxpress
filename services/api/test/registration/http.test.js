@@ -46,7 +46,8 @@ test('GET /status reports whether registration is open', async () => {
 test('a valid registration is accepted with 202 and no password in the response', async () => {
   const { status, body } = await json(await post(validBody()));
   assert.equal(status, 202);
-  assert.deepEqual(Object.keys(body.user).sort(), ['email', 'fullName', 'id']);
+  assert.deepEqual(Object.keys(body.user).sort(), ['email', 'fullName', 'id', 'publicId']);
+  assert.match(body.user.publicId, /^TXP-/);
   assert.equal(body.user.email, 'asha.kumar@college.edu');
   assert.equal(prisma.user.create.mock.callCount(), 1);
 });

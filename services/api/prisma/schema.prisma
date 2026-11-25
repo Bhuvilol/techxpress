@@ -103,6 +103,7 @@ enum AuditAction {
 
 model User {
   id                 String             @id @default(cuid())
+  publicId           String             @unique // TXP-XXXX-XXXX, shown to the student
   role               Role               @default(STUDENT)
 
   fullName           String
@@ -245,6 +246,7 @@ model ProblemStatement {
 
 model Team {
   id               String            @id @default(cuid())
+  publicId         String            @unique // TXT-XXXX-XXXX, shown to the team
   name             String            @unique
   leaderId         String            @unique
   leader           User              @relation("TeamLeader", fields: [leaderId], references: [id])

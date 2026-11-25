@@ -13,7 +13,7 @@ const src = (path) => new URL(`../../src/${path}`, import.meta.url).href;
 const defaults = () => ({
   institution: { findUnique: async () => ({ id: 'cinstitution0000000000000a' }) },
   domain: { count: async () => 1 },
-  user: { findFirst: async () => null, create: async ({ data }) => ({ id: 'cuser0000000000000000000', fullName: data.fullName, email: data.email }) },
+  user: { findFirst: async () => null, create: async ({ data }) => ({ id: 'cuser0000000000000000000', publicId: data.publicId, fullName: data.fullName, email: data.email }) },
   hackathonRules: { findUnique: async () => ({ id: 'rules', registrationOpen: true }) },
   collegeRegistry: { findUnique: async () => null },
   studentIdCard: { deleteMany: async () => ({ count: 0 }) },
