@@ -71,16 +71,38 @@ export const auditService = {
     });
   },
 
+  // One page of entries, newest first: { entries, total, page, pageSize,
+  // totalPages }. The free-text search (q) matches inside the JSON details,
+  // which the database can't filter, so with q the newest 5000 matching rows
+  // are filtered here and paged in memory.
   async list(filters = {}) {
-    const { q, limit = 100 } = filters;
-    const take = Math.min(limit, 500);
-    const entries = await prisma.auditLog.findMany({
-      where: buildWhere(filters),
-      include: SELECT_WITH_ACTOR,
-      orderBy: { createdAt: 'desc' },
-      take: q ? Math.min(take * 4, 2000) : take,
-    });
-    return entries.filter((entry) => matchesTextQuery(entry, q)).slice(0, take);
+    const { q } = filters;
+    const pageSize = Math.min(filters.limit ?? 100, 500);
+    const page = Math.max(1, filters.page ?? 1);
+    const where = buildWhere(filters);
+
+    let entries;
+    let total;
+    if (q) {
+      const rows = await prisma.auditLog.findMany({
+        where, include: SELECT_WITH_ACTOR, orderBy: { createdAt: 'desc' }, take: 5000,
+      });
+      const matched = rows.filter((entry) => matchesTextQuery(entry, q));
+      total = matched.length;
+      entries = matched.slice((page - 1) * pageSize, page * pageSize);
+    } else {
+      [total, entries] = await prisma.$transaction([
+        prisma.auditLog.count({ where }),
+        prisma.auditLog.findMany({
+          where,
+          include: SELECT_WITH_ACTOR,
+          orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+          skip: (page - 1) * pageSize,
+          take: pageSize,
+        }),
+      ]);
+    }
+    return { entries, total, page, pageSize, totalPages: Math.max(1, Math.ceil(total / pageSize)) };
   },
 
   async exportRows(filters = {}) {

@@ -18,4 +18,6 @@ export const listAuditQuerySchema = z.object({
   since:      z.coerce.date().optional(),
   until:      z.coerce.date().optional(),
   limit:      z.coerce.number().int().min(1).max(5000).optional(),
+  // Admin → Audit pages through the list 100 entries at a time.
+  page:       z.coerce.number().int().min(1).optional(),
 });

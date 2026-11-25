@@ -2,8 +2,8 @@ import { auditService } from '../services/audit.service.js';
 import XLSX from 'xlsx';
 
 export const list = async (req, res) => {
-  const entries = await auditService.list(req.query);
-  res.json({ count: entries.length, entries });
+  const result = await auditService.list(req.query);
+  res.json({ count: result.entries.length, ...result });
 };
 
 const summarizeDetails = (entry) => {
