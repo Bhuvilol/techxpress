@@ -159,6 +159,9 @@ model User {
   auditEntries        AuditLog[]
   teamMessages        TeamMessage[]
   staffCredential     StaffCredential?
+  // Student's college ID card photo, uploaded at registration. Separate
+  // table so the image never loads with ordinary user queries.
+  idCard              StudentIdCard?
 
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
@@ -177,6 +180,17 @@ model StaffCredential {
   password  String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+// College ID card image for a student, checked by admins and coordinators
+// during verification. Deleted with the user.
+model StudentIdCard {
+  userId    String   @id
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mimeType  String
+  sizeBytes Int
+  data      Bytes
+  createdAt DateTime @default(now())
 }
 
 model CollegeRegistry {
