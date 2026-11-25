@@ -1,5 +1,5 @@
 import { prisma } from '../config/db.js';
-import { Conflict, NotFound, Forbidden, BadRequest } from '../utils/errors.js';
+import { AppError, Conflict, NotFound, Forbidden, BadRequest } from '../utils/errors.js';
 import { generateSixDigitCode, hashPassword } from '../utils/crypto.js';
 import { rulesService } from './rules.service.js';
 import { invalidateUserStatus } from '../utils/userStatusCache.js';
@@ -179,6 +179,7 @@ export const userService = {
 
     // Registry check. Coordinators cannot override it; an admin can, once
     // they have seen the mismatch (allowRegistryMismatch).
+    let overrodeRegistryMismatch = false;
     if (user.registrationNo && !allowRegistryMismatch) {
       const entry = await prisma.collegeRegistry.findUnique({
         where: { registrationNo: user.registrationNo },
@@ -186,8 +187,12 @@ export const userService = {
       });
       const mismatches = registryMismatches(user, entry);
       if (mismatches.length) {
-        throw Conflict('The college registry does not match this registration. Check the details before approving.', { code: 'REGISTRY_MISMATCH', mismatches });
+        // Top-level code, so the client can branch on it (the API client reads `code`).
+        throw new AppError(409, 'REGISTRY_MISMATCH',
+          'The college registry does not match this registration. An organizer must check it before approval.',
+          { mismatches });
       }
+      overrodeRegistryMismatch = mismatches.length > 0;
     }
 
     const plaintextPassword = generateSixDigitCode();
@@ -203,7 +208,7 @@ export const userService = {
       select: PUBLIC_USER_FIELDS,
     });
 
-    return { user: updated, plaintextPassword };
+    return { user: updated, plaintextPassword, overrodeRegistryMismatch };
   },
 
   async rejectStudent(userId, { institutionId } = {}) {
@@ -218,17 +223,11 @@ export const userService = {
       throw Conflict('Cannot reject an already-verified user — use revoke instead');
     }
 
-    // A rejected student's ID card has no further use, so it is deleted with
-    // the status change. The account stays (for the audit trail and the
-    // re-registration path), without the image.
-    const [, updated] = await prisma.$transaction([
-      prisma.studentIdCard.deleteMany({ where: { userId } }),
-      prisma.user.update({
-        where: { id: userId },
-        data: { verificationStatus: 'REJECTED' },
-        select: PUBLIC_USER_FIELDS,
-      }),
-    ]);
+    const updated = await prisma.user.update({
+      where: { id: userId },
+      data: { verificationStatus: 'REJECTED' },
+      select: PUBLIC_USER_FIELDS,
+    });
     return { user: updated, snapshot: user };
   },
 

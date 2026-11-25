@@ -427,15 +427,9 @@ export const RegistrationPage = () => {
         const flat = {};
         for (const [key, value] of Object.entries(fieldErrs)) flat[key] = Array.isArray(value) ? value[0] : String(value);
         reportErrors(flat);
-      } else if (err.code === 'CONFLICT') {
-        const field = err.details?.field;
-        const msg = field === 'email'
-          ? 'This email is already registered. If you registered before, wait for verification or contact the organizers.'
-          : field === 'registrationNo'
-            ? 'This registration number is already registered. Check it for typos, or contact the organizers.'
-            : err.message;
-        if (field) reportErrors({ [field]: msg }); else toast.error(msg);
       } else {
+        // Duplicates come back as one generic CONFLICT with no field name (by design).
+
         toast.error(err.message || 'Registration failed.');
       }
     } finally {

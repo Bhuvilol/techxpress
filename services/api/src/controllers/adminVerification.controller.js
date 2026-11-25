@@ -105,7 +105,7 @@ export const approve = async (req, res) => {
   // An admin can approve past a registry mismatch, but only after the UI has
   // shown it and they have confirmed. The flag is recorded in the audit log.
   const allowRegistryMismatch = req.body?.allowRegistryMismatch === true;
-  const { user, plaintextPassword } = await userService.approveStudent(req.params.id, { allowRegistryMismatch });
+  const { user, plaintextPassword, overrodeRegistryMismatch } = await userService.approveStudent(req.params.id, { allowRegistryMismatch });
 
   const mail = await sendVerificationApprovedMail({
     to: user.email,
@@ -118,7 +118,7 @@ export const approve = async (req, res) => {
     action: 'USER_VERIFIED',
     entityType: 'User',
     entityId: user.id,
-    details: { email: user.email, emailDelivered: mail.delivered, registryMismatchOverride: allowRegistryMismatch },
+    details: { email: user.email, emailDelivered: mail.delivered, registryMismatchOverride: overrodeRegistryMismatch },
   });
 
   // One-shot reveal for the admin (ADMIN-gated route only). The database
