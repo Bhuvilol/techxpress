@@ -181,6 +181,7 @@ function drawStamp(ctx, cx, cy) {
   ctx.save();
   ctx.translate(cx, cy);
   ctx.rotate(-0.21);
+  ctx.scale(0.86, 0.86);
   ctx.globalAlpha = 0.86;
   ctx.strokeStyle = C.red;
   ctx.fillStyle = C.red;
@@ -354,7 +355,8 @@ export async function drawTicket(ticket, doc = document) {
     y += 112;
   }
 
-  drawStamp(ctx, width - 250, 1000);
+  // Over the right of the institution / class rows, clear of the values.
+  drawStamp(ctx, width - 215, 872);
 
   // Perforation and footer.
   y = height - 190;
@@ -371,7 +373,7 @@ export async function drawTicket(ticket, doc = document) {
   // Barcode-ish bars from the PNR (decorative).
   let bx = L;
   const code = `${f.pnr}${f.name}`;
-  for (let i = 0; i < 64 && bx < L + 420; i += 1) {
+  for (let i = 0; i < 64 && bx < L + 300; i += 1) {
     const w = 2 + ((code.charCodeAt(i % code.length) + i) % 4) * 2;
     ctx.fillStyle = C.ink;
     ctx.fillRect(bx, y + 34, w, 70);
@@ -379,11 +381,21 @@ export async function drawTicket(ticket, doc = document) {
   }
   ctx.textAlign = 'right';
   ctx.fillStyle = C.ink;
-  ctx.font = font(700, 26);
-  ctx.fillText(PNR.ticketFooter, R, y + 64);
+  const footW = W - 340;
+  const foot = fitText(PNR.ticketFooter, {
+    maxWidth: footW,
+    maxSize: 26,
+    minSize: 18,
+    measureAt: (size, t) => {
+      ctx.font = font(700, size);
+      return ctx.measureText(t).width;
+    },
+  });
+  ctx.font = font(700, foot.size);
+  ctx.fillText(foot.text, R, y + 64);
   ctx.font = font(600, 22);
   ctx.fillStyle = C.inkSoft;
-  ctx.fillText(TICKET.footerSmall, R, y + 100);
+  ctx.fillText(truncateToWidth(TICKET.footerSmall, footW, (t) => ctx.measureText(t).width), R, y + 100);
   ctx.textAlign = 'left';
 
   return canvas;
