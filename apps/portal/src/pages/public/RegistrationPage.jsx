@@ -108,7 +108,7 @@ const EMPTY = {
   preferredDomains: [],
   degree: '',
   phone: '',
-  gender: 'MALE',
+  gender: '', // no default: a guessed value would feed the team gender rules
   yearSemester: '',
   contributionAreas: [],
   preferredTeamRole: '',
@@ -531,6 +531,7 @@ export const RegistrationPage = () => {
               <div className="group relative">
                 <User size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20 transition-colors group-focus-within:text-white" />
                 <select className="select-glass !pl-14 h-12 border-white/10 bg-black transition-all focus:border-white" required value={form.gender} onChange={set('gender')}>
+                  <option value="" disabled>Select gender</option>
                   <option value="MALE">Male</option>
                   <option value="FEMALE">Female</option>
                   <option value="OTHER">Other / prefer not to say</option>
