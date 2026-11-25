@@ -21,20 +21,30 @@ export const CoordinatorVerificationPage = () => {
   const { user } = useAuth();
   // A coordinator without an institution reviews every institution.
   const scoped = Boolean(user?.institution?.name);
-  const institutionName = user?.institution?.name ?? 'All institutions';
   const [tab, setTab] = useState('PENDING');
+  // Coordinators without an institution can narrow the lists to one.
+  const [filterInstitutionId, setFilterInstitutionId] = useState('');
+  const institutions = useApi(
+    () => (scoped ? Promise.resolve(null) : api.get('/api/taxonomy/institutions')),
+    [scoped],
+    { refetchOnFocus: false },
+  );
+  const institutionOptions = institutions.data?.institutions ?? institutions.data ?? [];
+  const filterName = institutionOptions.find?.((i) => i.id === filterInstitutionId)?.name;
+  const institutionName = user?.institution?.name ?? filterName ?? 'All institutions';
+  const listQuery = { search, institutionId: scoped ? undefined : filterInstitutionId || undefined };
   const [search, setSearch] = useState('');
   const [reject, setReject] = useState(null);
   const [idCardFor, setIdCardFor] = useState(null);
 
   const pending = useApi(
-    () => api.get('/api/coordinator/verification/pending', { query: { search } }),
-    [search],
+    () => api.get('/api/coordinator/verification/pending', { query: listQuery }),
+    [search, filterInstitutionId],
   );
 
   const verified = useApi(
-    () => api.get('/api/coordinator/verification/students', { query: { status: 'VERIFIED', search } }),
-    [search],
+    () => api.get('/api/coordinator/verification/students', { query: { status: 'VERIFIED', ...listQuery } }),
+    [search, filterInstitutionId],
   );
 
   const stats = useMemo(() => ({
@@ -74,10 +84,24 @@ export const CoordinatorVerificationPage = () => {
           : 'Approve or reject student registrations from every institution. The verified tab lists all approved students.'}
         actions={(
           <div className="min-w-[250px] rounded-none border border-white/10 bg-[#050505] px-4 py-3">
-            <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-white/30">Coordinator Scope</div>
-            <div className="mt-1 font-sans text-[16px] font-black uppercase tracking-[0.08em] text-white">
-              {institutionName}
-            </div>
+            <label htmlFor="scope-institution" className="font-mono text-[10px] uppercase tracking-[0.2em] text-white/30">
+              {scoped ? 'Coordinator Scope' : 'Institution filter'}
+            </label>
+            {scoped ? (
+              <div className="mt-1 font-sans text-[16px] font-black uppercase tracking-[0.08em] text-white">
+                {institutionName}
+              </div>
+            ) : (
+              <select
+                id="scope-institution"
+                className="select-glass mt-2 h-10 w-full border-white/10 bg-black font-sans text-[13px] font-bold uppercase tracking-[0.06em] text-white"
+                value={filterInstitutionId}
+                onChange={(e) => setFilterInstitutionId(e.target.value)}
+              >
+                <option value="">All institutions</option>
+                {institutionOptions.map?.((i) => <option key={i.id} value={i.id}>{i.name}</option>)}
+              </select>
+            )}
           </div>
         )}
       />
@@ -95,7 +119,7 @@ export const CoordinatorVerificationPage = () => {
           value={stats.verified}
           hint="Approved for portal access"
         />
-        <ScopeCard institutionName={institutionName} scoped={scoped} />
+        <ScopeCard institutionName={institutionName} scoped={scoped} filtered={Boolean(filterName)} />
       </div>
 
       <div className="relative mb-4 w-full">
@@ -125,8 +149,8 @@ export const CoordinatorVerificationPage = () => {
           icon={tab === 'PENDING' ? Clock : ShieldCheck}
           title={tab === 'PENDING' ? 'No pending students' : 'No verified students'}
           description={tab === 'PENDING'
-            ? `There are no pending registrations${scoped ? ' for this institution' : ''} right now.`
-            : `No verified students${scoped ? ' from this institution' : ''} match the current filters.`}
+            ? `There are no pending registrations${scoped || filterName ? ` for ${institutionName}` : ''} right now.`
+            : `No verified students${scoped || filterName ? ` from ${institutionName}` : ''} match the current filters.`}
         />
       )}
 
@@ -208,7 +232,7 @@ export const CoordinatorVerificationPage = () => {
   );
 };
 
-const ScopeCard = ({ institutionName, scoped }) => (
+const ScopeCard = ({ institutionName, scoped, filtered }) => (
   <div className="relative overflow-hidden rounded-none border border-white/5 bg-[#050505] p-6">
     <div className="flex items-start justify-between gap-4">
       <div>
@@ -222,7 +246,9 @@ const ScopeCard = ({ institutionName, scoped }) => (
     <div className="mt-6 border-t border-white/10 pt-4 font-mono text-[11px] leading-relaxed text-white/40">
       {scoped
         ? 'Coordinator review is restricted to this institution. Both tabs are filtered automatically.'
-        : 'This coordinator account is not tied to an institution, so both tabs show students from every institution.'}
+        : filtered
+          ? 'Both tabs show only this institution. Choose “All institutions” in the filter at the top right to see everyone.'
+          : 'This coordinator account is not tied to an institution, so both tabs show students from every institution. Use the filter at the top right to narrow them.'}
     </div>
   </div>
 );
