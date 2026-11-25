@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { IdCard } from 'lucide-react';
 import { api } from '../../lib/api.js';
+import { useToast } from '../../contexts/ToastContext.jsx';
 import { Modal } from '../ui/Modal.jsx';
 import { Spinner } from '../ui/Spinner.jsx';
 
@@ -9,8 +10,68 @@ import { Spinner } from '../ui/Spinner.jsx';
 // "/api/admin/verification" or "/api/coordinator/verification".
 // The image is fetched with the login token and shown from memory; it is
 // never cached and the object URL is released when the modal closes.
-export const IdCardModal = ({ student, basePath, onClose, footer }) => {
+//
+// For a PENDING student it also offers the decision: Approve and Reject hand
+// back to the page's own flows; "Ask to re-register" removes the registration
+// and emails the student (with an optional note) to register again.
+const DEFAULT_NOTE = 'Your ID card photo was blurry or unreadable. Please upload a clear photo of the front of the card, with your name, photo and registration number visible.';
+
+export const IdCardModal = ({ student, basePath, onClose, onApprove, onReject, onReregistered }) => {
+  const toast = useToast();
   const [state, setState] = useState({ url: null, error: null });
+  const [asking, setAsking] = useState(false);
+  const [note, setNote] = useState(DEFAULT_NOTE);
+  const [busy, setBusy] = useState(false);
+
+  const sendBack = async () => {
+    setBusy(true);
+    try {
+      const res = await api.post(`${basePath}/students/${student.id}/request-reregistration`, { note: note.trim() || undefined });
+      if (res?.emailDelivered) toast.success(`${student.fullName} was emailed to register again.`);
+      else toast.error(`Registration removed, but the email to ${student.email} could not be sent. Contact the student directly.`, { ttl: 9000 });
+      onReregistered?.();
+      onClose();
+    } catch (err) {
+      toast.error(err.message);
+      setBusy(false);
+    }
+  };
+
+  const footer = onApprove || onReject || onReregistered ? (
+    asking ? (
+      <div className="w-full space-y-3">
+        <label className="block font-mono text-[10px] uppercase tracking-[0.18em] text-white/40" htmlFor="reregister-note">
+          Note to the student (included in the email)
+        </label>
+        <textarea
+          id="reregister-note"
+          className="input-glass min-h-[84px] w-full"
+          maxLength={500}
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
+        />
+        <p className="font-mono text-[11px] text-white/40">
+          This removes {student.fullName}'s registration so they can register again with the same email and registration number.
+        </p>
+        <div className="flex justify-end gap-2">
+          <button className="ghost-button text-[11px]" onClick={() => setAsking(false)} disabled={busy}>Back</button>
+          <button className="glow-button text-[11px]" onClick={sendBack} disabled={busy}>
+            {busy ? <Spinner /> : 'Remove & email student'}
+          </button>
+        </div>
+      </div>
+    ) : (
+      <div className="flex w-full flex-wrap justify-end gap-2">
+        {onReregistered && (
+          <button className="ghost-button text-[11px]" onClick={() => setAsking(true)} title="ID card not clear: ask the student to register again">
+            Ask to re-register
+          </button>
+        )}
+        {onReject && <button className="danger-button text-[11px]" onClick={() => { onClose(); onReject(student); }}>Reject</button>}
+        {onApprove && <button className="glow-button text-[11px]" onClick={() => { onClose(); onApprove(student); }}>Approve</button>}
+      </div>
+    )
+  ) : null;
 
   useEffect(() => {
     let url = null;

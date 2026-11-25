@@ -278,6 +278,9 @@ const summarizeEntry = (entry) => {
     case 'USER_VERIFIED':
       return `Verified ${details.email ?? 'student'}${details.via ? ` via ${titleCase(details.via)}` : ''}.`;
     case 'USER_REJECTED':
+      if (details.kind === 'REREGISTER_REQUESTED') {
+        return `Asked ${details.email ?? 'student'} to register again (ID card not clear)${details.note ? `: ${details.note}` : ''}${details.via ? ` via ${titleCase(details.via)}` : ''}.`;
+      }
       return `Rejected student${details.reason ? ` with reason: ${details.reason}` : ''}${details.via ? ` via ${titleCase(details.via)}` : ''}.`;
     case 'USER_REVOKED':
       return 'Revoked login access for a verified student account.';

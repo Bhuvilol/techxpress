@@ -281,7 +281,19 @@ export const AdminVerificationPage = () => {
       )}
 
       <RejectModal target={reject} onClose={() => setReject(null)} onDone={refresh} />
-      {idCardFor && <IdCardModal student={idCardFor} basePath="/api/admin/verification" onClose={() => setIdCardFor(null)} />}
+      {idCardFor && (
+        <IdCardModal
+          student={idCardFor}
+          basePath="/api/admin/verification"
+          onClose={() => setIdCardFor(null)}
+          // Decision buttons only for students still waiting for review.
+          {...((idCardFor.verificationStatus ?? (tab === 'PENDING' ? 'PENDING' : null)) === 'PENDING' && {
+            onApprove: approve,
+            onReject: setReject,
+            onReregistered: refresh,
+          })}
+        />
+      )}
       <CredentialModal cred={credential} onClose={() => setCredential(null)} />
     </>
   );
