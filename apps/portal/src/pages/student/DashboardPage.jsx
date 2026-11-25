@@ -35,6 +35,7 @@ const ProfileTab = ({ user, myTeam }) => (
       <dl className="grid grid-cols-1 gap-y-3 sm:grid-cols-2">
         <Field icon={User} label="Name" value={user.fullName} />
         <Field icon={Mail} label="Email" value={user.email} />
+        <Field icon={IdCard} label="Passenger ref" value={user.publicId ?? '-'} />
         <Field icon={IdCard} label="Registration #" value={user.registrationNo ?? '-'} />
         <Field icon={GraduationCap} label="Institution" value={user.institution?.name ?? '-'} />
         <Field icon={Layers} label="Preferred Domain" value={user.domain?.name ?? '-'} />
@@ -411,6 +412,7 @@ const TeamDetailsModal = ({ team, action, busy, onRequest, onClose }) => {
               <div className="font-mono text-[12px] text-text-secondary">
                 {fullTeam.domain?.name ?? 'No domain'} · led by {fullTeam.leader?.fullName}
               </div>
+              <div className="font-mono text-[11px] text-text-secondary">Team ref {fullTeam.publicId}</div>
             </div>
             <div className="flex flex-wrap gap-1.5">
               <Badge tone={fullTeam.status === 'FORMING' ? 'cyan' : 'dim'}>{fullTeam.status}</Badge>

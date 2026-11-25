@@ -1,6 +1,7 @@
 import { env, isProd } from '../config/env.js';
 import { logger } from './logger.js';
 import { COMMUNITY_LINKS } from '../config/community.js';
+import { AppError } from './errors.js';
 
 // Transactional email via Cloudflare Email Service (REST API).
 //
@@ -185,6 +186,17 @@ export const sendMail = async ({ to, subject, text, html }) => {
   if (out.delivered) logger.info('mail.sent', { to, subject, id: out.id });
   else logger.error('mail.failed', { to, subject, err: out.error, status: out.status, id: out.id });
   return out;
+};
+
+// Used where a password change must not stand unless its email went out:
+// inside the transaction that saves the change, so a failed send rolls it back.
+export const requireDelivered = (mail) => {
+  if (!mail.delivered) {
+    throw new AppError(502, 'MAIL_NOT_SENT',
+      'The email could not be sent, so nothing was changed. Check the mail settings and try again.',
+      { mailError: mail.error ?? mail.reason ?? null }); // 'not-configured' when mail is off
+  }
+  return mail;
 };
 
 export const sendVerificationApprovedMail = ({ to, fullName, password }) =>

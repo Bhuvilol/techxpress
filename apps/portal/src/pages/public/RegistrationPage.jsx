@@ -108,7 +108,7 @@ const EMPTY = {
   preferredDomains: [],
   degree: '',
   phone: '',
-  gender: 'MALE',
+  gender: '', // no default: a guessed value would feed the team gender rules
   yearSemester: '',
   contributionAreas: [],
   preferredTeamRole: '',
@@ -163,6 +163,22 @@ const FIELD_LABELS = {
   achievements: 'Achievements', hackathonExperience: 'Hackathon experience',
 };
 
+// Same list as the server (services/api/src/validators/registration.schema.js).
+const YEAR_SEMESTER_OPTIONS = [
+  '1st Year / Semester 1',
+  '1st Year / Semester 2',
+  '2nd Year / Semester 3',
+  '2nd Year / Semester 4',
+  '3rd Year / Semester 5',
+  '3rd Year / Semester 6',
+  '4th Year / Semester 7',
+  '4th Year / Semester 8',
+  '5th Year / Semester 9',
+  '5th Year / Semester 10',
+  '6th Year / Semester 11',
+  '6th Year / Semester 12',
+];
+
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
 const normalizeUrl = (value) => {
@@ -180,6 +196,41 @@ const isValidUrl = (value) => {
   }
 };
 
+// Profile links must point at the right site. Same rules as the server
+// (services/api/src/utils/profileLinks.js).
+const parseLink = (value) => {
+  try {
+    const u = new URL(value);
+    return u.protocol === 'https:' || u.protocol === 'http:' ? u : null;
+  } catch {
+    return null;
+  }
+};
+const onHost = (u, host) => u.hostname === host || u.hostname.endsWith(`.${host}`);
+const GITHUB_USER = /^[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?$/;
+
+const isLinkedInProfile = (value) => {
+  const u = parseLink(value);
+  return Boolean(u && onHost(u, 'linkedin.com') && /^\/in\/[^/]+\/?$/i.test(u.pathname));
+};
+const isGitHubProfile = (value) => {
+  const u = parseLink(value);
+  if (!u || !['github.com', 'www.github.com'].includes(u.hostname)) return false;
+  const [user, ...rest] = u.pathname.split('/').filter(Boolean);
+  return Boolean(user && GITHUB_USER.test(user) && rest.length === 0);
+};
+const isDriveFileLink = (value) => {
+  const u = parseLink(value);
+  return Boolean(u && onHost(u, 'drive.google.com') && /^\/file\/d\/[^/]+/.test(u.pathname));
+};
+
+// Each profile field: the check and the message shown when it fails.
+const PROFILE_CHECKS = {
+  linkedinUrl: { valid: isLinkedInProfile, message: 'LinkedIn' },
+  githubUrl: { valid: isGitHubProfile, message: 'GitHub' },
+  resumeDriveLink: { valid: isDriveFileLink, message: 'Google Drive file' },
+};
+
 const validateRegistration = (f) => {
   const e = {};
   const name = f.fullName.trim();
@@ -195,18 +246,14 @@ const validateRegistration = (f) => {
   else if (reg.length > 50) e.registrationNo = 'Registration number is too long — 50 characters at most.';
 
   const phone = f.phone.trim();
-  if (phone) {
-    const digits = phone.replace(/\D/g, '');
-    if (!/^\+?[\d\s-]+$/.test(phone)) e.phone = 'Use digits only (spaces, dashes and a leading + are fine).';
-    else if (digits.length < 7 || digits.length > 15) e.phone = `Phone number should have 7–15 digits (you entered ${digits.length}).`;
-    else if (phone.length > 20) e.phone = 'Phone number is too long — 20 characters at most.';
-  }
+  // Optional, but when given it must be exactly 10 digits (same rule as the server).
+  if (phone && !/^\d{10}$/.test(phone)) e.phone = 'Phone number must be exactly 10 digits, with no spaces, dashes or +.';
 
   if (!f.gender) e.gender = 'Select your gender.';
   if (!f.idCard) e.idCard = 'Upload a photo of your college ID card.';
   if (!f.institutionId) e.institutionId = 'Select your institution from the list.';
   if (!f.preferredDomains.length) e.preferredDomains = 'Pick at least one domain (up to 4). Your first pick is your primary domain.';
-  if (!f.yearSemester.trim()) e.yearSemester = 'Enter your year / semester, e.g. “3rd Year / Semester 6”.';
+  if (!YEAR_SEMESTER_OPTIONS.includes(f.yearSemester)) e.yearSemester = 'Select your year / semester.';
   if (!f.degree) e.degree = 'Select your degree.';
   if (!f.contributionAreas.length) e.contributionAreas = 'Pick at least one area you can contribute to.';
   if (!f.preferredTeamRole) e.preferredTeamRole = 'Select the role you’d like to play in a team.';
@@ -214,7 +261,13 @@ const validateRegistration = (f) => {
   if (f.nonTechnicalSkills.length > 500) e.nonTechnicalSkills = 'Keep non-technical skills under 500 characters.';
 
   for (const key of URL_FIELDS) {
-    if (f[key] && !isValidUrl(f[key])) e[key] = `Enter a complete link, e.g. ${URL_EXAMPLES[key]}`;
+    if (!f[key]) continue;
+    const profile = PROFILE_CHECKS[key];
+    if (profile) {
+      if (!profile.valid(f[key])) e[key] = `Enter your ${profile.message} link, e.g. ${URL_EXAMPLES[key]}`;
+    } else if (!isValidUrl(f[key])) {
+      e[key] = `Enter a complete link, e.g. ${URL_EXAMPLES[key]}`;
+    }
   }
 
   const bio = f.bio.trim();
@@ -427,15 +480,8 @@ export const RegistrationPage = () => {
         const flat = {};
         for (const [key, value] of Object.entries(fieldErrs)) flat[key] = Array.isArray(value) ? value[0] : String(value);
         reportErrors(flat);
-      } else if (err.code === 'CONFLICT') {
-        const field = err.details?.field;
-        const msg = field === 'email'
-          ? 'This email is already registered. If you registered before, wait for verification or contact the organizers.'
-          : field === 'registrationNo'
-            ? 'This registration number is already registered. Check it for typos, or contact the organizers.'
-            : err.message;
-        if (field) reportErrors({ [field]: msg }); else toast.error(msg);
       } else {
+        // Duplicates come back as one generic CONFLICT with no field name (by design).
         toast.error(err.message || 'Registration failed.');
       }
     } finally {
@@ -523,7 +569,7 @@ export const RegistrationPage = () => {
             <FormField field="phone" label="Phone" error={errors.phone}>
               <div className="group relative">
                 <Phone size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20 transition-colors group-focus-within:text-white" />
-                <input className="input-glass !pl-14 h-12 border-white/10 bg-black transition-all focus:border-white" maxLength={20} value={form.phone} onChange={set('phone')} placeholder="+91 98765 43210" />
+                <input className="input-glass !pl-14 h-12 border-white/10 bg-black transition-all focus:border-white" maxLength={10} inputMode="numeric" value={form.phone} onChange={set('phone')} placeholder="9876543210" />
               </div>
             </FormField>
 
@@ -531,6 +577,7 @@ export const RegistrationPage = () => {
               <div className="group relative">
                 <User size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20 transition-colors group-focus-within:text-white" />
                 <select className="select-glass !pl-14 h-12 border-white/10 bg-black transition-all focus:border-white" required value={form.gender} onChange={set('gender')}>
+                  <option value="" disabled>Select gender</option>
                   <option value="MALE">Male</option>
                   <option value="FEMALE">Female</option>
                   <option value="OTHER">Other / prefer not to say</option>
@@ -591,7 +638,12 @@ export const RegistrationPage = () => {
             <FormField field="yearSemester" label={requiredLabel('Year / Semester')} error={errors.yearSemester}>
               <div className="group relative">
                 <BookOpen size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20 transition-colors group-focus-within:text-white" />
-                <input className="input-glass !pl-14 h-12 border-white/10 bg-black transition-all focus:border-white" required maxLength={80} value={form.yearSemester} onChange={set('yearSemester')} placeholder="3rd Year / Semester 6" />
+                <select className="select-glass !pl-14 h-12 border-white/10 bg-black transition-all focus:border-white" required value={form.yearSemester} onChange={set('yearSemester')}>
+                  <option value="" disabled>Select year / semester</option>
+                  {YEAR_SEMESTER_OPTIONS.map((option) => (
+                    <option key={option} value={option}>{option}</option>
+                  ))}
+                </select>
               </div>
             </FormField>
 

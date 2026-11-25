@@ -18,6 +18,6 @@ export const register = async (req, res) => {
 
   res.status(202).json({
     message: 'Registration submitted. Awaiting organizer verification.',
-    user: { id: user.id, fullName: user.fullName, email: user.email },
+    user: { id: user.id, publicId: user.publicId, fullName: user.fullName, email: user.email },
   });
 };

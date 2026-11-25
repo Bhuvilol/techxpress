@@ -4,6 +4,7 @@ import { membershipService } from './membership.service.js';
 import { membershipChangeService } from './membershipChange.service.js';
 import { rulesService } from './rules.service.js';
 import { normalizeRegistrationNo } from '../utils/registrationNo.js';
+import { generatePublicId, TEAM_PUBLIC_PREFIX } from '../utils/publicId.js';
 
 const TEAM_DETAIL_INCLUDE = {
   domain: { select: { id: true, name: true } },
@@ -25,7 +26,7 @@ const TEAM_DETAIL_INCLUDE = {
 };
 
 const TEAM_LIST_FIELDS = {
-  id: true, name: true, status: true,
+  id: true, publicId: true, name: true, status: true,
   memberCount: true, femaleCount: true, domainExpertCount: true,
   createdAt: true, finalizedAt: true, adminOverride: true,
   domain: { select: { id: true, name: true } },
@@ -126,6 +127,7 @@ export const teamService = {
       try {
         team = await tx.team.create({
           data: {
+            publicId: generatePublicId(TEAM_PUBLIC_PREFIX),
             name,
             domainId,
             psId,
@@ -135,7 +137,7 @@ export const teamService = {
             femaleCount: 0,
             domainExpertCount: 0,
           },
-          select: { id: true, name: true, status: true, leaderId: true, domainId: true,
+          select: { id: true, publicId: true, name: true, status: true, leaderId: true, domainId: true,
                     memberCount: true, femaleCount: true, domainExpertCount: true },
         });
       } catch (err) {

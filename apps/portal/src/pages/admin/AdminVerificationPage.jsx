@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import {
-  ShieldCheck, Search, Users, ShieldAlert, ShieldOff, Clock, Eye, Copy,
+  ShieldCheck, Search, Users, ShieldAlert, ShieldOff, Clock, Mail,
 } from 'lucide-react';
 import { api } from '../../lib/api.js';
 import { useApi } from '../../hooks/useApi.js';
@@ -30,7 +30,6 @@ export const AdminVerificationPage = () => {
   const [limit, setLimit] = useState(25);
   const [reject, setReject] = useState(null);
   // { user, password } shown after approve / reissue
-  const [credential, setCredential] = useState(null);
   const [idCardFor, setIdCardFor] = useState(null);
   const [reregisterFor, setReregisterFor] = useState(null);
 
@@ -90,14 +89,26 @@ export const AdminVerificationPage = () => {
   };
 
   // ── actions ───────────────────────────────────────────────────────────
-  const approve = async (u) => {
+  const approve = async (u, { allowRegistryMismatch = false } = {}) => {
     try {
-      const res = await api.post(`/api/admin/verification/students/${u.id}/approve`);
-      toast.success(`Approved ${u.fullName}.`);
-      // Surface the freshly-issued password to the admin one-shot.
-      if (res?.password) setCredential({ user: res.user ?? u, password: res.password, label: 'Approved', emailDelivered: res.emailDelivered });
+      await api.post(`/api/admin/verification/students/${u.id}/approve`, allowRegistryMismatch ? { allowRegistryMismatch: true } : undefined);
+      toast.success(`Approved ${u.fullName}. Credentials emailed to the student.`);
       refresh();
-    } catch (e) { toast.error(e.message); }
+    } catch (e) {
+      if (e.code === 'REGISTRY_MISMATCH') {
+        // The college registry disagrees with the form. Ask before overriding.
+        const lines = (e.details?.mismatches ?? []).map((m) => `${m.field}: form says “${m.actual}”, registry says “${m.expected}”`);
+        const ok = await confirm({
+          title: `Registry mismatch for ${u.fullName}`,
+          message: `${lines.join('. ')}. Approve anyway? The login code will be emailed to ${u.email}.`,
+          tone: 'crit',
+          confirmLabel: 'Approve anyway',
+        });
+        if (ok) approve(u, { allowRegistryMismatch: true });
+        return;
+      }
+      toast.error(e.message);
+    }
   };
 
   // A rejection is otherwise final; this approves the student after all.
@@ -124,32 +135,31 @@ export const AdminVerificationPage = () => {
     } catch (e) { toast.error(e.message); }
   };
 
-  const revealCredentials = async (u) => {
+  // Issues a new password and emails it. The old one stops working. Nothing is
+  // shown on screen; if the email cannot be sent, the password is not changed.
+  const sendNewPassword = async (u) => {
     const ok = await confirm({
-      title: `Reveal credentials for ${u.fullName}?`,
-      message:
-        'The current password is hashed and unrecoverable. To show a usable code, the system will REISSUE a new 6-digit password — replacing the current one. The new password is emailed to the student and also shown to you once.',
-      confirmLabel: 'Reissue & reveal',
+      title: `Send a new password to ${u.fullName}?`,
+      message: 'This replaces their current password. The new 6-digit password is emailed to them.',
+      confirmLabel: 'Send new password',
     });
     if (!ok) return;
     try {
-      const res = await api.post(`/api/admin/verification/students/${u.id}/reissue-password`);
-      if (res?.password) setCredential({ user: res.user ?? u, password: res.password, label: 'Reissued', emailDelivered: res.emailDelivered });
-      toast.success('New password issued.');
+      await api.post(`/api/admin/verification/students/${u.id}/reissue-password`);
+      toast.success('New password emailed.');
     } catch (e) { toast.error(e.message); }
   };
 
   const restore = async (u) => {
     const ok = await confirm({
       title: `Undo revoke for ${u.fullName}?`,
-      message: 'This restores login access and issues a fresh 6-digit password. It is emailed to the student and also shown to you once.',
+      message: 'This restores login access and emails the student a fresh 6-digit password.',
       confirmLabel: 'Undo revoke',
     });
     if (!ok) return;
     try {
-      const res = await api.post(`/api/admin/verification/students/${u.id}/restore`);
-      if (res?.password) setCredential({ user: res.user ?? u, password: res.password, label: 'Restored', emailDelivered: res.emailDelivered });
-      toast.success('Access restored.');
+      await api.post(`/api/admin/verification/students/${u.id}/restore`);
+      toast.success('Access restored and password emailed.');
       refresh();
     } catch (e) { toast.error(e.message); }
   };
@@ -232,9 +242,11 @@ export const AdminVerificationPage = () => {
                   {tab === 'PENDING' && (
                     <td className="px-4 py-3">
                       {u.registryMatch?.matched
-                        ? <Badge tone={u.registryMatch.emailMatches === false ? 'warn' : 'live'} dot>
-                            {u.registryMatch.emailMatches === false ? 'Email mismatch' : 'Matched'}
-                          </Badge>
+                        ? (u.registryMatch.mismatches?.length
+                            ? <Badge tone="warn" dot title={u.registryMatch.mismatches.map((m) => m.field).join(', ')}>
+                                {u.registryMatch.mismatches.map((m) => (m.field === 'email' ? 'Email' : 'Institution')).join(' & ')} mismatch
+                              </Badge>
+                            : <Badge tone="live" dot>Matched</Badge>)
                         : <Badge tone="warn">No match</Badge>}
                     </td>
                   )}
@@ -254,10 +266,10 @@ export const AdminVerificationPage = () => {
                         <>
                           <button
                             className="ghost-button inline-flex items-center gap-1 text-[10px]"
-                            onClick={() => revealCredentials(u)}
-                            title="Reissue + reveal a fresh 6-digit password"
+                            onClick={() => sendNewPassword(u)}
+                            title="Issue a new 6-digit password and email it"
                           >
-                            <Eye size={10}/> Reveal
+                            <Mail size={10}/> New password
                           </button>
                           <button className="danger-button text-[10px]" onClick={() => revoke(u)}>Revoke</button>
                         </>
@@ -320,7 +332,6 @@ export const AdminVerificationPage = () => {
           })}
         />
       )}
-      <CredentialModal cred={credential} onClose={() => setCredential(null)} />
     </>
   );
 };
@@ -362,65 +373,3 @@ const RejectModal = ({ target, onClose, onDone }) => {
   );
 };
 
-const CredentialModal = ({ cred, onClose }) => {
-  const toast = useToast();
-  if (!cred) return null;
-
-  const copy = async (text) => {
-    try {
-      await navigator.clipboard.writeText(text);
-      toast.success('Copied to clipboard.');
-    } catch {
-      toast.warn('Copy failed — select and copy manually.');
-    }
-  };
-
-  return (
-    <Modal open onClose={onClose} size="sm" title={`${cred.label}: credentials`}
-      footer={
-        <button className="glow-button" onClick={onClose}>Done</button>
-      }
-    >
-      <div className="space-y-4">
-        {cred.emailDelivered ? (
-          <div className="rounded-none border border-status-live/40 bg-status-live/5 p-3 font-mono text-[12px] leading-relaxed text-status-live">
-            ✓ Credentials emailed to the student. The copy below is your backup.
-          </div>
-        ) : (
-          <div className="rounded-none border border-status-warn/40 bg-status-warn/5 p-3 font-mono text-[12px] leading-relaxed text-status-warn">
-            ⚠ Email not sent — share these credentials with the student manually.
-          </div>
-        )}
-        <div className="rounded-none border border-white/20 bg-white/5 p-3 font-mono text-[11px] leading-relaxed text-white/60">
-          One-shot reveal. The plaintext password is not stored — only its bcrypt hash. Closing this modal discards it from the UI.
-        </div>
-
-        <CredRow
-          label="Email"
-          value={cred.user?.email ?? '—'}
-          onCopy={() => copy(cred.user?.email ?? '')}
-        />
-        <CredRow
-          label="Password"
-          value={cred.password}
-          onCopy={() => copy(cred.password)}
-          mono
-        />
-      </div>
-    </Modal>
-  );
-};
-
-const CredRow = ({ label, value, onCopy, mono }) => (
-  <div>
-    <div className="mb-1 font-mono text-[10px] uppercase tracking-[0.15em] text-text-dim">{label}</div>
-    <div className="flex items-center gap-2">
-      <code className={`flex-1 select-all rounded-none border border-white/10 bg-white/5 px-3 py-2.5 ${mono ? 'font-sans text-[20px] font-bold tracking-[0.4em] text-white' : 'font-mono text-[13px] text-text-primary'}`}>
-        {value}
-      </code>
-      <button className="ghost-button inline-flex items-center gap-1" onClick={onCopy}>
-        <Copy size={12} /> Copy
-      </button>
-    </div>
-  </div>
-);

@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { normalizeRegistrationNo } from '../utils/registrationNo.js';
 import { parseIdCardDataUrl } from '../utils/idCard.js';
+import { isDriveFileLink, isGitHubProfile, isLinkedInProfile } from '../utils/profileLinks.js';
 
 // Human-readable messages: these reach the registration form verbatim when a
 // field fails server-side validation (the form also validates client-side
@@ -14,11 +15,37 @@ const url = (example) => z
   .optional()
   .or(z.literal('').transform(() => undefined));
 
+// A link that must also point at a specific site and path shape.
+const profileUrl = (message, isValid) => z
+  .string()
+  .trim()
+  .max(500, 'Link is too long — 500 characters at most.')
+  .optional()
+  .transform((value) => value || undefined) // empty means not filled in
+  .refine((value) => value === undefined || isValid(value), { message });
+
 const longText = (label, max) => z.string().trim().max(max, `${label} is too long — ${max} characters at most.`).optional();
 const cuidList = z.array(z.string().cuid('Invalid domain selection.'))
   .min(1, 'Pick at least one domain (up to 4).')
   .max(4, 'You can pick at most 4 domains.')
   .optional();
+
+// The year / semester choices. Kept in step with the two registration forms
+// (apps/site/src/utils/registrationForm.js and apps/portal RegistrationPage.jsx).
+export const YEAR_SEMESTER_OPTIONS = [
+  '1st Year / Semester 1',
+  '1st Year / Semester 2',
+  '2nd Year / Semester 3',
+  '2nd Year / Semester 4',
+  '3rd Year / Semester 5',
+  '3rd Year / Semester 6',
+  '4th Year / Semester 7',
+  '4th Year / Semester 8',
+  '5th Year / Semester 9',
+  '5th Year / Semester 10',
+  '6th Year / Semester 11',
+  '6th Year / Semester 12',
+];
 
 export const registrationSchema = z.object({
   fullName: z.string().trim()
@@ -35,9 +62,7 @@ export const registrationSchema = z.object({
   preferredDomains: cuidList,
   track: z.string().trim().min(1).max(80).optional(),
   degree: z.string({ required_error: 'Select your degree.' }).trim().min(1, 'Select your degree.').max(80),
-  yearSemester: z.string({ required_error: 'Enter your year / semester.' }).trim()
-    .min(1, 'Enter your year / semester, e.g. “3rd Year / Semester 6”.')
-    .max(80, 'Year / semester is too long — 80 characters at most.'),
+  yearSemester: z.enum(YEAR_SEMESTER_OPTIONS, { errorMap: () => ({ message: 'Select your year / semester.' }) }),
   contributionAreas: z.array(z.string().trim().min(1).max(80), { required_error: 'Pick at least one area you can contribute to.' })
     .min(1, 'Pick at least one area you can contribute to.')
     .max(12, 'Pick at most 12 contribution areas.'),
@@ -46,15 +71,15 @@ export const registrationSchema = z.object({
   technicalSkills: longText('Technical skills', 500),
   nonTechnicalSkills: longText('Non-technical skills', 500),
   phone: z.string().trim()
-    .regex(/^\+?[\d\s-]{7,20}$/, 'Phone number should have 7–15 digits (spaces, dashes and a leading + are fine).')
+    .regex(/^\d{10}$/, 'Phone number must be exactly 10 digits, with no spaces, dashes or +.')
     .optional(),
   discordId: z.string().trim().max(60, 'Discord ID is too long.').optional(),
   gender: z.enum(['MALE', 'FEMALE', 'OTHER'], { errorMap: () => ({ message: 'Select your gender.' }) }),
   profilePicUrl: url('https://…/photo.jpg'),
-  linkedinUrl: url('https://linkedin.com/in/yourname'),
-  githubUrl: url('https://github.com/yourname'),
+  linkedinUrl: profileUrl('Enter your LinkedIn profile link, e.g. https://linkedin.com/in/yourname', isLinkedInProfile),
+  githubUrl: profileUrl('Enter your GitHub profile link, e.g. https://github.com/yourname', isGitHubProfile),
   portfolioUrl: url('https://yourname.dev'),
-  resumeDriveLink: url('https://drive.google.com/file/d/…'),
+  resumeDriveLink: profileUrl('Enter a Google Drive file link, e.g. https://drive.google.com/file/d/…', isDriveFileLink),
   researchPublicationUrl: url('https://doi.org/…'),
   bio: z.string({ required_error: 'Bio is required.' }).trim()
     .min(1, 'Bio is required — a few lines about what you build, study or care about.')

@@ -2,6 +2,7 @@ import { prisma } from '../config/db.js';
 import { hashPassword, generateSixDigitCode } from '../utils/crypto.js';
 import { logger } from '../utils/logger.js';
 import { normalizeRegistrationNo } from '../utils/registrationNo.js';
+import { generatePublicId, USER_PUBLIC_PREFIX } from '../utils/publicId.js';
 
 const VALID_GENDERS = new Set(['MALE', 'FEMALE', 'OTHER']);
 
@@ -150,7 +151,7 @@ export const testingImportService = {
         };
 
         const user = await prisma.user.create({
-          data,
+          data: { ...data, publicId: generatePublicId(USER_PUBLIC_PREFIX) },
           select: { id: true, email: true, fullName: true, registrationNo: true },
         });
 
