@@ -16,11 +16,16 @@ import { Spinner } from '../ui/Spinner.jsx';
 // and emails the student (with an optional note) to register again.
 const DEFAULT_NOTE = 'Your ID card photo was blurry or unreadable. Please upload a clear photo of the front of the card, with your name, photo and registration number visible.';
 
-export const IdCardModal = ({ student, basePath, onClose, onApprove, onReject, onReregistered }) => {
+// For a REJECTED student (admins only) the re-register note defaults to a
+// second-chance message instead; `startAsking` opens straight on the note.
+const REJECTED_NOTE = 'Your registration has been reviewed again. Please register once more and make sure your details match your college ID card.';
+
+export const IdCardModal = ({ student, basePath, onClose, onApprove, onReject, onReregistered, startAsking = false }) => {
   const toast = useToast();
+  const wasRejected = student.verificationStatus === 'REJECTED';
   const [state, setState] = useState({ url: null, error: null });
-  const [asking, setAsking] = useState(false);
-  const [note, setNote] = useState(DEFAULT_NOTE);
+  const [asking, setAsking] = useState(startAsking);
+  const [note, setNote] = useState(wasRejected ? REJECTED_NOTE : DEFAULT_NOTE);
   const [busy, setBusy] = useState(false);
 
   const sendBack = async () => {
@@ -51,7 +56,7 @@ export const IdCardModal = ({ student, basePath, onClose, onApprove, onReject, o
           onChange={(e) => setNote(e.target.value)}
         />
         <p className="font-mono text-[11px] text-white/40">
-          This removes {student.fullName}'s registration so they can register again with the same email and registration number.
+          This removes {student.fullName}'s {wasRejected ? 'rejected ' : ''}registration so they can register again with the same email and registration number.
         </p>
         <div className="flex justify-end gap-2">
           <button className="ghost-button text-[11px]" onClick={() => setAsking(false)} disabled={busy}>Back</button>
@@ -64,11 +69,11 @@ export const IdCardModal = ({ student, basePath, onClose, onApprove, onReject, o
       <div className="flex w-full flex-wrap justify-end gap-2">
         {onReregistered && (
           <button className="ghost-button text-[11px]" onClick={() => setAsking(true)} title="ID card not clear: ask the student to register again">
-            Ask to re-register
+            {wasRejected ? 'Allow to re-register' : 'Ask to re-register'}
           </button>
         )}
         {onReject && <button className="danger-button text-[11px]" onClick={() => { onClose(); onReject(student); }}>Reject</button>}
-        {onApprove && <button className="glow-button text-[11px]" onClick={() => { onClose(); onApprove(student); }}>Approve</button>}
+        {onApprove && <button className="glow-button text-[11px]" onClick={() => { onClose(); onApprove(student); }}>{wasRejected ? 'Approve anyway' : 'Approve'}</button>}
       </div>
     )
   ) : null;

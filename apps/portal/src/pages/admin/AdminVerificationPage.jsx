@@ -32,6 +32,7 @@ export const AdminVerificationPage = () => {
   // { user, password } shown after approve / reissue
   const [credential, setCredential] = useState(null);
   const [idCardFor, setIdCardFor] = useState(null);
+  const [reregisterFor, setReregisterFor] = useState(null);
 
   // Debounce search query to prevent N requests on every keystroke
   useEffect(() => {
@@ -97,6 +98,16 @@ export const AdminVerificationPage = () => {
       if (res?.password) setCredential({ user: res.user ?? u, password: res.password, label: 'Approved', emailDelivered: res.emailDelivered });
       refresh();
     } catch (e) { toast.error(e.message); }
+  };
+
+  // A rejection is otherwise final; this approves the student after all.
+  const approveRejected = async (u) => {
+    const ok = await confirm({
+      title: `Approve ${u.fullName} anyway?`,
+      message: 'They were rejected earlier. Approving issues a login code, emails it to them and shows it to you once.',
+      confirmLabel: 'Approve',
+    });
+    if (ok) approve(u);
   };
 
   const revoke = async (u) => {
@@ -251,6 +262,12 @@ export const AdminVerificationPage = () => {
                           <button className="danger-button text-[10px]" onClick={() => revoke(u)}>Revoke</button>
                         </>
                       )}
+                      {u.verificationStatus === 'REJECTED' && (
+                        <>
+                          <button className="glow-button text-[10px]" onClick={() => approveRejected(u)} title="Approve this student after all and issue a login code">Approve anyway</button>
+                          <button className="ghost-button text-[10px]" onClick={() => setReregisterFor(u)} title="Clear the registration so the student can register again">Allow to re-register</button>
+                        </>
+                      )}
                       {u.verificationStatus === 'REVOKED' && (
                         <button className="glow-button text-[10px]" onClick={() => restore(u)}>Undo revoke</button>
                       )}
@@ -281,6 +298,15 @@ export const AdminVerificationPage = () => {
       )}
 
       <RejectModal target={reject} onClose={() => setReject(null)} onDone={refresh} />
+      {reregisterFor && (
+        <IdCardModal
+          student={reregisterFor}
+          basePath="/api/admin/verification"
+          onClose={() => setReregisterFor(null)}
+          onReregistered={refresh}
+          startAsking
+        />
+      )}
       {idCardFor && (
         <IdCardModal
           student={idCardFor}
