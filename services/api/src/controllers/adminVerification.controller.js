@@ -1,4 +1,5 @@
 import { registryMismatches } from '../utils/registryMismatch.js';
+import { requireDelivered } from '../utils/mail.js';
 import { userService } from '../services/user.service.js';
 import { sendIdCard } from '../utils/sendIdCard.js';
 import { auditService } from '../services/audit.service.js';
@@ -103,12 +104,14 @@ export const approve = async (req, res) => {
   // An admin can approve past a registry mismatch, but only after the UI has
   // shown it and they have confirmed. The flag is recorded in the audit log.
   const allowRegistryMismatch = req.body?.allowRegistryMismatch === true;
-  const { user, plaintextPassword, overrodeRegistryMismatch } = await userService.approveStudent(req.params.id, { allowRegistryMismatch });
-
-  const mail = await sendVerificationApprovedMail({
-    to: user.email,
-    fullName: user.fullName,
-    password: plaintextPassword,
+  // The student is approved only if the email goes out (see userService.issueCredentials).
+  const { user, overrodeRegistryMismatch } = await userService.approveStudent(req.params.id, {
+    allowRegistryMismatch,
+    deliver: async ({ user, plaintextPassword }) => requireDelivered(await sendVerificationApprovedMail({
+      to: user.email,
+      fullName: user.fullName,
+      password: plaintextPassword,
+    })),
   });
 
   auditService.record({
@@ -116,19 +119,10 @@ export const approve = async (req, res) => {
     action: 'USER_VERIFIED',
     entityType: 'User',
     entityId: user.id,
-    details: { email: user.email, emailDelivered: mail.delivered, registryMismatchOverride: overrodeRegistryMismatch },
+    details: { email: user.email, registryMismatchOverride: overrodeRegistryMismatch },
   });
 
-  // One-shot reveal for the admin (ADMIN-gated route only). The database
-  // stores only the bcrypt hash; after this the password can only be reissued.
-  res.json({
-    message: mail.delivered
-      ? 'User verified — credentials emailed'
-      : 'User verified — email not sent, share the password manually',
-    user,
-    password: plaintextPassword,
-    emailDelivered: mail.delivered,
-  });
+  res.json({ message: 'User verified — credentials emailed', user });
 };
 
 export const reject = async (req, res) => {
@@ -172,12 +166,12 @@ export const revoke = async (req, res) => {
 };
 
 export const restore = async (req, res) => {
-  const { user, plaintextPassword } = await userService.restoreRevokedStudent(req.params.id);
-
-  const mail = await sendAccessRestoredMail({
-    to: user.email,
-    fullName: user.fullName,
-    password: plaintextPassword,
+  const { user } = await userService.restoreRevokedStudent(req.params.id, {
+    deliver: async ({ user, plaintextPassword }) => requireDelivered(await sendAccessRestoredMail({
+      to: user.email,
+      fullName: user.fullName,
+      password: plaintextPassword,
+    })),
   });
 
   auditService.record({
@@ -185,26 +179,19 @@ export const restore = async (req, res) => {
     action: 'USER_VERIFIED',
     entityType: 'User',
     entityId: user.id,
-    details: { restored: true, emailDelivered: mail.delivered },
+    details: { restored: true },
   });
 
-  res.json({
-    message: mail.delivered
-      ? 'Access restored — credentials emailed'
-      : 'Access restored — email not sent, share the password manually',
-    user,
-    password: plaintextPassword,
-    emailDelivered: mail.delivered,
-  });
+  res.json({ message: 'Access restored — credentials emailed', user });
 };
 
 export const reissue = async (req, res) => {
-  const { user, plaintextPassword } = await userService.reissuePassword(req.params.id);
-
-  const mail = await sendPasswordReissuedMail({
-    to: user.email,
-    fullName: user.fullName,
-    password: plaintextPassword,
+  const { user } = await userService.reissuePassword(req.params.id, {
+    deliver: async ({ user, plaintextPassword }) => requireDelivered(await sendPasswordReissuedMail({
+      to: user.email,
+      fullName: user.fullName,
+      password: plaintextPassword,
+    })),
   });
 
   auditService.record({
@@ -212,17 +199,10 @@ export const reissue = async (req, res) => {
     action: 'USER_VERIFIED',
     entityType: 'User',
     entityId: user.id,
-    details: { reissue: true, emailDelivered: mail.delivered },
+    details: { reissue: true },
   });
 
-  res.json({
-    message: mail.delivered
-      ? 'New password issued — credentials emailed'
-      : 'New password issued — email not sent, share it manually',
-    password: plaintextPassword,
-    user,
-    emailDelivered: mail.delivered,
-  });
+  res.json({ message: 'New password issued — credentials emailed', user });
 };
 
 // ID card photo uploaded at registration.

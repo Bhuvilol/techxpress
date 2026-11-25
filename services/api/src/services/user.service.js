@@ -80,6 +80,20 @@ const assertInstitutionScope = (user, institutionId) => {
   }
 };
 
+// A new password is saved and emailed as one step. `deliver` sends the email
+// inside the transaction; if it throws (email not sent), the change is rolled
+// back, so a student never ends up with a password nobody received.
+const issueCredentials = (userId, data, plaintextPassword, deliver) => prisma.$transaction(async (tx) => {
+  const passwordHash = await hashPassword(plaintextPassword);
+  const updated = await tx.user.update({
+    where: { id: userId },
+    data: { ...data, passwordHash, passwordIssuedAt: new Date() },
+    select: PUBLIC_USER_FIELDS,
+  });
+  await deliver({ user: updated, plaintextPassword });
+  return updated;
+}, { timeout: 20_000 }); // the email call can take up to ~10 s
+
 export const userService = {
   publicFields: PUBLIC_USER_FIELDS,
 
@@ -163,7 +177,7 @@ export const userService = {
   // Approve a PENDING student: generate a 6-digit code, hash it, store it.
   // Returns { user, plaintextPassword } so the caller can email the password.
   // The plaintext NEVER persists past this function's return value.
-  async approveStudent(userId, { institutionId, allowRegistryMismatch = false } = {}) {
+  async approveStudent(userId, { institutionId, allowRegistryMismatch = false, deliver } = {}) {
     const user = await prisma.user.findUnique({
       where: { id: userId },
       select: {
@@ -201,20 +215,8 @@ export const userService = {
     }
     const overrodeRegistryMismatch = blocking.length > 0;
 
-    const plaintextPassword = generateSixDigitCode();
-    const passwordHash = await hashPassword(plaintextPassword);
-
-    const updated = await prisma.user.update({
-      where: { id: userId },
-      data: {
-        verificationStatus: 'VERIFIED',
-        passwordHash,
-        passwordIssuedAt: new Date(),
-      },
-      select: PUBLIC_USER_FIELDS,
-    });
-
-    return { user: updated, plaintextPassword, overrodeRegistryMismatch };
+    const updated = await issueCredentials(userId, { verificationStatus: 'VERIFIED' }, generateSixDigitCode(), deliver);
+    return { user: updated, overrodeRegistryMismatch };
   },
 
   async rejectStudent(userId, { institutionId } = {}) {
@@ -290,7 +292,7 @@ export const userService = {
     return { user: updated, snapshot: user, team };
   },
 
-  async restoreRevokedStudent(userId) {
+  async restoreRevokedStudent(userId, { deliver } = {}) {
     const user = await prisma.user.findUnique({
       where: { id: userId },
       select: { id: true, role: true, verificationStatus: true, fullName: true, email: true },
@@ -301,25 +303,13 @@ export const userService = {
       throw Conflict('Only REVOKED users can be restored');
     }
 
-    const plaintextPassword = generateSixDigitCode();
-    const passwordHash = await hashPassword(plaintextPassword);
-
-    const updated = await prisma.user.update({
-      where: { id: userId },
-      data: {
-        verificationStatus: 'VERIFIED',
-        passwordHash,
-        passwordIssuedAt: new Date(),
-      },
-      select: PUBLIC_USER_FIELDS,
-    });
-
+    const updated = await issueCredentials(userId, { verificationStatus: 'VERIFIED' }, generateSixDigitCode(), deliver);
     invalidateUserStatus(userId);
-    return { user: updated, plaintextPassword, snapshot: user };
+    return { user: updated, snapshot: user };
   },
 
   // Issue a fresh 6-digit code for an already-VERIFIED user (lost-password).
-  async reissuePassword(userId) {
+  async reissuePassword(userId, { deliver } = {}) {
     const user = await prisma.user.findUnique({
       where: { id: userId },
       select: { id: true, role: true, verificationStatus: true, fullName: true, email: true },
@@ -329,13 +319,8 @@ export const userService = {
       throw Forbidden('Cannot reissue password for a non-verified account');
     }
 
-    const plaintextPassword = generateSixDigitCode();
-    const passwordHash = await hashPassword(plaintextPassword);
-    await prisma.user.update({
-      where: { id: userId },
-      data: { passwordHash, passwordIssuedAt: new Date() },
-    });
-    return { user, plaintextPassword };
+    const updated = await issueCredentials(userId, {}, generateSixDigitCode(), deliver);
+    return { user: updated };
   },
 
   // Auth lookup — returns the row including the hash. ONLY the auth controller

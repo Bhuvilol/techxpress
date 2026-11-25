@@ -2,6 +2,7 @@ import { userService } from '../services/user.service.js';
 import { sendIdCard } from '../utils/sendIdCard.js';
 import { auditService } from '../services/audit.service.js';
 import {
+  requireDelivered,
   sendVerificationApprovedMail,
   sendVerificationRejectedMail,
   sendReregisterRequestMail,
@@ -37,12 +38,15 @@ export const listStudents = async (req, res) => {
 
 export const approve = async (req, res) => {
   const institutionId = requireCoordinatorInstitutionId(req);
-  const { user, plaintextPassword } = await userService.approveStudent(req.params.id, { institutionId });
-
-  const mail = await sendVerificationApprovedMail({
-    to: user.email,
-    fullName: user.fullName,
-    password: plaintextPassword,
+  // Approved only if the email goes out. Coordinators never see the password:
+  // it is delivered to the student by email alone.
+  const { user } = await userService.approveStudent(req.params.id, {
+    institutionId,
+    deliver: async ({ user, plaintextPassword }) => requireDelivered(await sendVerificationApprovedMail({
+      to: user.email,
+      fullName: user.fullName,
+      password: plaintextPassword,
+    })),
   });
 
   auditService.record({
@@ -50,19 +54,10 @@ export const approve = async (req, res) => {
     action: 'USER_VERIFIED',
     entityType: 'User',
     entityId: user.id,
-    details: { email: user.email, via: 'COORDINATOR', emailDelivered: mail.delivered },
+    details: { email: user.email, via: 'COORDINATOR' },
   });
 
-  // Coordinators must NEVER see the plaintext password — they only confirm
-  // identity. The password is delivered exclusively to the student by email;
-  // if delivery fails, an admin can reissue it (which also shows it once).
-  res.json({
-    message: mail.delivered
-      ? 'User verified and credentials emailed'
-      : 'User verified, but the email could not be sent — ask an organizer to reissue the password',
-    user,
-    emailDelivered: mail.delivered,
-  });
+  res.json({ message: 'User verified and credentials emailed', user });
 };
 
 export const reject = async (req, res) => {
