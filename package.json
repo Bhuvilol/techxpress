@@ -15,10 +15,13 @@
     "build": "node scripts/build.mjs",
     "build:local": "node scripts/build.mjs --no-install",
     "preview": "wrangler dev",
-    "lint": "npm --prefix apps/site run lint && npm --prefix apps/portal run lint"
+    "lint": "npm --prefix apps/site run lint && npm --prefix apps/portal run lint",
+    "cutout": "node scripts/cutout.mjs",
+    "test:cutout": "node --test scripts/cutout.test.mjs"
   },
   "devDependencies": {
     "playwright": "^1.65.1",
+    "sharp": "^0.35.5",
     "wrangler": "^4.166.0"
   }
 }
