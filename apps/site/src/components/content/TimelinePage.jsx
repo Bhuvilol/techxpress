@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import './ContentPages.css';
 
 const PRE_DEPARTURE_STATIONS = [
@@ -250,8 +250,15 @@ export default function TimelinePage({ onBack }) {
       <button className="back-btn" onClick={onBack}>← BACK TO SEAT</button>
 
       <div className="content-container animate-fade-in">
-        {/* Boarding Pass Hero */}
-        <header className="timeline-hero glass">
+        <div className="station-board-sheet">
+          <div className="reg-board-banner">
+            <span className="reg-banner-train" aria-hidden="true">🕒</span>
+            <span className="reg-banner-title">EXPEDITION TIMELINE</span>
+            <span className="reg-banner-sub">CARRIAGE Nº 4</span>
+          </div>
+
+          {/* Boarding Pass Hero */}
+          <header className="timeline-hero">
           <div className="timeline-hero-top">
             <span className="hero-eyebrow">ALL ABOARD &nbsp;|&nbsp; ITER, SOA UNIVERSITY</span>
             <span className="boarding-pass-badge">BOARDING PASS · 3 DAYS · FINAL SERVICE</span>
@@ -422,6 +429,7 @@ export default function TimelinePage({ onBack }) {
         <footer className="page-footer">
           <p>SOA TECHXPRESS 2026 + ABINYA 3.1 &nbsp;|&nbsp; ITER, SOA UNIVERSITY</p>
         </footer>
+        </div>
       </div>
     </div>
   );
