@@ -11,6 +11,7 @@ import cloudAsset from '../assets/cloud_wbg.png';
 import interiorMaskPngAsset from '../assets/train_interior_pov_masked1_optimized.png';
 import interiorMaskWebpAsset from '../assets/train_interior_pov_masked1_optimized.webp';
 import interiorVideoAsset from '../assets/train_bg_optimized.mp4';
+import { warmAssets } from '../utils/assetCache';
 import './TrainScene.css';
 
 gsap.registerPlugin(ScrollTrigger);
@@ -162,22 +163,25 @@ export default function TrainScene({ onComplete }) {
 
   const assetUrl = (path) => `${path}?retry=${loadAttempt}`;
 
-  /* ── Preload interior assets as soon as the landing artwork is ready ── */
+  /* ── Preload & cache station + interior assets as soon as the landing artwork is ready ── */
   useEffect(() => {
     if (!loaded || interiorPreloadStartedRef.current) return;
     interiorPreloadStartedRef.current = true;
 
-    const img = new Image();
-    img.decoding = 'async';
-    img.fetchPriority = 'low';
     const supportsWebp = document.createElement('canvas').toDataURL('image/webp').startsWith('data:image/webp');
-    img.src = supportsWebp
-      ? interiorMaskWebpAsset
-      : interiorMaskPngAsset;
+    const interiorMask = supportsWebp ? interiorMaskWebpAsset : interiorMaskPngAsset;
 
-    const video = document.createElement('video');
-    video.preload = 'auto';
-    video.src = interiorVideoAsset;
+    warmAssets([
+      interiorMask,
+      interiorVideoAsset,
+      backgroundAsset,
+      tracksAsset,
+      closedTrainAsset,
+      openTrainAsset,
+      platformAsset,
+      stationMasterAsset,
+      cloudAsset,
+    ]);
   }, [loaded]);
 
   /* ── Smooth Navigation to Train Interior ── */
