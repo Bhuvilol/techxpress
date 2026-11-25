@@ -101,3 +101,14 @@ export const registrationSchema = z.object({
       return parsed;
     }),
 });
+
+// PNR status check (POST /api/registration/pnr): both values must match the
+// same student. Invalid input is a 400; a valid but unknown pair is not.
+export const pnrSchema = z.object({
+  registrationNo: z.string({ required_error: 'Enter your registration number.' }).trim()
+    .min(1, 'Enter your registration number.')
+    .max(50, 'Registration number is too long — 50 characters at most.')
+    .transform(normalizeRegistrationNo),
+  email: z.string({ required_error: 'Enter the email you registered with.' }).trim().toLowerCase()
+    .email('Enter the email you registered with.'),
+});

@@ -323,6 +323,34 @@ export const userService = {
     return { user: updated };
   },
 
+  // Public PNR status check. The registration number and the email must
+  // belong to the same student; anything else (no such number, wrong email,
+  // a staff account) looks exactly like "no reservation", so the endpoint
+  // can't be used to find out which registration numbers exist.
+  // Returns { status, user? }: `user` only for a VERIFIED student.
+  async lookupPnr({ registrationNo, email }) {
+    const user = await prisma.user.findUnique({
+      where: { registrationNo: normalizeRegistrationNo(registrationNo) },
+      select: {
+        id: true,
+        role: true,
+        email: true,
+        verificationStatus: true,
+        fullName: true,
+        publicId: true,
+        institution: { select: { name: true } },
+        domain: { select: { name: true } },
+      },
+    });
+    const matches = Boolean(user)
+      && user.role === 'STUDENT'
+      && typeof user.email === 'string'
+      && user.email.toLowerCase() === String(email).toLowerCase();
+    if (!matches) return { status: 'NO_RESERVATION' };
+    if (user.verificationStatus !== 'VERIFIED') return { status: user.verificationStatus };
+    return { status: 'VERIFIED', user };
+  },
+
   // Auth lookup — returns the row including the hash. ONLY the auth controller
   // should call this; everywhere else uses findById which strips secrets.
   findForAuth(email) {
