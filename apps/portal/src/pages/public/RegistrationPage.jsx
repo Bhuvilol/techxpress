@@ -8,7 +8,6 @@ import {
   CheckCircle2,
   FileText,
   Github,
-  Globe,
   IdCard,
   ImagePlus,
   Linkedin,
@@ -116,7 +115,6 @@ const EMPTY = {
   technicalSkills: '',
   nonTechnicalSkills: '',
   linkedinUrl: '',
-  portfolioUrl: '',
   githubUrl: '',
   resumeDriveLink: '',
   certificationsAchievements: '',
@@ -133,11 +131,10 @@ const EMPTY = {
 // Clear, human messages for every rule the server enforces
 // (backend/src/validators/registration.schema.js), checked before submit.
 
-const URL_FIELDS = ['linkedinUrl', 'portfolioUrl', 'githubUrl', 'resumeDriveLink', 'researchPublicationUrl'];
+const URL_FIELDS = ['linkedinUrl', 'githubUrl', 'resumeDriveLink', 'researchPublicationUrl'];
 
 const URL_EXAMPLES = {
   linkedinUrl: 'https://linkedin.com/in/yourname',
-  portfolioUrl: 'https://yourname.dev',
   githubUrl: 'https://github.com/yourname',
   resumeDriveLink: 'https://drive.google.com/file/d/…',
   researchPublicationUrl: 'https://doi.org/…',
@@ -148,7 +145,7 @@ const FIELD_ORDER = [
   'fullName', 'email', 'registrationNo', 'phone', 'gender', 'idCard',
   'institutionId', 'preferredDomains', 'domainId', 'yearSemester', 'degree',
   'contributionAreas', 'nonTechnicalSkills', 'technicalSkills', 'preferredTeamRole',
-  'linkedinUrl', 'portfolioUrl', 'githubUrl', 'resumeDriveLink', 'researchPublicationUrl',
+  'linkedinUrl', 'githubUrl', 'resumeDriveLink', 'researchPublicationUrl',
   'certificationsAchievements', 'projectInitiative', 'participationExperience',
   'bio', 'achievements', 'hackathonExperience',
 ];
@@ -159,7 +156,7 @@ const FIELD_LABELS = {
   domainId: 'Preferred domain', yearSemester: 'Year / Semester', degree: 'Degree',
   contributionAreas: 'Contribution areas', preferredTeamRole: 'Preferred team role',
   technicalSkills: 'Technical skills', nonTechnicalSkills: 'Non-technical skills',
-  linkedinUrl: 'LinkedIn profile', portfolioUrl: 'Portfolio link', githubUrl: 'GitHub profile',
+  linkedinUrl: 'LinkedIn profile', githubUrl: 'GitHub profile',
   resumeDriveLink: 'Resume link', researchPublicationUrl: 'Publication link',
   certificationsAchievements: 'Certifications', projectInitiative: 'Project / initiative',
   participationExperience: 'Participation experience', bio: 'Bio',
@@ -665,13 +662,6 @@ export const RegistrationPage = () => {
               <div className="group relative">
                 <Linkedin size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20 transition-colors group-focus-within:text-white" />
                 <input type="text" inputMode="url" autoComplete="url" className="input-glass !pl-14 h-12 border-white/10 bg-black transition-all focus:border-white" value={form.linkedinUrl} onChange={set('linkedinUrl')} onBlur={normalizeUrlField('linkedinUrl')} placeholder="https://linkedin.com/in/..." />
-              </div>
-            </FormField>
-
-            <FormField field="portfolioUrl" label="Portfolio / Work Link" error={errors.portfolioUrl}>
-              <div className="group relative">
-                <Globe size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20 transition-colors group-focus-within:text-white" />
-                <input type="text" inputMode="url" autoComplete="url" className="input-glass !pl-14 h-12 border-white/10 bg-black transition-all focus:border-white" value={form.portfolioUrl} onChange={set('portfolioUrl')} onBlur={normalizeUrlField('portfolioUrl')} placeholder="https://..." />
               </div>
             </FormField>
 
