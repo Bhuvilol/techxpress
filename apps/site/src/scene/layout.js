@@ -4,7 +4,7 @@
 // Each composition has a viewBox (the SAFE AREA: always fully on screen,
 // everything you can tap lives inside it) and a BLEED (extra art drawn past
 // the edges, shown when the screen is wider or taller than the viewBox).
-// The layer <svg>s use preserveAspectRatio="xMidYMid meet" + overflow:visible.
+// The stage fits the viewBox to the screen (meet) and lets the bleed show.
 
 export const COMPOSITIONS = {
   wide: {
