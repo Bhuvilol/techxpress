@@ -429,7 +429,6 @@ export const RegistrationPage = () => {
         reportErrors(flat);
       } else {
         // Duplicates come back as one generic CONFLICT with no field name (by design).
-
         toast.error(err.message || 'Registration failed.');
       }
     } finally {

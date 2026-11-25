@@ -49,13 +49,11 @@ export const listPending = async (req, res) => {
     const entry = u.registrationNo ? registryByRegNo.get(u.registrationNo) : null;
     return {
       ...u,
-      // Same shape as registryService.matchUser — the admin UI reads
-      // registryMatch.emailMatches to show the "Email mismatch" badge.
+      // The admin UI reads registryMatch.mismatches for its badge.
       registryMatch: entry
         ? {
             matched: true,
             entry,
-            emailMatches: u.email ? entry.email?.toLowerCase() === u.email.toLowerCase() : null,
             mismatches: registryMismatches(u, entry),
           }
         : { matched: false },

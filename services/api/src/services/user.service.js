@@ -98,9 +98,9 @@ export const userService = {
       prisma.institution.findUnique({ where: { id: data.institutionId }, select: { id: true } }),
       prisma.domain.count({ where: { id: { in: domainIds } } }),
     ]);
-    if (!institution) throw BadRequest('Select your institution from the list.', { field: 'institutionId' });
+    if (!institution) throw BadRequest('Select your institution from the list.');
     if (domainCount !== domainIds.length) {
-      throw BadRequest('Pick your domains from the list.', { field: 'preferredDomains' });
+      throw BadRequest('Pick your domains from the list.');
     }
 
     // Duplicate check. The response names no field: a field name would tell
@@ -177,23 +177,25 @@ export const userService = {
       throw Conflict('Cannot verify a revoked account');
     }
 
-    // Registry check. Coordinators cannot override it; an admin can, once
-    // they have seen the mismatch (allowRegistryMismatch).
-    let overrodeRegistryMismatch = false;
-    if (user.registrationNo && !allowRegistryMismatch) {
+    // Registry check. Only an institution mismatch blocks approval: a student
+    // who typed a personal email should not need an override each time (the
+    // email difference still shows in the admin list). Coordinators cannot
+    // override; an admin can, once they have seen it (allowRegistryMismatch).
+    let blocking = [];
+    if (user.registrationNo) {
       const entry = await prisma.collegeRegistry.findUnique({
         where: { registrationNo: user.registrationNo },
         select: { email: true, institutionId: true, institution: { select: { name: true } } },
       });
-      const mismatches = registryMismatches(user, entry);
-      if (mismatches.length) {
-        // Top-level code, so the client can branch on it (the API client reads `code`).
-        throw new AppError(409, 'REGISTRY_MISMATCH',
-          'The college registry does not match this registration. An organizer must check it before approval.',
-          { mismatches });
-      }
-      overrodeRegistryMismatch = mismatches.length > 0;
+      blocking = registryMismatches(user, entry).filter((m) => m.field === 'institution');
     }
+    if (blocking.length && !allowRegistryMismatch) {
+      // Top-level code, so the client can branch on it (the API client reads `code`).
+      throw new AppError(409, 'REGISTRY_MISMATCH',
+        'The college registry does not match this registration. An organizer must check it before approval.',
+        { mismatches: blocking });
+    }
+    const overrodeRegistryMismatch = blocking.length > 0;
 
     const plaintextPassword = generateSixDigitCode();
     const passwordHash = await hashPassword(plaintextPassword);
