@@ -19,6 +19,9 @@ export const listStudentsQuerySchema = z.object({
   search: z.string().trim().max(120).optional().transform((v) => v || undefined),
   page: z.coerce.number().int().min(1).optional(),
   limit: z.coerce.number().int().min(1).max(100).optional(),
+  // Narrow the list to one institution. Coordinators tied to an institution
+  // are always limited to it, whatever this says.
+  institutionId: z.string().cuid().optional(),
 });
 
 export const lookupByRegistrationNoQuerySchema = z.object({

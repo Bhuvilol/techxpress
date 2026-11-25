@@ -12,8 +12,12 @@ import {
 // "no filter" in userService).
 const requireCoordinatorInstitutionId = (req) => req.user.institutionId ?? null;
 
+// For lists: a coordinator without an institution may narrow the list to one
+// with ?institutionId=. A coordinator with one always sees only theirs.
+const listInstitutionId = (req) => req.user.institutionId ?? req.query.institutionId ?? null;
+
 export const listPending = async (req, res) => {
-  const institutionId = requireCoordinatorInstitutionId(req);
+  const institutionId = listInstitutionId(req);
   const users = await userService.listPending({
     search: req.query.search,
     institutionId,
@@ -22,7 +26,7 @@ export const listPending = async (req, res) => {
 };
 
 export const listStudents = async (req, res) => {
-  const institutionId = requireCoordinatorInstitutionId(req);
+  const institutionId = listInstitutionId(req);
   const users = await userService.listStudents({
     status: req.query.status,
     search: req.query.search,
