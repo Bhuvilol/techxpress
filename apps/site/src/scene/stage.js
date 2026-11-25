@@ -66,7 +66,7 @@ export const SLOTS = {
   tall: {
     sky: { x: -240, y: -340, w: 1560, h: 2600 },
     sun: { x: 640, y: 360, w: 280, h: 280 },
-    birds: { x: 80, y: 300, w: 440, h: 150 },
+    birds: { x: 80, y: 50, w: 440, h: 150 }, // above the LED board (was hidden behind it at y 300)
     platform2: { x: -240, y: 820, w: 1560, h: 240 },
     mast: { instances: [{ x: 10, y: 520, w: 110, h: 540 }, { x: 490, y: 520, w: 110, h: 540 }, { x: 970, y: 520, w: 110, h: 540 }] },
     train: { h: 560, bottom: 1320, doorX: 470 },
