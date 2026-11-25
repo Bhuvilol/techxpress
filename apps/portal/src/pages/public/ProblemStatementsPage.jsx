@@ -1,8 +1,5 @@
 import { useMemo, useState } from 'react';
-import {
-  FileText, Search, ChevronDown, X,
-  HeartPulse, Sprout, Leaf, Cpu, Briefcase, Scale, Lightbulb, Shapes,
-} from 'lucide-react';
+import { FileText, Search, ChevronDown, X } from 'lucide-react';
 import { api } from '../../lib/api.js';
 import { useApi } from '../../hooks/useApi.js';
 import { PageHeader } from '../../components/ui/PageHeader.jsx';
@@ -10,41 +7,12 @@ import { Empty } from '../../components/ui/Empty.jsx';
 import { Badge } from '../../components/ui/Badge.jsx';
 import { CardSkeleton } from '../../components/ui/Skeleton.jsx';
 import { cn } from '../../utils/cn.js';
+import { THEMES, OTHER, themeForDomain } from '../../lib/themes.js';
 
-// Problem statements grouped into a handful of themes instead of one section
-// per domain (29 domains × 1 statement made the page endlessly long).
-// Domains are mapped to themes by name; any domain an organizer adds later
-// that isn't listed here lands in "Other".
+// Problem statements grouped into themes (lib/themes.js) instead of one
+// section per domain (29 domains × 1 statement made the page endlessly long).
 
-const THEMES = [
-  { id: 'health', label: 'Health & Life Sciences', icon: HeartPulse, domains: [
-    'Healthcare & Medical Technology', 'Pharmaceutical Innovation', 'Nursing & Patient Care',
-    'Mental Health & Wellness', 'Dental Healthcare', 'Public Health Systems', 'Veterinary & Animal Welfare',
-  ] },
-  { id: 'agri', label: 'Agriculture, Food & Rural', icon: Sprout, domains: [
-    'Agriculture & Smart Farming', 'Food Technology', 'Rural Development',
-  ] },
-  { id: 'env', label: 'Environment & Climate', icon: Leaf, domains: [
-    'Environmental Sustainability', 'Climate & Green Technology',
-  ] },
-  { id: 'tech', label: 'Technology & Innovation', icon: Cpu, domains: [
-    'Artificial Intelligence', 'Cybersecurity & Digital Safety', 'IoT & Smart Devices',
-    'Productivity & Workflow Automation', 'Smart Campus Solutions', 'Research & Innovation',
-  ] },
-  { id: 'biz', label: 'Business & Commerce', icon: Briefcase, domains: [
-    'Business & Finance', 'Marketing & Consumer Experience', 'E-Commerce & Retail',
-    'Hospitality & Tourism', 'Supply Chain & Logistics',
-  ] },
-  { id: 'society', label: 'Society, Law & Education', icon: Scale, domains: [
-    'Legal Technology', 'Education Technology', 'Social Impact & Community Development',
-    'Women Safety & Empowerment', 'Accessibility & Inclusion',
-  ] },
-  { id: 'open', label: 'Open Innovation', icon: Lightbulb, domains: ['Open Innovation'] },
-];
-const OTHER = { id: 'other', label: 'Other', icon: Shapes, domains: [] };
-
-const themeByDomain = new Map(THEMES.flatMap((t) => t.domains.map((d) => [d, t])));
-const themeOf = (ps) => themeByDomain.get(ps.domain?.name) ?? OTHER;
+const themeOf = (ps) => themeForDomain(ps.domain?.name);
 
 export const ProblemStatementsPage = () => {
   const { data, loading, error } = useApi(() => api.get('/api/taxonomy/problem-statements'), []);

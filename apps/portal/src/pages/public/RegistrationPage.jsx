@@ -26,6 +26,7 @@ import { Spinner } from '../../components/ui/Spinner.jsx';
 import { ScrambleText } from '../../components/ui/ScrambleText.jsx';
 import { Badge } from '../../components/ui/Badge.jsx';
 import { compressImage } from '../../utils/imageCompress.js';
+import { DomainPicker } from '../../components/registration/DomainPicker.jsx';
 
 const CONTRIBUTION_AREA_OPTIONS = [
   'Research & Documentation',
@@ -146,7 +147,7 @@ const URL_EXAMPLES = {
 const FIELD_ORDER = [
   'fullName', 'email', 'registrationNo', 'phone', 'gender', 'idCard',
   'institutionId', 'preferredDomains', 'domainId', 'yearSemester', 'degree',
-  'contributionAreas', 'preferredTeamRole', 'technicalSkills', 'nonTechnicalSkills',
+  'contributionAreas', 'nonTechnicalSkills', 'technicalSkills', 'preferredTeamRole',
   'linkedinUrl', 'portfolioUrl', 'githubUrl', 'resumeDriveLink', 'researchPublicationUrl',
   'certificationsAchievements', 'projectInitiative', 'participationExperience',
   'bio', 'achievements', 'hackathonExperience',
@@ -575,36 +576,18 @@ export const RegistrationPage = () => {
                 field="domainId" label={requiredLabel('Preferred Domain')}
                 field="preferredDomains"
                 error={errors.domainId ?? errors.preferredDomains}
-                hint="Select up to 4. Your first selected domain is treated as the primary domain for team and qualification logic."
+                hint="Your first pick is your primary domain, used for team formation and qualification."
               >
                 <div className="field-box rounded-none border border-white/10 bg-white/[0.02] p-3 sm:p-4 md:p-5">
                   {domLoading ? (
                     <div className="input-glass flex h-12 items-center gap-2 text-white/40"><Spinner size={12} /> Loading...</div>
                   ) : (
-                    <div className="flex flex-wrap gap-2.5 md:gap-3">
-                      {domData?.domains.map((domain) => {
-                        const active = form.preferredDomains.includes(domain.id);
-                        const disabled = !active && form.preferredDomains.length >= 4;
-                        return (
-                          <button
-                            key={domain.id}
-                            type="button"
-                            disabled={disabled}
-                            className={`rounded-full border px-4 py-2.5 text-left font-mono text-[11px] leading-none transition-all disabled:cursor-not-allowed disabled:opacity-40 ${
-                              active
-                                ? 'border-white bg-white text-black shadow-[0_0_0_1px_rgba(255,255,255,0.12)]'
-                                : 'border-white/12 bg-black/70 text-white/78 hover:border-white/30 hover:bg-white/[0.05]'
-                            }`}
-                            onClick={() => setPreferredDomain(domain.id)}
-                          >
-                            <div className="flex items-center gap-2.5">
-                              <span>{domain.name}</span>
-                              {active ? <span className="shrink-0 rounded-full bg-black/12 px-1.5 py-0.5 text-[9px] font-bold tracking-[0.08em] text-black">#{form.preferredDomains.indexOf(domain.id) + 1}</span> : null}
-                            </div>
-                          </button>
-                        );
-                      })}
-                    </div>
+                    <DomainPicker
+                      domains={domData?.domains ?? []}
+                      value={form.preferredDomains}
+                      max={4}
+                      onToggle={setPreferredDomain}
+                    />
                   )}
                 </div>
               </FormField>
@@ -639,16 +622,14 @@ export const RegistrationPage = () => {
               </FormField>
             </div>
 
-            <FormField field="preferredTeamRole" label={requiredLabel('Preferred Team Role')} error={errors.preferredTeamRole}>
-              <div className="group relative">
-                <Briefcase size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20 transition-colors group-focus-within:text-white" />
-                <select className="select-glass !pl-14 h-12 border-white/10 bg-black transition-all focus:border-white" required value={form.preferredTeamRole} onChange={set('preferredTeamRole')}>
-                  <option value="">Select role...</option>
-                  {TEAM_ROLE_OPTIONS.map((role) => (
-                    <option key={role} value={role}>{role}</option>
-                  ))}
-                </select>
-              </div>
+            <FormField field="nonTechnicalSkills" label="Non-Technical Skills" error={errors.nonTechnicalSkills}>
+              <textarea
+                className="input-glass min-h-[120px] border-white/10 bg-black px-4 py-4 transition-all focus:border-white"
+                maxLength={500}
+                value={form.nonTechnicalSkills}
+                onChange={set('nonTechnicalSkills')}
+                placeholder="Leadership, communication, pitching, outreach, documentation..."
+              />
             </FormField>
 
             <FormField field="technicalSkills" label="Technical Skills" error={errors.technicalSkills} hint="Optional free text. Stack, tools, methods, labs, platforms.">
@@ -661,14 +642,16 @@ export const RegistrationPage = () => {
               />
             </FormField>
 
-            <FormField field="nonTechnicalSkills" label="Non-Technical Skills" error={errors.nonTechnicalSkills}>
-              <textarea
-                className="input-glass min-h-[120px] border-white/10 bg-black px-4 py-4 transition-all focus:border-white"
-                maxLength={500}
-                value={form.nonTechnicalSkills}
-                onChange={set('nonTechnicalSkills')}
-                placeholder="Leadership, communication, pitching, outreach, documentation..."
-              />
+            <FormField field="preferredTeamRole" label={requiredLabel('Preferred Team Role')} error={errors.preferredTeamRole}>
+              <div className="group relative">
+                <Briefcase size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20 transition-colors group-focus-within:text-white" />
+                <select className="select-glass !pl-14 h-12 border-white/10 bg-black transition-all focus:border-white" required value={form.preferredTeamRole} onChange={set('preferredTeamRole')}>
+                  <option value="">Select role...</option>
+                  {TEAM_ROLE_OPTIONS.map((role) => (
+                    <option key={role} value={role}>{role}</option>
+                  ))}
+                </select>
+              </div>
             </FormField>
           </div>
         </Section>
