@@ -244,3 +244,10 @@ export const buildSubmitPayload = (form) => {
   }
   return payload;
 };
+
+// True when the visitor has typed or picked anything (the honeypot does not
+// count). The booking panel asks before closing when this is true.
+export const hasFormData = (form) =>
+  Object.keys(INITIAL_FORM).some(
+    (key) => key !== 'website' && JSON.stringify(form[key]) !== JSON.stringify(INITIAL_FORM[key]),
+  );

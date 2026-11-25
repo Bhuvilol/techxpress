@@ -1,5 +1,14 @@
+// The booking (registration) counter: the teammate's registration form,
+// unchanged in behaviour (fields, validation, ID-card upload, honeypot,
+// POST /api/registration), dressed as an Indian Railways reservation
+// requisition form. Lazy-loaded by the shell as its own chunk.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { api } from '../../lib/api';
+import { fetchRegistrationOpen, markRegistrationClosed } from '../../lib/station.js';
+import { shutterKey } from '../../lib/countdown.js';
+import { BOOK, EVENT, LABELS, PNR, UI } from '../../content/station.js';
+import { goToPortal, PORTAL_URL } from '../portal.js';
+import { useNow } from '../hooks.js';
 import { compressImage } from '../../utils/imageCompress';
 import { normalizeRegistrationNo } from '../../utils/registrationNo';
 import {
@@ -8,12 +17,16 @@ import {
   INITIAL_FORM,
   FIELD_ORDER,
   URL_FIELDS,
-  URL_EXAMPLES,
   buildSubmitPayload,
+  hasFormData,
   normalizeUrl,
   validateRegistration,
 } from '../../utils/registrationForm';
-import './ContentPages.css';
+
+// The draft survives closing the panel (until the page is left), so a
+// mistaken swipe or the back button never loses a half-filled form.
+let draft = INITIAL_FORM;
+
 
 const CONTRIBUTION_AREA_OPTIONS = [
   'Research & Documentation',
@@ -186,8 +199,56 @@ function IdCardUpload({ value, onChange, onError, disabled }) {
   );
 }
 
-export default function RegisterPage({ onBack }) {
-  const [form, setForm] = useState(INITIAL_FORM);
+function Shutter({ titleId, onOpen }) {
+  const now = useNow(60000);
+  const line = BOOK[shutterKey({ now, opensOn: EVENT.registrationOpensOn })];
+  return (
+    <div className="shutter" role="status">
+      <div className="shutter-slats" aria-hidden="true" />
+      <div className="shutter-sign">
+        <p className="shutter-hindi" lang="hi">{LABELS.book.hindi}</p>
+        <h2 id={titleId} tabIndex={-1} className="shutter-title">{line}</h2>
+        <p className="shutter-note">{UI.bookShutterNote}</p>
+        <div className="shutter-actions">
+          <a className="txp-btn txp-btn--paper" href="#timetable" onClick={(e) => { e.preventDefault(); onOpen('timetable'); }}>
+            {LABELS.timetable.english}
+          </a>
+          <a className="txp-btn txp-btn--paper" href="#faq" onClick={(e) => { e.preventDefault(); onOpen('faq'); }}>
+            {LABELS.faq.english}
+          </a>
+          <a className="txp-btn txp-btn--paper" href="#pnr" onClick={(e) => { e.preventDefault(); onOpen('pnr'); }}>
+            {LABELS.pnr.english}
+          </a>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function FormHeader({ titleId }) {
+  return (
+    <header className="req-head" data-grab>
+      <div className="req-head-top">
+        <span className="req-head-rly">{EVENT.trainNo} · {EVENT.trainName}</span>
+        <span className="req-head-hindi" lang="hi">{LABELS.book.hindi}</span>
+      </div>
+      <h2 id={titleId} tabIndex={-1} className="req-head-title">
+        <span className="req-head-kicker">{BOOK.title}</span>
+        {BOOK.formTitle}
+      </h2>
+    </header>
+  );
+}
+
+export default function ReservationCounter({ titleId, onOpen, onDirtyChange }) {
+  const [form, setFormState] = useState(draft);
+  const setForm = useCallback((update) => {
+    setFormState((prev) => {
+      const next = typeof update === 'function' ? update(prev) : update;
+      draft = next;
+      return next;
+    });
+  }, []);
   const [errors, setErrors] = useState({});
   const [bannerError, setBannerError] = useState('');
   const [busy, setBusy] = useState(false);
@@ -199,16 +260,30 @@ export default function RegisterPage({ onBack }) {
   const [taxonomyLoading, setTaxonomyLoading] = useState(true);
   const [taxonomyError, setTaxonomyError] = useState('');
 
+  // Arriving after the lazy chunk loaded: move focus from the loading line to the heading.
+  useEffect(() => {
+    const active = document.activeElement;
+    if (!active || active === document.body) document.getElementById(titleId)?.focus({ preventScroll: true });
+  }, [titleId]);
+
+  // Tell the panel whether closing should ask first.
+  const dirty = !submitted && hasFormData(form);
+  useEffect(() => {
+    onDirtyChange?.(dirty);
+  }, [dirty, onDirtyChange]);
+  useEffect(() => () => onDirtyChange?.(false), [onDirtyChange]);
+
   const fetchMetadata = useCallback(async () => {
-    const [instRes, domRes, statusRes] = await Promise.all([
+    const [instRes, domRes, open] = await Promise.all([
       api.get('/api/taxonomy/institutions'),
       api.get('/api/taxonomy/domains'),
-      api.get('/api/registration/status').catch(() => ({ open: true })),
+      fetchRegistrationOpen(), // null (unknown) counts as open, as before
     ]);
+    if (!instRes || !domRes) throw new Error('Unable to connect to the TechXpress registration API.');
     return {
       institutions: instRes?.institutions ?? [],
       domains: domRes?.domains ?? [],
-      registrationClosed: statusRes?.open === false,
+      registrationClosed: open === false,
     };
   }, []);
 
@@ -329,9 +404,11 @@ export default function RegisterPage({ onBack }) {
       setSubmitted({
         response: res,
         registrationNo: normalized.registrationNo,
+        email: normalized.email.trim(),
         institutionName: selectedInstitution,
         primaryDomain,
       });
+      draft = INITIAL_FORM; // the next booking starts on a fresh form
     } catch (err) {
       if (err.code === 'VALIDATION_ERROR') {
         const fieldErrs = err.details?.body ?? err.details ?? {};
@@ -341,16 +418,11 @@ export default function RegisterPage({ onBack }) {
         }
         reportErrors(flat);
       } else if (err.code === 'CONFLICT') {
-        const field = err.details?.field;
-        const msg =
-          field === 'email'
-            ? 'This email is already registered. Wait for verification or contact the organizers.'
-            : field === 'registrationNo'
-              ? 'This registration number is already registered. Check for typos or contact the organizers.'
-              : err.message;
-        if (field) reportErrors({ [field]: msg });
-        else setBannerError(msg);
+        // Duplicates come back as a generic 409 (no field, so the API does
+        // not reveal which detail is taken): show the server's message.
+        setBannerError(err.message || 'You may already be registered. Check your PNR status or contact the organizers.');
       } else if (err.code === 'REGISTRATION_CLOSED') {
+        markRegistrationClosed();
         setRegistrationClosed(true);
         setBannerError(err.message);
       } else {
@@ -363,91 +435,83 @@ export default function RegisterPage({ onBack }) {
 
   if (submitted) {
     const user = submitted.response?.user;
+    const rows = [
+      ['PASSENGER', user?.fullName || form.fullName],
+      ['EMAIL', user?.email || form.email],
+      [UI.regdNo.toUpperCase(), submitted.registrationNo],
+      ['INSTITUTION', submitted.institutionName],
+      ['PRIMARY DOMAIN', submitted.primaryDomain],
+      [UI.passengerRef.toUpperCase(), user?.publicId, true],
+    ].filter(([, v]) => v);
     return (
-      <div className="content-page register-page" data-lenis-prevent>
-        <button className="back-btn" onClick={onBack}>← BACK TO SEAT</button>
-        <div className="content-container animate-slide-up">
-          <div className="register-form-box register-success-card glass">
-            <div className="reg-board-banner">
-              <span className="reg-banner-train" aria-hidden="true">🎫</span>
-              <span className="reg-banner-title">EXPEDITION BOARDING PASS</span>
-              <span className="reg-banner-sub">PENDING REVIEW</span>
-            </div>
-            <header className="form-header">
-              <h2>REGISTRATION QUEUED</h2>
-              <p>{submitted.response?.message || 'Registration submitted. Awaiting organizer verification.'}</p>
-            </header>
-
-            <div className="boarding-summary-grid">
-              <div className="summary-cell">
-                <span className="summary-label">PASSENGER</span>
-                <strong className="summary-val">{user?.fullName || form.fullName}</strong>
-              </div>
-              <div className="summary-cell">
-                <span className="summary-label">EMAIL</span>
-                <strong className="summary-val">{user?.email || form.email}</strong>
-              </div>
-              <div className="summary-cell">
-                <span className="summary-label">REGD. NUMBER</span>
-                <strong className="summary-val highlight-cyan">{submitted.registrationNo}</strong>
-              </div>
-              {submitted.institutionName && (
-                <div className="summary-cell">
-                  <span className="summary-label">INSTITUTION</span>
-                  <strong className="summary-val">{submitted.institutionName}</strong>
-                </div>
-              )}
-              {submitted.primaryDomain && (
-                <div className="summary-cell">
-                  <span className="summary-label">PRIMARY DOMAIN</span>
-                  <strong className="summary-val">{submitted.primaryDomain}</strong>
-                </div>
-              )}
-              {user?.publicId && (
-                <div className="summary-cell">
-                  <span className="summary-label">PASSENGER REF</span>
-                  <strong className="summary-val code-mono">{user.publicId}</strong>
-                </div>
-              )}
-            </div>
-
-            <div className="ticket-status-note">
-              Your profile and college ID card are now in the verification queue. Once approved by campus coordinators or organizers, your login credentials will be sent to your email.
-            </div>
-
-            <div className="ticket-actions">
-              <button type="button" className="submit-btn" onClick={onBack}>
-                RETURN TO COMPARTMENT
-              </button>
+      <article className="m-book m-book--slip">
+        <header className="req-head" data-grab>
+          <div className="req-head-top">
+            <span className="req-head-rly">{EVENT.trainNo} · {EVENT.trainName}</span>
+            <span className="req-head-hindi" lang="hi">{LABELS.book.hindi}</span>
+          </div>
+          <h2 id={titleId} tabIndex={-1} className="req-head-title">
+            <span className="req-head-kicker">{BOOK.title}</span>
+            {BOOK.successTitle}
+          </h2>
+        </header>
+        <div className="paper paper--form slip">
+          <div className="slip-top">
+            <p className="slip-message">
+              {submitted.response?.message || 'Registration submitted. Awaiting organizer verification.'}
+            </p>
+            <div className="rubber-stamp rubber-stamp--wait" aria-hidden="true">
+              <span className="rubber-stamp-top">PNR · TECHXPRESS JN.</span>
+              <span className="rubber-stamp-label">{PNR.stamps.WAITLISTED.label}</span>
+              <span className="rubber-stamp-bottom">{EVENT.trainNo}</span>
             </div>
           </div>
+          <p className="sr-only">{PNR.stamps.WAITLISTED.label}</p>
+          <dl className="slip-rows">
+            {rows.map(([k, v, mono]) => (
+              <div key={k} className="slip-row">
+                <dt>{k}</dt>
+                <dd className={mono ? 'slip-mono' : undefined}>{v}</dd>
+              </div>
+            ))}
+          </dl>
+          <p className="notice-box">
+            Your profile and college ID card are now in the verification queue. Once approved by campus coordinators or organizers, your login credentials will be sent to your email.
+          </p>
+          <div className="slip-actions">
+            <button
+              type="button"
+              className="txp-btn txp-btn--ink"
+              onClick={() => onOpen('pnr', { registrationNo: submitted.registrationNo, email: submitted.email })}
+            >
+              {BOOK.checkPnr}
+            </button>
+            <a className="txp-btn txp-btn--ghost" href={PORTAL_URL} onClick={goToPortal}>
+              {BOOK.login}
+            </a>
+          </div>
         </div>
-      </div>
+      </article>
+    );
+  }
+
+  if (registrationClosed) {
+    return (
+      <article className="m-book m-book--closed">
+        <FormHeader titleId={`${titleId}-form`} />
+        <Shutter titleId={titleId} onOpen={onOpen} />
+      </article>
     );
   }
 
   return (
-    <div className="content-page register-page" data-lenis-prevent>
-      <button className="back-btn" onClick={onBack}>← BACK TO SEAT</button>
-
-      <div className="content-container animate-slide-up">
-        <div className="register-form-box register-portal-box glass">
-          <div className="reg-board-banner">
-            <span className="reg-banner-train" aria-hidden="true">🚂</span>
-            <span className="reg-banner-title">TECHXPRESS STUDENT REGISTRATION</span>
-            <span className="reg-banner-sub">CARRIAGE Nº 4</span>
-          </div>
-
-          <header className="form-header">
-            <h2>JOIN THE <span>JOURNEY</span></h2>
-            <p>Initialize your TechXpress passenger credentials for verification, team discovery, and boarding.</p>
-          </header>
-
-          {registrationClosed && (
-            <div className="reg-alert reg-alert-warn">
-              Registration is currently closed. Please check back later or contact the organizers.
-            </div>
-          )}
+    <article className="m-book">
+      <FormHeader titleId={titleId} />
+      <div className="paper paper--form req-paper">
+        <div className="req-formno" aria-hidden="true">
+          <span>FORM Nº TXP-1</span>
+          <span>{EVENT.trainNo}</span>
+        </div>
 
           {taxonomyError && (
             <div className="reg-alert reg-alert-error">
@@ -906,10 +970,10 @@ export default function RegisterPage({ onBack }) {
               </div>
             </section>
 
+            <p className="reg-consent">
+              By submitting, you agree to organizer verification of your college ID and TechXpress event guidelines.
+            </p>
             <div className="reg-submit-footer">
-              <p>
-                By submitting, you agree to organizer verification of your college ID and TechXpress event guidelines.
-              </p>
               <button
                 type="submit"
                 className="submit-btn highlight-btn"
@@ -919,8 +983,7 @@ export default function RegisterPage({ onBack }) {
               </button>
             </div>
           </form>
-        </div>
       </div>
-    </div>
+    </article>
   );
 }

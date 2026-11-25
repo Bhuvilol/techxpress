@@ -213,7 +213,7 @@ export const TICKET = {
 export const UI = {
   close: 'Close',
   panelsHeading: 'On the platform',
-  closeAnyway: 'Discard and close',
+  closeAnyway: 'Close form',
   keepEditing: 'Keep editing',
   discardQuestion: 'Close the form? What you typed stays here until you leave the page.',
   loadingCounter: 'Opening the counter…',
