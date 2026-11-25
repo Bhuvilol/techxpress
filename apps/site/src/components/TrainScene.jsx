@@ -189,11 +189,13 @@ export default function TrainScene({ onComplete }) {
     if (isNavigatingRef.current || completeTriggeredRef.current) return;
     isNavigatingRef.current = true;
 
-    // Fade out instruction immediately
+    // Fade out instruction and dismiss dialogue immediately
     setShowInstruction(false);
-
-    // Dismiss dialogue if still active
     setDialogueStep(2);
+
+    // Warm interior media right away if not already cached
+    const supportsWebp = document.createElement('canvas').toDataURL('image/webp').startsWith('data:image/webp');
+    warmAssets([supportsWebp ? interiorMaskWebpAsset : interiorMaskPngAsset, interiorVideoAsset]);
 
     const scrollTl = tlRef.current?.scrollTl;
     if (!scrollTl) {
@@ -204,26 +206,41 @@ export default function TrainScene({ onComplete }) {
       return;
     }
 
-    // Disable ScrollTrigger scrubbing so manual scroll doesn't conflict
+    // Cancel any active ScrollTrigger scrub tween so it cannot fight our entry tween
     if (stRef.current) {
+      stRef.current.getTween()?.kill();
       stRef.current.disable(false);
+    }
+    gsap.killTweensOf(scrollTl);
+
+    // If the user double-taps before train arrival finishes, smoothly glide train into dock
+    const trainEntry = tlRef.current?.trainEntry;
+    if (trainEntry && trainEntry.isActive() && tlRef.current?.openImg && tlRef.current?.trainFinalX !== undefined) {
+      trainEntry.kill();
+      hasArrivedRef.current = true;
+      gsap.to(tlRef.current.openImg, {
+        x: tlRef.current.trainFinalX,
+        duration: 0.45,
+        ease: 'power2.out',
+        force3D: true,
+      });
     }
 
     const currentProgress = scrollTl.progress();
-    const remaining = 1 - currentProgress;
-    const duration = Math.max(0.65, 1.5 * remaining);
+    const remaining = Math.max(0.05, 1 - currentProgress);
+    const duration = Math.max(0.85, 1.45 * remaining);
 
     gsap.to(scrollTl, {
       progress: 1,
       duration,
-      ease: 'power2.inOut',
+      ease: 'sine.inOut',
       onComplete: () => {
         if (!completeTriggeredRef.current && onComplete) {
           completeTriggeredRef.current = true;
           window.scrollTo(0, 0);
-          setTimeout(onComplete, 120);
+          onComplete();
         }
-      }
+      },
     });
   }, [onComplete]);
 
@@ -381,43 +398,37 @@ export default function TrainScene({ onComplete }) {
     /* ═══ Scroll-driven: Boarding ═══ */
     const scrollTl = gsap.timeline({ paused: true });
 
-    // 1. Global Zoom: Pivot EXACTLY on pivotX
+    // 1. Global Zoom: Exponential-feeling curve centered on the train door
     scrollTl.to(masterContainer, {
       scale: zoomScaleFactor,
-      y: -20, // subtle "lift" as you step in
+      y: -18,
       transformOrigin: `${pivotX}px ${pivotY}px`,
-      ease: 'power2.inOut',
+      ease: 'power2.in',
+      force3D: true,
       duration: 1,
     }, 0);
 
-    // 2. Platform Glide: Move vertically down the screen (KEEP QUALITY)
-    // Removed opacity/blur to keep it looking sharp while it slides away
+    // 2. Platform Glide: Move smoothly down out of frame
     scrollTl.to(platform, {
-      y: vh * 0.8,
-      ease: 'power2.in',
-      duration: 0.8,
+      y: vh * 0.85,
+      ease: 'power1.in',
+      force3D: true,
+      duration: 0.78,
     }, 0);
 
-    // 3. Slow World Fade: Blend into the blurred layer
+    // 3. Depth Blur: Crossfade pre-blurred background layer over sharp layer
     scrollTl.to(backgroundBlurRef.current, {
       opacity: 1,
-      ease: 'power1.inOut',
-      duration: 0.9,
-    }, 0.1);
+      ease: 'none',
+      duration: 0.75,
+    }, 0.08);
 
-    // Fade out original sharp layer simultaneously
-    scrollTl.to(backgroundSharpRef.current, {
-      opacity: 0,
-      ease: 'power1.inOut',
-      duration: 0.8,
-    }, 0.2);
-
-    // 4. Entering the train: Final blackout
+    // 4. Entering the train: Smooth blackout envelope into InteriorScene
     scrollTl.to(blackout, {
       opacity: 1,
-      ease: 'power2.in',
-      duration: 0.15,
-    }, 0.85);
+      ease: 'power1.in',
+      duration: 0.28,
+    }, 0.72);
 
     /* ── ScrollTrigger scrubs the zoom timeline ── */
     const st = ScrollTrigger.create({
@@ -442,8 +453,8 @@ export default function TrainScene({ onComplete }) {
     // Scrolling becomes available only after the arrival dialogue is dismissed.
     st.disable(false);
 
-    // Store for cleanup
-    tlRef.current = { trainEntry, scrollTl };
+    // Store for cleanup and smooth early-tap handoff
+    tlRef.current = { trainEntry, scrollTl, openImg, trainFinalX };
     stRef.current = st;
 
     return () => {
