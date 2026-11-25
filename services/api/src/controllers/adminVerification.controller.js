@@ -1,4 +1,5 @@
 import { userService } from '../services/user.service.js';
+import { sendIdCard } from '../utils/sendIdCard.js';
 import { auditService } from '../services/audit.service.js';
 import { disconnectUser, emitLeaderboardChanged } from '../realtime/emitter.js';
 import { prisma } from '../config/db.js';
@@ -218,4 +219,10 @@ export const reissue = async (req, res) => {
     user,
     emailDelivered: mail.delivered,
   });
+};
+
+// ID card photo uploaded at registration.
+export const idCard = async (req, res) => {
+  const card = await userService.getIdCard(req.params.id);
+  sendIdCard(res, card);
 };

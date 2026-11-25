@@ -1,4 +1,5 @@
 import { userService } from '../services/user.service.js';
+import { sendIdCard } from '../utils/sendIdCard.js';
 import { auditService } from '../services/audit.service.js';
 import {
   sendVerificationApprovedMail,
@@ -78,4 +79,10 @@ export const reject = async (req, res) => {
   });
 
   res.json({ message: 'User rejected', user });
+};
+
+// ID card photo of a student this coordinator may review.
+export const idCard = async (req, res) => {
+  const card = await userService.getIdCard(req.params.id, { institutionId: requireCoordinatorInstitutionId(req) });
+  sendIdCard(res, card);
 };

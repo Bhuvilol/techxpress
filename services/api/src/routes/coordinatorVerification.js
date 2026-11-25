@@ -12,6 +12,7 @@ import {
   listStudents,
   approve,
   reject,
+  idCard,
 } from '../controllers/coordinatorVerification.controller.js';
 
 const router = Router();
@@ -20,6 +21,9 @@ router.use(requireAuth, requireRole('COORDINATOR'));
 
 router.get('/pending', validate({ query: listStudentsQuerySchema }), ah(listPending));
 router.get('/students', validate({ query: listStudentsQuerySchema }), ah(listStudents));
+
+router.get('/students/:id/id-card',
+  validate({ params: userIdParamSchema }), ah(idCard));
 
 router.post('/students/:id/approve',
   validate({ params: userIdParamSchema }), ah(approve));

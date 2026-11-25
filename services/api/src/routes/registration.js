@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import express, { Router } from 'express';
 import { validate } from '../middleware/validate.js';
 import { registrationLimiter } from '../middleware/rateLimit.js';
 import { ah } from '../utils/asyncHandler.js';
@@ -25,6 +25,11 @@ const honeypot = (req, res, next) => {
 };
 
 router.get('/status', ah(status));
-router.post('/', registrationLimiter, honeypot, validate({ body: registrationSchema }), ah(register));
+// The form includes the ID card photo (shrunk in the browser, at most 1.5 MB
+// decoded, so about 2 mb as base64). The rate limiter runs first, so the
+// bigger body is only parsed for requests that are allowed through.
+const registrationBody = express.json({ limit: '2mb' });
+
+router.post('/', registrationLimiter, registrationBody, honeypot, validate({ body: registrationSchema }), ah(register));
 
 export default router;

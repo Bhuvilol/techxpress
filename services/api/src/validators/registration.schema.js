@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { normalizeRegistrationNo } from '../utils/registrationNo.js';
+import { parseIdCardDataUrl } from '../utils/idCard.js';
 
 // Human-readable messages: these reach the registration form verbatim when a
 // field fails server-side validation (the form also validates client-side
@@ -63,4 +64,15 @@ export const registrationSchema = z.object({
   participationExperience: longText('Participation experience', 1500),
   achievements: longText('Achievements', 1500),
   hackathonExperience: longText('Hackathon experience', 1500),
+  // Required photo of the college ID card, as a data URL (see utils/idCard.js).
+  // Becomes { mimeType, sizeBytes, data } after validation.
+  idCard: z.string({ required_error: 'Upload a photo of your college ID card.' })
+    .transform((value, ctx) => {
+      const parsed = parseIdCardDataUrl(value);
+      if (parsed.error) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: parsed.error });
+        return z.NEVER;
+      }
+      return parsed;
+    }),
 });

@@ -58,13 +58,16 @@ app.use(
 app.use(requestLog);
 
 // Request bodies are small JSON (the profile photo is a URL, not an upload),
-// so cap them at 100 kb. The only exception is the testing import, which
-// parses its own larger body and exists only when ENABLE_TESTING_IMPORT=true.
+// so cap them at 100 kb. Two exceptions parse their own larger body:
+// registration (it carries the ID card photo, 2 mb, see routes/registration.js)
+// and the testing import, which exists only when ENABLE_TESTING_IMPORT=true.
 const TESTING_PATH = '/api/admin/testing';
+const REGISTER_PATH = '/api/registration';
 const smallJson = express.json({ limit: '100kb' });
 const smallForm = express.urlencoded({ extended: true, limit: '100kb' });
 app.use((req, res, next) => {
   if (env.ENABLE_TESTING_IMPORT && req.path.startsWith(TESTING_PATH)) return next();
+  if (req.method === 'POST' && (req.path === REGISTER_PATH || req.path === `${REGISTER_PATH}/`)) return next();
   smallJson(req, res, (err) => (err ? next(err) : smallForm(req, res, next)));
 });
 

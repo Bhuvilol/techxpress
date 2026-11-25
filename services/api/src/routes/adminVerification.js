@@ -18,6 +18,7 @@ import {
   revoke,
   restore,
   reissue,
+  idCard,
 } from '../controllers/adminVerification.controller.js';
 
 const router = Router();
@@ -29,6 +30,9 @@ router.get('/pending', validate({ query: listStudentsQuerySchema }), ah(listPend
 router.get('/students', validate({ query: listStudentsQuerySchema }), ah(listStudents));
 // Resolve a registration number to a user (admin force add/remove member).
 router.get('/lookup', validate({ query: lookupByRegistrationNoQuerySchema }), ah(lookupByRegistrationNo));
+
+router.get('/students/:id/id-card',
+  validate({ params: userIdParamSchema }), ah(idCard));
 
 router.post('/students/:id/approve',
   validate({ params: userIdParamSchema }), ah(approve));

@@ -77,7 +77,8 @@ export const userService = {
 
   async createPendingStudent(input) {
     // The validator already normalizes; do it again so no caller can bypass it.
-    const data = { ...input, registrationNo: normalizeRegistrationNo(input.registrationNo) };
+    const { idCard, ...fields } = input;
+    const data = { ...fields, registrationNo: normalizeRegistrationNo(fields.registrationNo) };
     const rules = await rulesService.get();
     if (!rules.registrationOpen) {
       throw Forbidden('Registration is currently closed', { code: 'REGISTRATION_CLOSED' });
@@ -105,9 +106,28 @@ export const userService = {
         role: 'STUDENT',
         verificationStatus: 'PENDING',
         passwordHash: null,
+        // Saved in the same statement as the user: no account without its card.
+        ...(idCard && { idCard: { create: idCard } }),
       },
       select: PUBLIC_USER_FIELDS,
     });
+  },
+
+  // A student's ID card image, for admins and coordinators during
+  // verification. Coordinators tied to an institution only see their own.
+  async getIdCard(userId, { institutionId } = {}) {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        role: true,
+        institutionId: true,
+        idCard: { select: { mimeType: true, sizeBytes: true, data: true, createdAt: true } },
+      },
+    });
+    if (!user || user.role !== 'STUDENT') throw NotFound('User not found');
+    assertInstitutionScope(user, institutionId);
+    if (!user.idCard) throw NotFound('No ID card uploaded for this student');
+    return user.idCard;
   },
 
   // Approve a PENDING student: generate a 6-digit code, hash it, store it.
