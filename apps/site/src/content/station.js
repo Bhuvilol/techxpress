@@ -177,3 +177,61 @@ export const BOOK = {
   checkPnr: 'Check PNR status',
   login: 'Log in to VORTEX',
 };
+
+// ── Added for the station UI (src/ui/). ⚠ CONFIRM the wording. ────────────
+
+// The souvenir e-ticket drawn by src/lib/eticket.js.
+export const TICKET = {
+  header: 'TECHXPRESS JN. · ELECTRONIC RESERVATION SLIP',
+  headerHindi: 'इलेक्ट्रॉनिक आरक्षण पर्ची', // ⚠ CONFIRM with a native Hindi speaker
+  kind: 'E-TICKET · SOUVENIR',
+  from: 'SOA',
+  to: 'TECHXPRESS JN.',
+  departure: '09:30 IST', // ⚠ CONFIRM: matches EVENT.startsAt
+  stampTop: 'TECHXPRESS JN.',
+  stampBottom: 'BOARDING CONFIRMED',
+  labels: {
+    train: 'Train No. / Name',
+    pnr: 'PNR',
+    from: 'From',
+    to: 'To',
+    date: 'Date of journey',
+    departure: 'Departure',
+    passenger: 'Passenger name',
+    institution: 'Institution',
+    cls: 'Class',
+    coach: 'Coach',
+    berth: 'Berth',
+    berthType: 'Berth type',
+  },
+  footerSmall: 'SOA TechXpress · Bhubaneswar · 04 Dec 2026',
+  shareTitle: 'My TechXpress ticket',
+  shareText: 'Boarding the 12026 TechXpress. See you at TechXpress Jn.!',
+};
+
+// Small UI words that were not in the sections above.
+export const UI = {
+  close: 'Close',
+  panelsHeading: 'On the platform',
+  closeAnyway: 'Discard and close',
+  keepEditing: 'Keep editing',
+  discardQuestion: 'Close the form? What you typed stays here until you leave the page.',
+  loadingCounter: 'Opening the counter…',
+  liveStatusPrefix: 'Departure board:',
+  timetableCols: { time: 'Time', event: 'Event', venue: 'Venue' },
+  preDepartureTitle: 'Before departure',
+  fareCols: { cls: 'Class', title: 'Passenger', fare: 'Fare', extra: 'Includes' },
+  fareTotal: 'Total prize pool',
+  fareTitle: 'Fare chart',
+  enquiryPlate: { hindi: 'पूछताछ', english: 'ENQUIRY' },
+  enquiryTitle: 'Questions and answers',
+  bookShutterNote: 'Meanwhile, check the timetable or ask at the enquiry counter.',
+  pnrAgain: 'Check another PNR',
+  pnrRequired: {
+    registrationNo: 'Enter your registration number.',
+    email: 'Enter the email you registered with.',
+  },
+  pnrBadEmail: 'That does not look like a valid email.',
+  passengerRef: 'Passenger ref',
+  regdNo: 'Regd. number',
+};
