@@ -231,11 +231,12 @@ export const idCard = async (req, res) => {
 // The ID card (or other details) can't be verified: remove the pending
 // registration and email the student to register again.
 export const requestReregistration = async (req, res) => {
-  const snapshot = await userService.removeForReregistration(req.params.id, {});
+  const snapshot = await userService.removeForReregistration(req.params.id, { allowRejected: true });
   const mail = await sendReregisterRequestMail({
     to: snapshot.email,
     fullName: snapshot.fullName,
     note: req.body.note,
+    previouslyRejected: snapshot.verificationStatus === 'REJECTED',
   });
 
   auditService.record({
@@ -248,6 +249,7 @@ export const requestReregistration = async (req, res) => {
       email: snapshot.email,
       registrationNo: snapshot.registrationNo,
       note: req.body.note ?? null,
+      previousStatus: snapshot.verificationStatus,
       via: 'ADMIN',
       emailDelivered: mail.delivered,
     },

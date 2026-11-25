@@ -100,6 +100,7 @@ export const requestReregistration = async (req, res) => {
     to: snapshot.email,
     fullName: snapshot.fullName,
     note: req.body.note,
+    previouslyRejected: snapshot.verificationStatus === 'REJECTED',
   });
 
   auditService.record({
@@ -112,6 +113,7 @@ export const requestReregistration = async (req, res) => {
       email: snapshot.email,
       registrationNo: snapshot.registrationNo,
       note: req.body.note ?? null,
+      previousStatus: snapshot.verificationStatus,
       via: 'COORDINATOR',
       emailDelivered: mail.delivered,
     },

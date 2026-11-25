@@ -200,28 +200,33 @@ export const sendVerificationRejectedMail = ({ to, fullName, reason }) =>
     }),
   });
 
-// The registration was removed so the student can register again, usually
-// because the ID card photo couldn't be read.
-export const sendReregisterRequestMail = ({ to, fullName, note }) => {
+// The registration was removed so the student can register again: either the
+// ID card photo couldn't be read (pending), or an admin is giving a rejected
+// student a second try (previouslyRejected).
+export const sendReregisterRequestMail = ({ to, fullName, note, previouslyRejected = false }) => {
   const registerUrl = env.APP_URL ? `${env.APP_URL.replace(/\/+$/, '')}/vortex/register` : null;
+  const why = previouslyRejected
+    ? 'Your earlier Vortex registration was not approved. The organizers have cleared it, so you can register again.'
+    : 'We couldn’t verify your Vortex registration because your college ID card photo wasn’t clear enough. Your earlier registration has been removed.';
+  const tips = previouslyRejected
+    ? 'Make sure your details match your college ID card and upload a clear photo of its front.'
+    : 'Register again with a clear photo of the front of your ID card: name, photo and registration number readable, no glare or blur.';
   return sendMail({
     to,
-    subject: 'Action needed: please register again for Vortex',
+    subject: previouslyRejected ? 'You can register again for Vortex' : 'Action needed: please register again for Vortex',
     text:
-      `Hi ${fullName},\n\n` +
-      `We couldn't verify your Vortex registration because your college ID card photo wasn't clear enough.\n` +
+      `Hi ${fullName},\n\n${why}\n` +
       (note ? `Note from the organizers: ${note}\n` : '') +
-      `\nYour earlier registration has been removed. Please register again with a clear photo of the front of your ID card ` +
-      `(name, photo and registration number readable, no glare or blur)${registerUrl ? `:\n${registerUrl}` : '.'}\n\n` +
+      `\n${tips}${registerUrl ? `\n${registerUrl}` : ''}\n\n` +
       `You can use the same email and registration number.\n`,
     html: wrapHtml({
       heading: 'Please register again',
-      intro: `Hi ${escapeHtml(fullName)}, we couldn't verify your Vortex registration because your college ID card photo wasn't clear enough.`,
+      intro: `Hi ${escapeHtml(fullName)}, ${escapeHtml(why.charAt(0).toLowerCase() + why.slice(1))}`,
       body:
         (note
           ? `<div style="margin:8px 0 16px 0;padding:14px 16px;background:#0a0a0a;border:1px solid #2a2a2a;border-radius:4px;font-size:13px;color:#f5f5f5;"><strong style="color:#fbbf24;">Note from the organizers:</strong> ${escapeHtml(note)}</div>`
           : '') +
-        `<p style="margin:0 0 16px 0;font-size:14px;line-height:1.6;color:#d4d4d4;">Your earlier registration has been removed. Register again with a clear photo of the <strong>front</strong> of your ID card: name, photo and registration number readable, no glare or blur. You can use the same email and registration number.</p>` +
+        `<p style="margin:0 0 16px 0;font-size:14px;line-height:1.6;color:#d4d4d4;">${escapeHtml(tips)} You can use the same email and registration number.</p>` +
         (registerUrl
           ? `<p style="margin:0 0 8px 0;"><a href="${escapeHtml(registerUrl)}" style="display:inline-block;padding:12px 20px;background:#22d3ee;color:#000;text-decoration:none;font-weight:700;border-radius:4px;">Register again</a></p>`
           : ''),

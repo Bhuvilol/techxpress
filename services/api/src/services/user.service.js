@@ -184,11 +184,12 @@ export const userService = {
     return { user: updated, snapshot: user };
   },
 
-  // The ID card (or other details) can't be verified: remove the PENDING
-  // registration entirely so the student can register again with the same
-  // email and registration number. The ID card is deleted with it (cascade).
+  // Remove a registration entirely so the student can register again with the
+  // same email and registration number; the ID card is deleted with it
+  // (cascade). Used for PENDING students whose ID card can't be verified and,
+  // by admins only (allowRejected), to give a REJECTED student a second try.
   // Returns a snapshot for the email and audit log.
-  async removeForReregistration(userId, { institutionId } = {}) {
+  async removeForReregistration(userId, { institutionId, allowRejected = false } = {}) {
     const user = await prisma.user.findUnique({
       where: { id: userId },
       select: { id: true, role: true, verificationStatus: true, fullName: true, email: true, registrationNo: true, institutionId: true },
@@ -196,8 +197,11 @@ export const userService = {
     if (!user) throw NotFound('User not found');
     if (user.role !== 'STUDENT') throw Forbidden('Only student registrations can be sent back');
     assertInstitutionScope(user, institutionId);
-    if (user.verificationStatus !== 'PENDING') {
-      throw Conflict('Only pending registrations can be sent back for re-registration');
+    const allowed = user.verificationStatus === 'PENDING' || (allowRejected && user.verificationStatus === 'REJECTED');
+    if (!allowed) {
+      throw Conflict(allowRejected
+        ? 'Only pending or rejected registrations can be cleared for re-registration'
+        : 'Only pending registrations can be sent back for re-registration');
     }
     await prisma.user.delete({ where: { id: userId } });
     return user;
