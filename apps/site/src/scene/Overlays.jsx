@@ -64,14 +64,23 @@ export function LedText({ box, u, scroll }) {
     if (!scroll) return undefined;
     const track = trackRef.current;
     const text = textRef.current;
-    const start = Math.ceil(track.clientWidth / pitch) * pitch;
-    const steps = Math.ceil((start + text.offsetWidth) / pitch);
-    const speed = 70 * u; // px per second
-    const anim = text.animate(
-      [{ transform: `translateX(${start}px)` }, { transform: `translateX(${start - steps * pitch}px)` }],
-      { duration: ((steps * pitch) / speed) * 1000, iterations: Infinity, easing: `steps(${steps}, end)` },
-    );
-    return () => anim.cancel();
+    let anim = null;
+    let alive = true;
+    // Measure only once the LED font is in, or the travel comes out short.
+    (document.fonts?.ready ?? Promise.resolve()).then(() => {
+      if (!alive) return;
+      const start = Math.ceil(track.clientWidth / pitch) * pitch;
+      const steps = Math.ceil((start + text.offsetWidth) / pitch);
+      const speed = 70 * u; // px per second
+      anim = text.animate(
+        [{ transform: `translateX(${start}px)` }, { transform: `translateX(${start - steps * pitch}px)` }],
+        { duration: ((steps * pitch) / speed) * 1000, iterations: Infinity, easing: `steps(${steps}, end)` },
+      );
+    });
+    return () => {
+      alive = false;
+      anim?.cancel();
+    };
   }, [scroll, pitch, u, status]);
 
   const dots = { '--dot': px(pitch), padding: `${px(pitch)} ${px(pitch * 2)}` };
