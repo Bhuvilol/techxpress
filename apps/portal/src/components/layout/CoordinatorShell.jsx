@@ -68,7 +68,7 @@ export const CoordinatorShell = () => {
 
         <div className="border-t border-border-dim px-6 py-6">
           <div className="mb-2 truncate font-mono text-[10px] uppercase tracking-[0.18em] text-text-secondary">
-            {user?.institution?.name ?? 'Campus'}
+            {user?.institution?.name ?? 'All institutions'}
           </div>
           <div className="mb-4 truncate font-mono text-[10px] uppercase tracking-[0.16em] text-text-dim">
             {user?.email}

@@ -18,7 +18,9 @@ import { formatDate } from '../../utils/format.js';
 export const CoordinatorVerificationPage = () => {
   const toast = useToast();
   const { user } = useAuth();
-  const institutionName = user?.institution?.name ?? 'Assigned Institution';
+  // A coordinator without an institution reviews every institution.
+  const scoped = Boolean(user?.institution?.name);
+  const institutionName = user?.institution?.name ?? 'All institutions';
   const [tab, setTab] = useState('PENDING');
   const [search, setSearch] = useState('');
   const [reject, setReject] = useState(null);
@@ -65,7 +67,9 @@ export const CoordinatorVerificationPage = () => {
       <PageHeader
         kicker="Campus Verification"
         title="Institution Review Console"
-        description={`Approve or reject student registrations for ${institutionName}. The verified tab lists only approved students from the same institution.`}
+        description={scoped
+          ? `Approve or reject student registrations for ${institutionName}. The verified tab lists only approved students from the same institution.`
+          : 'Approve or reject student registrations from every institution. The verified tab lists all approved students.'}
         actions={(
           <div className="min-w-[250px] rounded-none border border-white/10 bg-[#050505] px-4 py-3">
             <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-white/30">Coordinator Scope</div>
@@ -89,7 +93,7 @@ export const CoordinatorVerificationPage = () => {
           value={stats.verified}
           hint="Approved for portal access"
         />
-        <ScopeCard institutionName={institutionName} />
+        <ScopeCard institutionName={institutionName} scoped={scoped} />
       </div>
 
       <div className="relative mb-4 w-full">
@@ -119,8 +123,8 @@ export const CoordinatorVerificationPage = () => {
           icon={tab === 'PENDING' ? Clock : ShieldCheck}
           title={tab === 'PENDING' ? 'No pending students' : 'No verified students'}
           description={tab === 'PENDING'
-            ? 'There are no pending registrations for this institution right now.'
-            : 'No verified students from this institution match the current filters.'}
+            ? `There are no pending registrations${scoped ? ' for this institution' : ''} right now.`
+            : `No verified students${scoped ? ' from this institution' : ''} match the current filters.`}
         />
       )}
 
@@ -187,11 +191,11 @@ export const CoordinatorVerificationPage = () => {
   );
 };
 
-const ScopeCard = ({ institutionName }) => (
+const ScopeCard = ({ institutionName, scoped }) => (
   <div className="relative overflow-hidden rounded-none border border-white/5 bg-[#050505] p-6">
     <div className="flex items-start justify-between gap-4">
       <div>
-        <div className="font-mono text-[10px] uppercase tracking-[0.25em] text-white/30">Institution Lock</div>
+        <div className="font-mono text-[10px] uppercase tracking-[0.25em] text-white/30">{scoped ? 'Institution Lock' : 'Scope'}</div>
         <div className="mt-4 font-sans text-[22px] font-black uppercase leading-tight tracking-[0.04em] text-white">
           {institutionName}
         </div>
@@ -199,7 +203,9 @@ const ScopeCard = ({ institutionName }) => (
       <Building2 size={18} className="text-white/15" />
     </div>
     <div className="mt-6 border-t border-white/10 pt-4 font-mono text-[11px] leading-relaxed text-white/40">
-      Coordinator review is restricted to this institution. Both tabs are filtered automatically.
+      {scoped
+        ? 'Coordinator review is restricted to this institution. Both tabs are filtered automatically.'
+        : 'This coordinator account is not tied to an institution, so both tabs show students from every institution.'}
     </div>
   </div>
 );
