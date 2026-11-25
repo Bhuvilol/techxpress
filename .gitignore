@@ -34,3 +34,6 @@ infra/gcp/config.env
 
 # Raw Gemini art for the stage cutouts (processed copies live in apps/site/src/assets/stage/)
 art-source/
+
+# Agent worktrees (Claude Code)
+.claude/worktrees/

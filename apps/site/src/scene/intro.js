@@ -26,6 +26,12 @@ export function markIntroPlayed() {
   try { window.sessionStorage.setItem(SESSION_KEY, '1'); } catch { /* private mode */ }
 }
 
+// Once someone has seen the station (intro finished, skipped or not shown),
+// later visits open straight on the finished stage.
+export function markVisited() {
+  try { window.localStorage.setItem(VISITED_KEY, '1'); } catch { /* private mode */ }
+}
+
 const RISE_MS = 820;
 const SWING_MS = 900;
 const FADE_MS = 700;

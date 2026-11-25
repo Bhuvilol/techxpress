@@ -13,7 +13,7 @@ import { COMPOSITIONS, TALL_QUERY, fullBox } from './layout.js';
 import { STAGE_LAYERS } from './stage.js';
 import { allSources, placePieces } from './geometry.js';
 import { preload } from './assets.js';
-import { markIntroPlayed, playIntro, shouldPlayIntro } from './intro.js';
+import { markIntroPlayed, markVisited, playIntro, shouldPlayIntro } from './intro.js';
 import Piece, { TrainDoor } from './Piece.jsx';
 import { ClockHands, LedText, NameBoardText, Wires } from './Overlays.jsx';
 import useStageTilt from '../motion/useStageTilt.js';
@@ -109,6 +109,7 @@ export default function Station({ onHotspot, dimmed = false, onIntroDone }) {
   const announceDone = useCallback(() => {
     if (doneCalled.current) return;
     doneCalled.current = true;
+    markVisited();
     onIntroDoneRef.current?.();
   }, []);
 
