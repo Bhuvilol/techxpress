@@ -1,15 +1,14 @@
 import { userService } from '../services/user.service.js';
 import { auditService } from '../services/audit.service.js';
-import { Forbidden } from '../utils/errors.js';
 import {
   sendVerificationApprovedMail,
   sendVerificationRejectedMail,
 } from '../utils/mail.js';
 
-const requireCoordinatorInstitutionId = (req) => {
-  if (!req.user.institutionId) throw Forbidden('Coordinator is not assigned to an institution');
-  return req.user.institutionId;
-};
+// A coordinator assigned to an institution only sees and acts on students
+// from it. One without an institution covers every institution (null means
+// "no filter" in userService).
+const requireCoordinatorInstitutionId = (req) => req.user.institutionId ?? null;
 
 export const listPending = async (req, res) => {
   const institutionId = requireCoordinatorInstitutionId(req);

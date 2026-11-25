@@ -26,9 +26,11 @@ import 'dotenv/config';
 //   - The admin: ADMIN_SEED_EMAIL + ADMIN_SEED_PASSWORD (required outside --dev)
 //   - Staff (jury, coordinators, more admins) from STAFF_SEED_JSON, else
 //     prisma/staff.local.json (git-ignored), else data/staff.dev.json with
-//     --dev. Format: [{ "fullName", "email", "role", "institution"? }]
-//     Each new staff account gets a random 6-digit login code, stored hashed
-//     on the user and readable in StaffCredential for Admin → Staff.
+//     --dev. Format: [{ "fullName", "email", "role", "institution"?, "password"? }]
+//     Each new staff account gets its "password" if given (6+ characters),
+//     else a random 6-digit login code. It's stored hashed on the user and
+//     readable in StaffCredential for Admin → Staff. A coordinator without an
+//     institution reviews students from every institution.
 //   - With --dev only: sample CollegeRegistry rows (data/registry.dev.json)
 //
 // It never prints a password.
@@ -65,8 +67,8 @@ const staffSchema = z.array(z.object({
   email: z.string().trim().toLowerCase().email(),
   role: z.enum(['JURY', 'COORDINATOR', 'ADMIN']),
   institution: z.string().trim().min(1).optional(),
-}).refine((s) => s.role !== 'COORDINATOR' || s.institution, {
-  message: 'coordinators need an institution',
+  // Optional fixed login password (same 6+ rule as the login form).
+  password: z.string().min(6).max(128).optional(),
 }));
 
 const taxonomySchema = z.object({
@@ -239,10 +241,10 @@ const seedStaff = async ({ source, staff }) => {
     });
     if (existing?.role === 'STUDENT') fail(`${person.email} is already a student account`);
 
-    // A new account, or a staff account that never got a code, gets one.
-    // Existing passwords are never changed.
+    // A new account, or a staff account that never got a password, gets the
+    // listed password or a random code. Existing passwords are never changed.
     const needsCode = !existing || (!existing.passwordHash && !existing.staffCredential);
-    const code = needsCode ? generateSixDigitCode() : null;
+    const code = needsCode ? (person.password ?? generateSixDigitCode()) : null;
     const passwordData = code
       ? { passwordHash: await bcrypt.hash(code, ROUNDS), passwordIssuedAt: new Date() }
       : {};
@@ -278,7 +280,7 @@ const seedStaff = async ({ source, staff }) => {
     if (code) codesIssued += 1;
   }
 
-  log(`Staff from ${source}: ${staff.length} ensured, ${created} new, ${codesIssued} login codes issued (see Admin → Staff)`);
+  log(`Staff from ${source}: ${staff.length} ensured, ${created} new, ${codesIssued} passwords set (see Admin → Staff)`);
 };
 
 const seedDevRegistry = async () => {
