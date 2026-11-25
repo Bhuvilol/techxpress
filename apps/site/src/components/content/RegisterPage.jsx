@@ -531,8 +531,9 @@ export default function RegisterPage({ onBack }) {
                 <FieldWrap field="phone" label="PHONE NUMBER" error={errors.phone}>
                   <input
                     type="tel"
-                    placeholder="+91 98765 43210"
-                    maxLength={20}
+                    inputMode="numeric"
+                    placeholder="9876543210"
+                    maxLength={10}
                     value={form.phone}
                     onChange={setField('phone')}
                     disabled={busy}

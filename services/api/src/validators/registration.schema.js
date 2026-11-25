@@ -46,7 +46,7 @@ export const registrationSchema = z.object({
   technicalSkills: longText('Technical skills', 500),
   nonTechnicalSkills: longText('Non-technical skills', 500),
   phone: z.string().trim()
-    .regex(/^\+?[\d\s-]{7,20}$/, 'Phone number should have 7–15 digits (spaces, dashes and a leading + are fine).')
+    .regex(/^\d{10}$/, 'Phone number must be exactly 10 digits, with no spaces, dashes or +.')
     .optional(),
   discordId: z.string().trim().max(60, 'Discord ID is too long.').optional(),
   gender: z.enum(['MALE', 'FEMALE', 'OTHER'], { errorMap: () => ({ message: 'Select your gender.' }) }),

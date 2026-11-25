@@ -195,12 +195,8 @@ const validateRegistration = (f) => {
   else if (reg.length > 50) e.registrationNo = 'Registration number is too long — 50 characters at most.';
 
   const phone = f.phone.trim();
-  if (phone) {
-    const digits = phone.replace(/\D/g, '');
-    if (!/^\+?[\d\s-]+$/.test(phone)) e.phone = 'Use digits only (spaces, dashes and a leading + are fine).';
-    else if (digits.length < 7 || digits.length > 15) e.phone = `Phone number should have 7–15 digits (you entered ${digits.length}).`;
-    else if (phone.length > 20) e.phone = 'Phone number is too long — 20 characters at most.';
-  }
+  // Optional, but when given it must be exactly 10 digits (same rule as the server).
+  if (phone && !/^\d{10}$/.test(phone)) e.phone = 'Phone number must be exactly 10 digits, with no spaces, dashes or +.';
 
   if (!f.gender) e.gender = 'Select your gender.';
   if (!f.idCard) e.idCard = 'Upload a photo of your college ID card.';
@@ -516,7 +512,7 @@ export const RegistrationPage = () => {
             <FormField field="phone" label="Phone" error={errors.phone}>
               <div className="group relative">
                 <Phone size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20 transition-colors group-focus-within:text-white" />
-                <input className="input-glass !pl-14 h-12 border-white/10 bg-black transition-all focus:border-white" maxLength={20} value={form.phone} onChange={set('phone')} placeholder="+91 98765 43210" />
+                <input className="input-glass !pl-14 h-12 border-white/10 bg-black transition-all focus:border-white" maxLength={10} inputMode="numeric" value={form.phone} onChange={set('phone')} placeholder="9876543210" />
               </div>
             </FormField>
 

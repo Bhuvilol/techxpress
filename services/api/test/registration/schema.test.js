@@ -81,11 +81,13 @@ test('bio is required and at most 1000 characters', () => {
   assert.ok(parsed(validBody({ bio: 'x'.repeat(1000) })).bio);
 });
 
-test('phone is optional but must have 7 to 20 digit characters when given', () => {
+test('phone is optional; when given it must be exactly 10 digits', () => {
   assert.equal(parsed(validBody({ phone: undefined })).phone, undefined);
-  assert.equal(parsed(validBody({ phone: '+91 98765-43210' })).phone, '+91 98765-43210');
-  assert.ok(fieldErrors(validBody({ phone: '12' })).phone);
-  assert.ok(fieldErrors(validBody({ phone: 'call me' })).phone);
+  assert.equal(parsed(validBody({ phone: '9876543210' })).phone, '9876543210');
+  assert.equal(parsed(validBody({ phone: '  9876543210  ' })).phone, '9876543210', 'surrounding spaces are trimmed');
+  for (const bad of ['12', '987654321', '98765432100', '+919876543210', '98765 43210', '98765-43210', 'call me', '98765abcde']) {
+    assert.ok(fieldErrors(validBody({ phone: bad })).phone, `${bad} must be rejected`);
+  }
 });
 
 test('an empty optional link becomes undefined; a bad link is rejected', () => {

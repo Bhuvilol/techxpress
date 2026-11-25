@@ -13,7 +13,7 @@ const validForm = (overrides = {}) => ({
   fullName: 'Asha Kumar',
   email: 'asha@college.edu',
   registrationNo: '2024PS01',
-  phone: '+91 98765 43210',
+  phone: '9876543210',
   gender: 'FEMALE',
   idCard: 'data:image/jpeg;base64,/9j/',
   institutionId: 'cinstitution0000000000000a',
@@ -86,11 +86,12 @@ describe('validateRegistration', () => {
     expect(validateRegistration(validForm({ registrationNo: 'X'.repeat(51) })).registrationNo).toMatch(/50/);
   });
 
-  it('checks phone: digits only, 7 to 15 digits, and a length cap', () => {
-    expect(validateRegistration(validForm({ phone: '98765abc' })).phone).toMatch(/digits only/);
-    expect(validateRegistration(validForm({ phone: '12345' })).phone).toMatch(/7–15 digits/);
-    expect(validateRegistration(validForm({ phone: '1'.repeat(16) })).phone).toMatch(/7–15 digits/);
-    expect(validateRegistration(validForm({ phone: '' }))).toEqual({}, 'phone is optional');
+  it('phone is optional, but when given it must be exactly 10 digits', () => {
+    expect(validateRegistration(validForm({ phone: '' }))).toEqual({});
+    expect(validateRegistration(validForm({ phone: '9876543210' }))).toEqual({});
+    for (const bad of ['12345', '987654321', '98765432100', '+919876543210', '98765 43210', '98765-43210', '98765abcde']) {
+      expect(validateRegistration(validForm({ phone: bad })).phone, bad).toMatch(/exactly 10 digits/);
+    }
   });
 
   it('allows at most 4 preferred domains through the picker, and 12 contribution areas', () => {
