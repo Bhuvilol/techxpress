@@ -1,10 +1,11 @@
 import { prisma } from '../config/db.js';
-import { Conflict, NotFound, Forbidden } from '../utils/errors.js';
+import { Conflict, NotFound, Forbidden, BadRequest } from '../utils/errors.js';
 import { generateSixDigitCode, hashPassword } from '../utils/crypto.js';
 import { rulesService } from './rules.service.js';
 import { invalidateUserStatus } from '../utils/userStatusCache.js';
 import { membershipService } from './membership.service.js';
 import { normalizeRegistrationNo } from '../utils/registrationNo.js';
+import { registryMismatches } from '../utils/registryMismatch.js';
 
 // Sole owner of User table writes related to the verification lifecycle.
 // Controllers must NOT touch prisma.user directly for these flows.
@@ -48,6 +49,11 @@ const PUBLIC_USER_FIELDS = {
   domain: { select: { id: true, name: true } },
 };
 
+// One message for every duplicate, with no field name in it (see createPendingStudent).
+const DUPLICATE_REGISTRATION = () => Conflict(
+  'This email or registration number is already registered. If you registered before, wait for verification or contact the organizers.',
+);
+
 const attachPreferredDomainDetails = async (user) => {
   if (!user) return user;
   const preferredDomainIds = [...new Set((user.preferredDomains ?? []).filter(Boolean))];
@@ -84,33 +90,53 @@ export const userService = {
       throw Forbidden('Registration is currently closed', { code: 'REGISTRATION_CLOSED' });
     }
 
-    // Surface uniqueness conflicts as 409 with field hints so the UI can
-    // mark the offending input. The DB constraint is still authoritative.
-    const conflict = await prisma.user.findFirst({
+    // Institution and domains come from the taxonomy tables. Check them here:
+    // without it an unknown id fails as a raw foreign-key error, and an
+    // unknown preferred domain would be stored with no check at all.
+    const domainIds = [...new Set([data.domainId, ...(data.preferredDomains ?? [])].filter(Boolean))];
+    const [institution, domainCount] = await Promise.all([
+      prisma.institution.findUnique({ where: { id: data.institutionId }, select: { id: true } }),
+      prisma.domain.count({ where: { id: { in: domainIds } } }),
+    ]);
+    if (!institution) throw BadRequest('Select your institution from the list.', { field: 'institutionId' });
+    if (domainCount !== domainIds.length) {
+      throw BadRequest('Pick your domains from the list.', { field: 'preferredDomains' });
+    }
+
+    // Duplicate check. The response names no field: a field name would tell
+    // anyone who submits a stranger's email that the account exists. The
+    // unique constraints are still the final word (see the P2002 handler).
+    const existing = await prisma.user.findFirst({
       where: {
         OR: [
           { email: data.email },
           ...(data.registrationNo ? [{ registrationNo: data.registrationNo }] : []),
         ],
       },
-      select: { email: true, registrationNo: true },
+      select: { id: true },
     });
-    if (conflict) {
-      const field = conflict.email === data.email ? 'email' : 'registrationNo';
-      throw Conflict(`A user with this ${field} already exists`, { field });
+    if (existing) {
+      throw DUPLICATE_REGISTRATION();
     }
 
-    return prisma.user.create({
-      data: {
-        ...data,
-        role: 'STUDENT',
-        verificationStatus: 'PENDING',
-        passwordHash: null,
-        // Saved in the same statement as the user: no account without its card.
-        ...(idCard && { idCard: { create: idCard } }),
-      },
-      select: PUBLIC_USER_FIELDS,
-    });
+    try {
+      return await prisma.user.create({
+        data: {
+          ...data,
+          role: 'STUDENT',
+          verificationStatus: 'PENDING',
+          passwordHash: null,
+          // Saved in the same statement as the user: no account without its card.
+          ...(idCard && { idCard: { create: idCard } }),
+        },
+        select: PUBLIC_USER_FIELDS,
+      });
+    } catch (err) {
+      // Two identical submissions can both pass the check above; the unique
+      // index then rejects the second. Answer it the same way as the check.
+      if (err.code === 'P2002') throw DUPLICATE_REGISTRATION();
+      throw err;
+    }
   },
 
   // A student's ID card image, for admins and coordinators during
@@ -133,10 +159,13 @@ export const userService = {
   // Approve a PENDING student: generate a 6-digit code, hash it, store it.
   // Returns { user, plaintextPassword } so the caller can email the password.
   // The plaintext NEVER persists past this function's return value.
-  async approveStudent(userId, { institutionId } = {}) {
+  async approveStudent(userId, { institutionId, allowRegistryMismatch = false } = {}) {
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: { id: true, role: true, verificationStatus: true, fullName: true, email: true, institutionId: true },
+      select: {
+        id: true, role: true, verificationStatus: true, fullName: true, email: true, institutionId: true,
+        registrationNo: true, institution: { select: { name: true } },
+      },
     });
     if (!user) throw NotFound('User not found');
     if (user.role !== 'STUDENT') throw Forbidden('Only student accounts can be verified');
@@ -146,6 +175,19 @@ export const userService = {
     }
     if (user.verificationStatus === 'REVOKED') {
       throw Conflict('Cannot verify a revoked account');
+    }
+
+    // Registry check. Coordinators cannot override it; an admin can, once
+    // they have seen the mismatch (allowRegistryMismatch).
+    if (user.registrationNo && !allowRegistryMismatch) {
+      const entry = await prisma.collegeRegistry.findUnique({
+        where: { registrationNo: user.registrationNo },
+        select: { email: true, institutionId: true, institution: { select: { name: true } } },
+      });
+      const mismatches = registryMismatches(user, entry);
+      if (mismatches.length) {
+        throw Conflict('The college registry does not match this registration. Check the details before approving.', { code: 'REGISTRY_MISMATCH', mismatches });
+      }
     }
 
     const plaintextPassword = generateSixDigitCode();
@@ -176,11 +218,17 @@ export const userService = {
       throw Conflict('Cannot reject an already-verified user — use revoke instead');
     }
 
-    const updated = await prisma.user.update({
-      where: { id: userId },
-      data: { verificationStatus: 'REJECTED' },
-      select: PUBLIC_USER_FIELDS,
-    });
+    // A rejected student's ID card has no further use, so it is deleted with
+    // the status change. The account stays (for the audit trail and the
+    // re-registration path), without the image.
+    const [, updated] = await prisma.$transaction([
+      prisma.studentIdCard.deleteMany({ where: { userId } }),
+      prisma.user.update({
+        where: { id: userId },
+        data: { verificationStatus: 'REJECTED' },
+        select: PUBLIC_USER_FIELDS,
+      }),
+    ]);
     return { user: updated, snapshot: user };
   },
 

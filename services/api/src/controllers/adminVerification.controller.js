@@ -1,3 +1,4 @@
+import { registryMismatches } from '../utils/registryMismatch.js';
 import { userService } from '../services/user.service.js';
 import { sendIdCard } from '../utils/sendIdCard.js';
 import { auditService } from '../services/audit.service.js';
@@ -55,6 +56,7 @@ export const listPending = async (req, res) => {
             matched: true,
             entry,
             emailMatches: u.email ? entry.email?.toLowerCase() === u.email.toLowerCase() : null,
+            mismatches: registryMismatches(u, entry),
           }
         : { matched: false },
     };
@@ -100,7 +102,10 @@ export const lookupByRegistrationNo = async (req, res) => {
 };
 
 export const approve = async (req, res) => {
-  const { user, plaintextPassword } = await userService.approveStudent(req.params.id);
+  // An admin can approve past a registry mismatch, but only after the UI has
+  // shown it and they have confirmed. The flag is recorded in the audit log.
+  const allowRegistryMismatch = req.body?.allowRegistryMismatch === true;
+  const { user, plaintextPassword } = await userService.approveStudent(req.params.id, { allowRegistryMismatch });
 
   const mail = await sendVerificationApprovedMail({
     to: user.email,
@@ -113,7 +118,7 @@ export const approve = async (req, res) => {
     action: 'USER_VERIFIED',
     entityType: 'User',
     entityId: user.id,
-    details: { email: user.email, emailDelivered: mail.delivered },
+    details: { email: user.email, emailDelivered: mail.delivered, registryMismatchOverride: allowRegistryMismatch },
   });
 
   // One-shot reveal for the admin (ADMIN-gated route only). The database
