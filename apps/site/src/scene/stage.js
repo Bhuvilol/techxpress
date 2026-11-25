@@ -116,3 +116,20 @@ export const LOOPS = {
   lamp: { flicker: true },
   boil: { period: 420, maxShift: 1, maxRotateDeg: 0.3 },
 };
+
+// ── Interfaces between the stage and the UI ────────────────────────────────
+//
+// <Station> (src/scene/Station.jsx, default export) renders the full-screen
+// stage and nothing else. Props:
+//   onHotspot(name)   called when a piece with a `hotspot` (or the open train
+//                     door, name 'book') is clicked or activated by keyboard.
+//   dimmed            true while a panel is open: the stage dims slightly and
+//                     its hotspots leave the tab order.
+//   onIntroDone()     called once the opening has finished or been skipped
+//                     (immediately for returning visitors / reduced motion).
+// The stage owns its Skip button. The UI (src/ui/) owns everything else on
+// top: menu, "Book your ticket", hints, panels.
+//
+// Tilt: src/motion/useTilt.js exports
+//   requestTiltPermission(): Promise<boolean>   call from a user tap (iOS asks)
+// and the stage listens to device orientation once permission exists.
