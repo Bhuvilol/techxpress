@@ -6,7 +6,7 @@ import { useNavigate } from 'react-router-dom';
  * Central Cartoon-Style Hanging Information Board
  *
  * Prominently suspended in the upper central aisle of the cartoon train,
- * featuring large readable options for ABOUT, REGISTER, and ASK PRICES
+ * featuring large readable options for ABOUT, REGISTER, and TIMELINE
  * with cartoon chains, playful cel-shaded materials, smooth bounce animation,
  * and physical 3D unfolding transitions upon option selection.
  *
@@ -166,27 +166,28 @@ export default function SeatNavigation({ isVisible, onNavigate }) {
                 </div>
               </div>
 
-              {/* Option 3: ASK PRICES */}
+              {/* Option 3: TIMELINE */}
               <div
                 role="button"
                 tabIndex={0}
-                className={`cartoon-option-card card-ask ${
-                  transitioningTo === 'ask' ? 'selected-transition' : ''
+                className={`cartoon-option-card card-timeline ${
+                  transitioningTo === 'timeline' ? 'selected-transition' : ''
                 }`}
-                onClick={(e) => handleOptionClick(e, 'ask')}
-                onKeyDown={(e) => handleOptionKeyDown(e, 'ask')}
+                onClick={(e) => handleOptionClick(e, 'timeline')}
+                onKeyDown={(e) => handleOptionKeyDown(e, 'timeline')}
               >
-                <div className="option-icon-box icon-ask">
+                <div className="option-icon-box icon-timeline">
                   <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                    <circle cx="12" cy="12" r="10" />
+                    <polyline points="12 6 12 12 16 14" />
                   </svg>
                 </div>
                 <div className="option-text-box">
-                  <span className="option-title">ASK PRICES</span>
-                  <span className="option-sub">FARES & ASSISTANT</span>
+                  <span className="option-title">TIMELINE</span>
+                  <span className="option-sub">EXPEDITION SCHEDULE</span>
                 </div>
-                <div className="option-action-btn btn-ask">
-                  <span>{transitioningTo === 'ask' ? 'OPENING...' : 'INQUIRE'}</span>
+                <div className="option-action-btn btn-timeline">
+                  <span>{transitioningTo === 'timeline' ? 'OPENING...' : 'VIEW'}</span>
                   <span className="btn-arrow">➔</span>
                 </div>
               </div>
@@ -206,13 +207,15 @@ export default function SeatNavigation({ isVisible, onNavigate }) {
       </div>
 
       {/* 3. Physical 3D Cartoon Unfolding Transition Curtain */}
-      {transitioningTo === 'register' && (
-        <div className="cartoon-unfolding-transition-curtain curtain-register">
+      {transitioningTo && (
+        <div className={`cartoon-unfolding-transition-curtain curtain-${transitioningTo}`}>
           <div className="curtain-cardboard-sheet">
             <div className="curtain-header-tab">
               <span className="curtain-stitch" />
               <span className="curtain-tab-title">
-                🎫 EXPEDITION REGISTRATION
+                {transitioningTo === 'about' && '🚂 ABOUT TECHXPRESS'}
+                {transitioningTo === 'register' && '🎫 EXPEDITION REGISTRATION'}
+                {transitioningTo === 'timeline' && '🕒 EXPEDITION TIMELINE'}
               </span>
               <span className="curtain-stitch" />
             </div>

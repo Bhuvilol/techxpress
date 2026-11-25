@@ -5,6 +5,7 @@ import TrainScene from './components/TrainScene';
 import InteriorScene from './components/InteriorScene';
 import AboutPage from './components/content/AboutPage';
 import AskRajesh from './components/content/AskRajesh';
+import TimelinePage from './components/content/TimelinePage';
 
 // "Register" opens the VORTEX portal's home page. The portal is a separate app
 // on the same domain, so going there is a full page load, not a client-side
@@ -52,6 +53,7 @@ export default function App() {
         <Route path="/about" element={<AboutPage onBack={() => navigate('/interior')} />} />
         <Route path="/register" element={<RegisterRedirect />} />
         <Route path="/ask" element={<AskRajesh onBack={() => navigate('/interior')} />} />
+        <Route path="/timeline" element={<TimelinePage onBack={() => navigate('/interior')} />} />
       </Routes>
     </div>
   );

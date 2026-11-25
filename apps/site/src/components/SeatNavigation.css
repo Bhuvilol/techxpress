@@ -264,7 +264,7 @@
 /* Specific Card Tint Borders on Hover */
 .card-about:hover { border-color: #1f3471; }
 .card-register:hover { border-color: #c62828; }
-.card-ask:hover { border-color: #2e7d32; }
+.card-timeline:hover { border-color: #2e7d32; }
 
 /* ── Option Icon Badge ── */
 .option-icon-box {
@@ -289,7 +289,7 @@
   color: #ffffff;
 }
 
-.icon-ask {
+.icon-timeline {
   background: linear-gradient(135deg, #81c784 0%, #388e3c 100%);
   color: #ffffff;
 }
@@ -314,7 +314,7 @@
 
 .card-about .option-title { color: #1a2f63; }
 .card-register .option-title { color: #ba1a1a; }
-.card-ask .option-title { color: #1b5e20; }
+.card-timeline .option-title { color: #1b5e20; }
 
 .option-sub {
   font-family: 'Inter', sans-serif;
@@ -354,7 +354,7 @@
   color: #ffffff;
 }
 
-.btn-ask {
+.btn-timeline {
   background: #4caf50;
   color: #ffffff;
 }
