@@ -138,7 +138,3 @@ apps/portal/src/
 | [DEPLOY.md](DEPLOY.md) | Infrastructure, first-time setup, releases, environment variables, domain and email |
 | [RUNBOOK.md](RUNBOOK.md) | Health checks, logs, rollback, incidents, launch-day steps |
 | [CREDENTIALS.md](CREDENTIALS.md) | Accounts and where each secret lives (no values) |
-| [KNOWN_ISSUES.md](KNOWN_ISSUES.md) | Open issues by launch phase, plus a fixed log |
-| [GITHUB_ISSUES.md](GITHUB_ISSUES.md) | Deep-audit findings, formatted as GitHub issues |
-| [ADDITIONAL_ISSUES.md](ADDITIONAL_ISSUES.md) | Further audit findings |
-| [TECHXPRESS_CONTEXT.md](TECHXPRESS_CONTEXT.md) | Background and decisions for the monorepo migration |
