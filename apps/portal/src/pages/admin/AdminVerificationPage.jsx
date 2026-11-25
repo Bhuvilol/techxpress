@@ -90,14 +90,28 @@ export const AdminVerificationPage = () => {
   };
 
   // ── actions ───────────────────────────────────────────────────────────
-  const approve = async (u) => {
+  const approve = async (u, { allowRegistryMismatch = false } = {}) => {
     try {
-      const res = await api.post(`/api/admin/verification/students/${u.id}/approve`);
+      const res = await api.post(`/api/admin/verification/students/${u.id}/approve`, allowRegistryMismatch ? { allowRegistryMismatch: true } : undefined);
       toast.success(`Approved ${u.fullName}.`);
       // Surface the freshly-issued password to the admin one-shot.
       if (res?.password) setCredential({ user: res.user ?? u, password: res.password, label: 'Approved', emailDelivered: res.emailDelivered });
       refresh();
-    } catch (e) { toast.error(e.message); }
+    } catch (e) {
+      if (e.code === 'REGISTRY_MISMATCH') {
+        // The college registry disagrees with the form. Ask before overriding.
+        const lines = (e.details?.mismatches ?? []).map((m) => `${m.field}: form says “${m.actual}”, registry says “${m.expected}”`);
+        const ok = await confirm({
+          title: `Registry mismatch for ${u.fullName}`,
+          message: `${lines.join('. ')}. Approve anyway? The login code will be emailed to ${u.email}.`,
+          tone: 'crit',
+          confirmLabel: 'Approve anyway',
+        });
+        if (ok) approve(u, { allowRegistryMismatch: true });
+        return;
+      }
+      toast.error(e.message);
+    }
   };
 
   // A rejection is otherwise final; this approves the student after all.
@@ -232,9 +246,11 @@ export const AdminVerificationPage = () => {
                   {tab === 'PENDING' && (
                     <td className="px-4 py-3">
                       {u.registryMatch?.matched
-                        ? <Badge tone={u.registryMatch.emailMatches === false ? 'warn' : 'live'} dot>
-                            {u.registryMatch.emailMatches === false ? 'Email mismatch' : 'Matched'}
-                          </Badge>
+                        ? (u.registryMatch.mismatches?.length
+                            ? <Badge tone="warn" dot title={u.registryMatch.mismatches.map((m) => m.field).join(', ')}>
+                                {u.registryMatch.mismatches.map((m) => (m.field === 'email' ? 'Email' : 'Institution')).join(' & ')} mismatch
+                              </Badge>
+                            : <Badge tone="live" dot>Matched</Badge>)
                         : <Badge tone="warn">No match</Badge>}
                     </td>
                   )}
