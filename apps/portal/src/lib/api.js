@@ -71,7 +71,30 @@ const request = async (method, path, { body, query, headers, signal } = {}) => {
   return payload;
 };
 
+// Authenticated binary download (e.g. a student's ID card image). Returns a
+// Blob; errors use the same ApiError shape as JSON requests.
+const blob = async (path) => {
+  const token = storage.getToken();
+  const res = await fetch(buildUrl(path), {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    cache: 'no-store',
+  });
+  if (!res.ok) {
+    if (res.status === 401) onUnauthorized();
+    let payload = null;
+    try { payload = await res.json(); } catch { /* not JSON */ }
+    throw new ApiError({
+      message: payload?.error ?? `GET ${path} failed (${res.status})`,
+      code:    payload?.code  ?? 'HTTP_ERROR',
+      status:  res.status,
+      details: payload?.details,
+    });
+  }
+  return res.blob();
+};
+
 export const api = {
+  blob,
   get:    (path, opts) => request('GET',    path, opts),
   post:   (path, body, opts) => request('POST',   path, { ...opts, body }),
   put:    (path, body, opts) => request('PUT',    path, { ...opts, body }),

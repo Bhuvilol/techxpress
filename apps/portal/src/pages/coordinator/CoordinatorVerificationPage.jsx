@@ -14,6 +14,7 @@ import { FormField } from '../../components/ui/FormField.jsx';
 import { Spinner } from '../../components/ui/Spinner.jsx';
 import { StatTile } from '../../components/ui/StatTile.jsx';
 import { formatDate } from '../../utils/format.js';
+import { IdCardModal } from '../../components/verification/IdCardModal.jsx';
 
 export const CoordinatorVerificationPage = () => {
   const toast = useToast();
@@ -24,6 +25,7 @@ export const CoordinatorVerificationPage = () => {
   const [tab, setTab] = useState('PENDING');
   const [search, setSearch] = useState('');
   const [reject, setReject] = useState(null);
+  const [idCardFor, setIdCardFor] = useState(null);
 
   const pending = useApi(
     () => api.get('/api/coordinator/verification/pending', { query: { search } }),
@@ -169,11 +171,13 @@ export const CoordinatorVerificationPage = () => {
                     <td className="px-4 py-4">
                       {tab === 'PENDING' ? (
                         <div className="flex justify-end gap-1.5">
+                          <button className="ghost-button text-[10px]" onClick={() => setIdCardFor(student)}>ID card</button>
                           <button className="glow-button text-[10px]" onClick={() => approve(student)}>Approve</button>
                           <button className="danger-button text-[10px]" onClick={() => setReject(student)}>Reject</button>
                         </div>
                       ) : (
-                        <div className="flex justify-end">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <button className="ghost-button text-[10px]" onClick={() => setIdCardFor(student)}>ID card</button>
                           <Badge tone="live" dot>Verified</Badge>
                         </div>
                       )}
@@ -187,6 +191,7 @@ export const CoordinatorVerificationPage = () => {
       )}
 
       <RejectModal target={reject} onClose={() => setReject(null)} onDone={refresh} />
+      {idCardFor && <IdCardModal student={idCardFor} basePath="/api/coordinator/verification" onClose={() => setIdCardFor(null)} />}
     </>
   );
 };

@@ -17,6 +17,7 @@ import { StatTile } from '../../components/ui/StatTile.jsx';
 import { Pagination } from '../../components/ui/Pagination.jsx';
 import { confirm } from '../../components/ui/Confirm.jsx';
 import { titleCase } from '../../utils/format.js';
+import { IdCardModal } from '../../components/verification/IdCardModal.jsx';
 
 const STATUS_TONE = { PENDING: 'warn', VERIFIED: 'live', REJECTED: 'crit', REVOKED: 'crit' };
 
@@ -30,6 +31,7 @@ export const AdminVerificationPage = () => {
   const [reject, setReject] = useState(null);
   // { user, password } shown after approve / reissue
   const [credential, setCredential] = useState(null);
+  const [idCardFor, setIdCardFor] = useState(null);
 
   // Debounce search query to prevent N requests on every keystroke
   useEffect(() => {
@@ -230,6 +232,7 @@ export const AdminVerificationPage = () => {
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex justify-end gap-1.5">
+                      <button className="ghost-button text-[10px]" onClick={() => setIdCardFor(u)} title="View the college ID card uploaded at registration">ID card</button>
                       {u.verificationStatus === 'PENDING' && (
                         <>
                           <button className="glow-button text-[10px]" onClick={() => approve(u)}>Approve</button>
@@ -278,6 +281,7 @@ export const AdminVerificationPage = () => {
       )}
 
       <RejectModal target={reject} onClose={() => setReject(null)} onDone={refresh} />
+      {idCardFor && <IdCardModal student={idCardFor} basePath="/api/admin/verification" onClose={() => setIdCardFor(null)} />}
       <CredentialModal cred={credential} onClose={() => setCredential(null)} />
     </>
   );

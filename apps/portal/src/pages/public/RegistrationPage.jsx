@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   ArrowRight,
@@ -10,6 +10,7 @@ import {
   Github,
   Globe,
   IdCard,
+  ImagePlus,
   Linkedin,
   Mail,
   Phone,
@@ -24,6 +25,7 @@ import { FormField } from '../../components/ui/FormField.jsx';
 import { Spinner } from '../../components/ui/Spinner.jsx';
 import { ScrambleText } from '../../components/ui/ScrambleText.jsx';
 import { Badge } from '../../components/ui/Badge.jsx';
+import { compressImage } from '../../utils/imageCompress.js';
 
 const CONTRIBUTION_AREA_OPTIONS = [
   'Research & Documentation',
@@ -100,6 +102,7 @@ const EMPTY = {
   fullName: '',
   email: '',
   registrationNo: '',
+  idCard: '', // data URL of the shrunk ID card photo
   institutionId: '',
   domainId: '',
   preferredDomains: [],
@@ -141,7 +144,7 @@ const URL_EXAMPLES = {
 
 // Order fields appear on the page — used to jump to the first problem.
 const FIELD_ORDER = [
-  'fullName', 'email', 'registrationNo', 'phone', 'gender',
+  'fullName', 'email', 'registrationNo', 'phone', 'gender', 'idCard',
   'institutionId', 'preferredDomains', 'domainId', 'yearSemester', 'degree',
   'contributionAreas', 'preferredTeamRole', 'technicalSkills', 'nonTechnicalSkills',
   'linkedinUrl', 'portfolioUrl', 'githubUrl', 'resumeDriveLink', 'researchPublicationUrl',
@@ -151,7 +154,7 @@ const FIELD_ORDER = [
 
 const FIELD_LABELS = {
   fullName: 'Name', email: 'Email', registrationNo: 'Registration number', phone: 'Phone',
-  gender: 'Gender', institutionId: 'Institution', preferredDomains: 'Preferred domain',
+  gender: 'Gender', idCard: 'College ID card', institutionId: 'Institution', preferredDomains: 'Preferred domain',
   domainId: 'Preferred domain', yearSemester: 'Year / Semester', degree: 'Degree',
   contributionAreas: 'Contribution areas', preferredTeamRole: 'Preferred team role',
   technicalSkills: 'Technical skills', nonTechnicalSkills: 'Non-technical skills',
@@ -202,6 +205,7 @@ const validateRegistration = (f) => {
   }
 
   if (!f.gender) e.gender = 'Select your gender.';
+  if (!f.idCard) e.idCard = 'Upload a photo of your college ID card.';
   if (!f.institutionId) e.institutionId = 'Select your institution from the list.';
   if (!f.preferredDomains.length) e.preferredDomains = 'Pick at least one domain (up to 4). Your first pick is your primary domain.';
   if (!f.yearSemester.trim()) e.yearSemester = 'Enter your year / semester, e.g. “3rd Year / Semester 6”.';
@@ -290,6 +294,56 @@ const ChoiceGrid = ({ options, values, onToggle, columns = 'xl:grid-cols-3' }) =
     })}
   </div>
 );
+
+// College ID card photo: pick or take a picture, shrink it in the browser,
+// preview it. The value is a JPEG data URL (see utils/imageCompress.js).
+const IdCardUpload = ({ value, onChange, onError }) => {
+  const inputRef = useRef(null);
+  const [processing, setProcessing] = useState(false);
+  const [info, setInfo] = useState('');
+
+  const pick = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = ''; // allow picking the same file again
+    if (!file) return;
+    setProcessing(true);
+    try {
+      const { dataUrl, bytes } = await compressImage(file);
+      onChange(dataUrl);
+      setInfo(`${file.name} · ${Math.max(1, Math.round(bytes / 1024))} KB after resizing`);
+    } catch (err) {
+      onError(err.message);
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  return (
+    <div className="flex flex-col gap-4 border border-dashed border-white/15 bg-black p-4 sm:flex-row sm:items-center">
+      <button
+        type="button"
+        onClick={() => inputRef.current?.click()}
+        className="grid h-32 w-full shrink-0 place-items-center overflow-hidden border border-white/10 bg-white/[0.03] transition-colors hover:border-white/30 sm:w-52"
+        aria-label={value ? 'Change ID card photo' : 'Upload ID card photo'}
+      >
+        {processing ? <Spinner /> : value
+          ? <img src={value} alt="Your ID card" className="h-full w-full object-contain" />
+          : <ImagePlus size={28} strokeWidth={1.5} className="text-white/30" />}
+      </button>
+      <div className="min-w-0 space-y-2">
+        <p className="font-sans text-[13px] leading-relaxed text-white/70">
+          A clear photo or scan of the <span className="text-white">front of your college ID card</span>, showing your name and photo.
+          Coordinators use it to verify you; only organizers can see it.
+        </p>
+        <p className="font-mono text-[11px] text-white/35">{info || 'JPG, PNG or WebP. Large photos are resized automatically.'}</p>
+        <button type="button" className="ghost-button !py-2 !text-[11px]" onClick={() => inputRef.current?.click()} disabled={processing}>
+          {value ? 'Change photo' : 'Choose photo'}
+        </button>
+      </div>
+      <input ref={inputRef} type="file" accept="image/jpeg,image/png,image/webp,image/*" className="hidden" onChange={pick} />
+    </div>
+  );
+};
 
 export const RegistrationPage = () => {
   const toast = useToast();
@@ -485,6 +539,16 @@ export const RegistrationPage = () => {
                 </select>
               </div>
             </FormField>
+
+            <div className="md:col-span-2">
+              <FormField field="idCard" label={requiredLabel('College ID Card')} error={errors.idCard}>
+                <IdCardUpload
+                  value={form.idCard}
+                  onChange={(dataUrl) => { setForm((prev) => ({ ...prev, idCard: dataUrl })); clearError('idCard'); }}
+                  onError={(msg) => setErrors((prev) => ({ ...prev, idCard: msg }))}
+                />
+              </FormField>
+            </div>
           </div>
         </Section>
 
