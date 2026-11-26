@@ -92,6 +92,13 @@
   opacity: 1;
 }
 
+/* Two-state pieces SWAP drawings, never show both: drawing A runs the exact
+   inverse of B's animation (the -inv keyframes), and is hidden wherever B
+   rests on. */
+.cut--a.rest-off {
+  opacity: 0;
+}
+
 /* ── Placeholder cards (pieces without art yet) ─────────────────────────── */
 
 .ph {
@@ -601,3 +608,32 @@
 .piece--nameboard > .piece__boil { rotate: y 28deg; transform-origin: 0% 50%; }
 .piece--timetable > .piece__boil { rotate: y -26deg; transform-origin: 100% 50%; }
 .piece--platform2 .cut { object-fit: fill; }
+
+/* Inverses of the swap animations, for drawing A. */
+@keyframes stage-swap-inv {
+  0% { opacity: 1; }
+  50%, 100% { opacity: 0; }
+}
+@keyframes stage-wave-inv {
+  0% { opacity: 0; }
+  7% { opacity: 1; }
+  10% { opacity: 0; }
+  17% { opacity: 1; }
+  20% { opacity: 0; }
+  26%, 100% { opacity: 1; }
+}
+@keyframes stage-lamp-on-inv {
+  0% { opacity: 1; }
+  14% { opacity: 0; }
+  22% { opacity: 1; }
+  38% { opacity: 0; }
+  45% { opacity: 1; }
+  58%, 100% { opacity: 0; }
+}
+@keyframes stage-lamp-dip-inv {
+  0%, 91% { opacity: 0; }
+  92% { opacity: 0.65; }
+  93% { opacity: 0; }
+  95% { opacity: 0.4; }
+  96%, 100% { opacity: 0; }
+}

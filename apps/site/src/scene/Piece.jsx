@@ -104,8 +104,10 @@ export default function Piece({ piece, u, live, motion, overlay, hotspotsOn, onH
     >
       <div className={`piece__boil${animate && id !== 'sky' ? ' is-boiling' : ''}`} style={animate ? boilStyle(piece) : undefined}>
         {drawings.map((state, i) => {
-          const cls = `cut--${state.toLowerCase()}${i && REST_ON_B.has(id) ? ' rest-on' : ''}`;
-          const style = i ? { animation: swap } : undefined;
+          const restsOnB = REST_ON_B.has(id);
+          const cls = `cut--${state.toLowerCase()}${i && restsOnB ? ' rest-on' : ''}${!i && states > 1 && restsOnB ? ' rest-off' : ''}`;
+          // Drawing A runs the inverse of B's swap, so exactly one shows.
+          const style = swap ? { animation: i ? swap : swap.replace(/stage-([a-z-]+?) /g, 'stage-$1-inv ') } : undefined;
           return art ? (
             <img
               key={state}

@@ -117,6 +117,9 @@ export function playIntro(root, ctx) {
           // Hard cut to drawing B: stop-motion, no cross-fade.
           const b = el.querySelector('.cut--b');
           if (b) run(b, [{ opacity: 0 }, { opacity: 1 }], { duration: 60, delay, easing: 'steps(1, end)' });
+          // ...and drawing A goes at the same instant, so the two never overlap.
+          const a = el.querySelector('.cut--a');
+          if (a) run(a, [{ opacity: 1 }, { opacity: 0 }], { duration: 60, delay, easing: 'steps(1, end)' });
           break;
         }
         default:
