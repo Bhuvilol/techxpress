@@ -106,3 +106,19 @@ test('saving domains only accepts domains that have problem statements', async (
   const { where } = prisma.domain.count.mock.calls[0].arguments[0];
   assert.deepEqual(where.problemStatements, { some: {} });
 });
+
+// ── T-shirt size ──────────────────────────────────────────────────────────
+
+const { updateTshirtSizeSchema } = await import('../../src/validators/students.schema.js');
+
+test('T-shirt size update takes one of the listed sizes', () => {
+  assert.equal(updateTshirtSizeSchema.safeParse({ tshirtSize: 'XL' }).success, true);
+  assert.equal(updateTshirtSizeSchema.safeParse({ tshirtSize: 'HUGE' }).success, false);
+  assert.equal(updateTshirtSizeSchema.safeParse({}).success, false);
+});
+
+test('a student saves their T-shirt size', async () => {
+  prisma.domain.findMany = mock.fn(async () => []);
+  await userService.updateTshirtSize('cstudent000000000000000a', 'M');
+  assert.deepEqual(prisma.user.update.mock.calls[0].arguments[0].data, { tshirtSize: 'M' });
+});

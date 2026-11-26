@@ -21,6 +21,7 @@ import { Spinner } from '../../components/ui/Spinner.jsx';
 import { Modal } from '../../components/ui/Modal.jsx';
 import { formatRelative, titleCase } from '../../utils/format.js';
 import { DomainPicker, DOMAINS_SAVED_EVENT } from '../../components/student/DomainPicker.jsx';
+import { TshirtSizePicker } from '../../components/student/TshirtSizePicker.jsx';
 
 const ROLE_TONE = { ADMIN: 'crit', JURY: 'cyan', COORDINATOR: 'warn', STUDENT: 'live' };
 const EXPLORE_CARD_CLASS = 'glass-card flat min-h-[188px] rounded-none px-5 py-6 transition duration-200 ease-out hover:border-white hover:bg-white/[0.04]';
@@ -45,7 +46,14 @@ const ProfileTab = ({ user, myTeam }) => {
         <Field icon={GraduationCap} label="Degree" value={user.degree ?? '-'} />
         <Field icon={BookOpen} label="Year / Semester" value={user.yearSemester ?? '-'} />
         <Field icon={Mail} label="Phone" value={user.phone ?? '-'} />
-        <Field icon={Shirt} label="T-shirt size" value={user.tshirtSize ?? '-'} />
+        {user.role === 'STUDENT' ? (
+          <div className="space-y-1">
+            <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.3em] text-white/30"><Shirt size={12} /> T-shirt size</div>
+            <TshirtSizePicker key={user.tshirtSize ?? ''} current={user.tshirtSize ?? ''} compact />
+          </div>
+        ) : (
+          <Field icon={Shirt} label="T-shirt size" value={user.tshirtSize ?? '-'} />
+        )}
         <Field icon={Briefcase} label="Preferred Team Role" value={user.preferredTeamRole ?? '-'} />
         <Field icon={Award} label="Contribution Areas" value={joinList(user.contributionAreas)} />
       </dl>
