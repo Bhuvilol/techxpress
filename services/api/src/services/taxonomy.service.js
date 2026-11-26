@@ -46,8 +46,14 @@ export const institutionService = {
 };
 
 // ── Domains ────────────────────────────────────────────────────────────────
+// A domain is open for students to pick only while it has problem
+// statements. Old domains kept because a team still uses them have none, so
+// they drop out of every picker; admins still see every domain.
+export const OPEN_DOMAIN = { problemStatements: { some: {} } };
+
 export const domainService = {
-  list: () => prisma.domain.findMany({
+  list: ({ all = false } = {}) => prisma.domain.findMany({
+    where: all ? {} : OPEN_DOMAIN,
     orderBy: { name: 'asc' },
     include: { _count: { select: { problemStatements: true, teams: true } } },
   }),
