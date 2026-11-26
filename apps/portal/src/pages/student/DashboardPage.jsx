@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import {
   User, Users, Mail, ArrowRight, Inbox, Megaphone, ExternalLink,
   Github, Linkedin, IdCard, GraduationCap, Layers, Search, UserPlus, Send,
-  Briefcase, FileText, Award, BookOpen, Globe,
+  Briefcase, FileText, Award, BookOpen, Globe, Shirt,
 } from 'lucide-react';
 import { api } from '../../lib/api.js';
 import { useApi } from '../../hooks/useApi.js';
@@ -45,6 +45,7 @@ const ProfileTab = ({ user, myTeam }) => {
         <Field icon={GraduationCap} label="Degree" value={user.degree ?? '-'} />
         <Field icon={BookOpen} label="Year / Semester" value={user.yearSemester ?? '-'} />
         <Field icon={Mail} label="Phone" value={user.phone ?? '-'} />
+        <Field icon={Shirt} label="T-shirt size" value={user.tshirtSize ?? '-'} />
         <Field icon={Briefcase} label="Preferred Team Role" value={user.preferredTeamRole ?? '-'} />
         <Field icon={Award} label="Contribution Areas" value={joinList(user.contributionAreas)} />
       </dl>

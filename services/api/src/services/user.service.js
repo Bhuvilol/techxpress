@@ -22,6 +22,7 @@ const PUBLIC_USER_FIELDS = {
   phone: true,
   discordId: true,
   gender: true,
+  tshirtSize: true,
   profilePicUrl: true,
   preferredDomains: true,
   linkedinUrl: true,

@@ -130,6 +130,7 @@ model User {
   phone              String?
   discordId          String?
   gender             Gender?
+  tshirtSize         String?            // XS … XXXL, picked at registration
   profilePicUrl      String?
   linkedinUrl        String?
   githubUrl          String?

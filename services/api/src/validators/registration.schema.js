@@ -48,6 +48,8 @@ export const YEAR_SEMESTER_OPTIONS = [
   '6th Year / Semester 12',
 ];
 
+export const TSHIRT_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'];
+
 export const registrationSchema = z.object({
   fullName: z.string().trim()
     .min(2, 'Enter your full name (at least 2 characters).')
@@ -76,6 +78,7 @@ export const registrationSchema = z.object({
     .optional(),
   discordId: z.string().trim().max(60, 'Discord ID is too long.').optional(),
   gender: z.enum(['MALE', 'FEMALE', 'OTHER'], { errorMap: () => ({ message: 'Select your gender.' }) }),
+  tshirtSize: z.enum(TSHIRT_SIZES, { errorMap: () => ({ message: 'Select your T-shirt size.' }) }),
   profilePicUrl: url('https://…/photo.jpg'),
   linkedinUrl: profileUrl('Enter your LinkedIn profile link, e.g. https://linkedin.com/in/yourname', isLinkedInProfile),
   githubUrl: profileUrl('Enter your GitHub profile link, e.g. https://github.com/yourname', isGitHubProfile),

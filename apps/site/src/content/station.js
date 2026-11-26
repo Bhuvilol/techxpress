@@ -27,7 +27,7 @@ export const LED = {
   intro: '12026 TECHXPRESS · BOARDING',
   headline: '12026 TECHXPRESS',
   status: {
-    beforeOpen: 'REGISTRATION OPENS 27 NOV · PLATFORM 1',
+    beforeOpen: 'REGISTRATION CLOSES 27 NOV · PLATFORM 1',
     open: 'BOARDING NOW · BOOK YOUR TICKET · PLATFORM 1',
     closed: 'BOOKING CLOSED · DEPARTS 04 DEC',
     departed: 'DEPARTED · HACKATHON IN PROGRESS',

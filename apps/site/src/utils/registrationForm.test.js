@@ -16,6 +16,7 @@ const validForm = (overrides = {}) => ({
   registrationNo: '2024PS01',
   phone: '9876543210',
   gender: 'FEMALE',
+  tshirtSize: 'M',
   idCard: 'data:image/jpeg;base64,/9j/',
   institutionId: 'cinstitution0000000000000a',
   preferredDomains: ['cdomain00000000000000000a', 'cdomain00000000000000000b', 'cdomain00000000000000000c', 'cdomain00000000000000000d'],
@@ -100,6 +101,12 @@ describe('validateRegistration', () => {
     for (const bad of ['12345', '987654321', '98765432100', '+919876543210', '98765 43210', '98765-43210', '98765abcde']) {
       expect(validateRegistration(validForm({ phone: bad })).phone, bad).toMatch(/exactly 10 digits/);
     }
+  });
+
+  it('needs a T-shirt size from the list', () => {
+    expect(validateRegistration(validForm({ tshirtSize: '' })).tshirtSize).toMatch(/T-shirt/);
+    expect(validateRegistration(validForm({ tshirtSize: 'HUGE' })).tshirtSize).toMatch(/T-shirt/);
+    expect(validateRegistration(validForm({ tshirtSize: 'XL' })).tshirtSize).toBeUndefined();
   });
 
   it('needs exactly 4 preferred domains', () => {

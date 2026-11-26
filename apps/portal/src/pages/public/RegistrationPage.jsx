@@ -15,6 +15,7 @@ import {
   Phone,
   School,
   User,
+  Shirt,
 } from 'lucide-react';
 import { api } from '../../lib/api.js';
 import { useApi } from '../../hooks/useApi.js';
@@ -109,6 +110,7 @@ const EMPTY = {
   degree: '',
   phone: '',
   gender: '', // no default: a guessed value would feed the team gender rules
+  tshirtSize: '',
   yearSemester: '',
   contributionAreas: [],
   preferredTeamRole: '',
@@ -141,8 +143,11 @@ const URL_EXAMPLES = {
 };
 
 // Order fields appear on the page — used to jump to the first problem.
+// Kept in step with TSHIRT_SIZES in services/api/src/validators/registration.schema.js.
+const TSHIRT_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'];
+
 const FIELD_ORDER = [
-  'fullName', 'email', 'registrationNo', 'phone', 'gender', 'idCard',
+  'fullName', 'email', 'registrationNo', 'phone', 'gender', 'tshirtSize', 'idCard',
   'institutionId', 'preferredDomains', 'domainId', 'yearSemester', 'degree',
   'contributionAreas', 'nonTechnicalSkills', 'technicalSkills', 'preferredTeamRole',
   'linkedinUrl', 'githubUrl', 'resumeDriveLink', 'researchPublicationUrl',
@@ -152,7 +157,7 @@ const FIELD_ORDER = [
 
 const FIELD_LABELS = {
   fullName: 'Name', email: 'Email', registrationNo: 'Registration number', phone: 'Phone',
-  gender: 'Gender', idCard: 'College ID card', institutionId: 'Institution', preferredDomains: 'Preferred domain',
+  gender: 'Gender', tshirtSize: 'T-shirt size', idCard: 'College ID card', institutionId: 'Institution', preferredDomains: 'Preferred domain',
   domainId: 'Preferred domain', yearSemester: 'Year / Semester', degree: 'Degree',
   contributionAreas: 'Contribution areas', preferredTeamRole: 'Preferred team role',
   technicalSkills: 'Technical skills', nonTechnicalSkills: 'Non-technical skills',
@@ -250,6 +255,7 @@ const validateRegistration = (f) => {
   if (phone && !/^\d{10}$/.test(phone)) e.phone = 'Phone number must be exactly 10 digits, with no spaces, dashes or +.';
 
   if (!f.gender) e.gender = 'Select your gender.';
+  if (!TSHIRT_SIZES.includes(f.tshirtSize)) e.tshirtSize = 'Select your T-shirt size.';
   if (!f.idCard) e.idCard = 'Upload a photo of your college ID card.';
   if (!f.institutionId) e.institutionId = 'Select your institution from the list.';
   if (f.preferredDomains.length !== 4) e.preferredDomains = 'Pick exactly 4 domains. Your first pick is your primary domain.';
@@ -581,6 +587,16 @@ export const RegistrationPage = () => {
                   <option value="MALE">Male</option>
                   <option value="FEMALE">Female</option>
                   <option value="OTHER">Other / prefer not to say</option>
+                </select>
+              </div>
+            </FormField>
+
+            <FormField field="tshirtSize" label={requiredLabel('T-shirt size')} error={errors.tshirtSize}>
+              <div className="group relative">
+                <Shirt size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20 transition-colors group-focus-within:text-white" />
+                <select className="select-glass !pl-14 h-12 border-white/10 bg-black transition-all focus:border-white" required value={form.tshirtSize} onChange={set('tshirtSize')}>
+                  <option value="" disabled>Select size</option>
+                  {TSHIRT_SIZES.map((size) => <option key={size} value={size}>{size}</option>)}
                 </select>
               </div>
             </FormField>
