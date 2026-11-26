@@ -51,7 +51,7 @@ export const SLOTS = {
     sun: { x: 1700, y: 0, w: 190, h: 190 },
     birds: { x: 560, y: 40, w: 240, h: 120 },
     platform2: { x: -340, y: 190, w: 2600, h: 230 },
-    mast: { instances: [{ x: 60, y: 140, w: 130, h: 570 }, { x: 900, y: 140, w: 130, h: 570 }, { x: 1740, y: 140, w: 130, h: 570 }] },
+    mast: { instances: [{ x: 45, y: 30, w: 160, h: 680 }, { x: 885, y: 30, w: 160, h: 680 }, { x: 1725, y: 30, w: 160, h: 680 }] },
     train: { h: 470, bottom: 830, doorX: 910 },
     // Wider and taller than the screen on purpose: its top surface hides the
     // train's wheels (like a real platform edge) and it reaches the bottom of
@@ -71,7 +71,7 @@ export const SLOTS = {
     sun: { x: 780, y: 160, w: 240, h: 240 },
     birds: { x: 80, y: 440, w: 220, h: 110 },
     platform2: { x: -240, y: 620, w: 1560, h: 190 },
-    mast: { instances: [{ x: 10, y: 470, w: 110, h: 540 }, { x: 490, y: 470, w: 110, h: 540 }, { x: 970, y: 470, w: 110, h: 540 }] },
+    mast: { instances: [{ x: 0, y: 370, w: 130, h: 640 }, { x: 480, y: 370, w: 130, h: 640 }, { x: 960, y: 370, w: 130, h: 640 }] },
     train: { h: 560, bottom: 1320, doorX: 600 },
     platform1: { x: -2056, y: 1038, w: 5192, h: 1222 },
     lamp: { instances: [{ x: 400, y: 700, w: 250, h: 700 }, { x: 940, y: 700, w: 250, h: 700 }] },
