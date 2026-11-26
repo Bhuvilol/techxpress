@@ -85,6 +85,7 @@ export const validBody = (overrides = {}) => ({
   contributionAreas: ['Frontend'],
   preferredTeamRole: 'Developer',
   gender: 'FEMALE',
+  tshirtSize: 'M',
   bio: 'I build small web tools.',
   idCard: `data:image/jpeg;base64,${JPEG_BYTES.toString('base64')}`,
   ...overrides,

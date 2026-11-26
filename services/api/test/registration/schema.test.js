@@ -72,6 +72,14 @@ test('institution and domain must be ids of the right shape', () => {
   assert.ok(fieldErrors(validBody({ domainId: 'nope' })).domainId);
 });
 
+test('T-shirt size is required and must be one of the listed sizes', () => {
+  assert.equal(parsed(validBody({ tshirtSize: 'XXL' })).tshirtSize, 'XXL');
+  assert.ok(fieldErrors(validBody({ tshirtSize: 'HUGE' })).tshirtSize);
+  const noSize = validBody();
+  delete noSize.tshirtSize;
+  assert.ok(fieldErrors(noSize).tshirtSize);
+});
+
 test('preferred domains: exactly four, all different', () => {
   const five = Array.from({ length: 5 }, (_, i) => `cdomain0000000000000000${String.fromCharCode(97 + i)}`);
   assert.ok(fieldErrors(validBody({ preferredDomains: [] })).preferredDomains);
