@@ -1,11 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Users, Search, Building2, Layers, UserCheck, UserPlus, ChevronDown, Award, X, CheckCircle2,
+  Users, Search, Building2, Layers, UserCheck, ChevronDown, Award, X, CheckCircle2,
 } from 'lucide-react';
 import { api } from '../../lib/api.js';
 import { useApi } from '../../hooks/useApi.js';
 import { PageHeader } from '../../components/ui/PageHeader.jsx';
-import { StatTile } from '../../components/ui/StatTile.jsx';
 import { Badge } from '../../components/ui/Badge.jsx';
 import { Empty } from '../../components/ui/Empty.jsx';
 import { CardSkeleton } from '../../components/ui/Skeleton.jsx';
@@ -175,13 +174,6 @@ export const DirectoryPage = () => {
 
       {data && (
         <>
-          <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <StatTile icon={UserCheck} label="Verified" value={stats.total} />
-            <StatTile icon={Building2} label="Colleges" value={stats.colleges} />
-            <StatTile icon={Users} label="In a team" value={stats.inTeam} tone="live" />
-            <StatTile icon={UserPlus} label="Looking" value={stats.looking} tone="warn" hint="Not in a team yet" />
-          </div>
-
           {/* College segmentation chips */}
           <div className="mb-5 flex flex-wrap gap-2">
             <Chip active={!collegeId} onClick={() => { setCollegeId(''); setPage(1); }} label="All colleges" count={stats.total} />
