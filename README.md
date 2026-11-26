@@ -38,7 +38,6 @@ npm run preview       # wrangler dev on :8787
 | [docs/CREDENTIALS.md](docs/CREDENTIALS.md) | Accounts and where each secret lives (no values) |
 | [infra/gcp/README.md](infra/gcp/README.md) | Google Cloud setup script |
 | [docs/VORTEX.md](docs/VORTEX.md) | What the VORTEX platform does, and its code layout |
-| [docs/KNOWN_ISSUES.md](docs/KNOWN_ISSUES.md) | Open issues by launch phase |
 
 ## License
 

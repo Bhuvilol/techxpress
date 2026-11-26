@@ -1,10 +1,10 @@
 import express, { Router } from 'express';
 import { validate } from '../middleware/validate.js';
-import { registrationLimiter } from '../middleware/rateLimit.js';
+import { registrationLimiter, pnrPerIpLimiter, pnrPerRegistrationNoLimiter } from '../middleware/rateLimit.js';
 import { ah } from '../utils/asyncHandler.js';
 import { logger } from '../utils/logger.js';
-import { registrationSchema } from '../validators/registration.schema.js';
-import { register, status } from '../controllers/registration.controller.js';
+import { registrationSchema, pnrSchema } from '../validators/registration.schema.js';
+import { register, status, pnr } from '../controllers/registration.controller.js';
 
 const router = Router();
 
@@ -31,5 +31,12 @@ router.get('/status', ah(status));
 const registrationBody = express.json({ limit: '2mb' });
 
 router.post('/', registrationLimiter, registrationBody, honeypot, validate({ body: registrationSchema }), ah(register));
+
+// PNR status check from the train site. The app-wide 100 kb parser normally
+// parses the body first; this small parser is a no-op then, and keeps the
+// route self-contained (tests mount the router alone). The per-number limiter
+// needs the parsed body, so it runs after the parser.
+const pnrBody = express.json({ limit: '10kb' });
+router.post('/pnr', pnrPerIpLimiter, pnrBody, pnrPerRegistrationNoLimiter, validate({ body: pnrSchema }), ah(pnr));
 
 export default router;

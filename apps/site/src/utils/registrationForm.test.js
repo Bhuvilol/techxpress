@@ -3,6 +3,7 @@ import {
   FIELD_ORDER,
   INITIAL_FORM,
   buildSubmitPayload,
+  hasFormData,
   normalizeUrl,
   sanitizePayload,
   validateRegistration,
@@ -218,5 +219,16 @@ describe('buildSubmitPayload', () => {
 
   it('sends the gender only once it has been picked', () => {
     expect(buildSubmitPayload(validForm({ gender: '' })).gender).toBeUndefined();
+  });
+});
+
+describe('hasFormData', () => {
+  it('is false for a fresh form and ignores the honeypot', () => {
+    expect(hasFormData(INITIAL_FORM)).toBe(false);
+    expect(hasFormData({ ...INITIAL_FORM, website: 'spam' })).toBe(false);
+  });
+  it('is true once anything is typed or picked', () => {
+    expect(hasFormData({ ...INITIAL_FORM, fullName: 'A' })).toBe(true);
+    expect(hasFormData({ ...INITIAL_FORM, contributionAreas: ['Problem Solving'] })).toBe(true);
   });
 });

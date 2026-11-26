@@ -60,6 +60,25 @@ export const registrationLimiter = rateLimit({
   handler: limited('registration_ip'),
 });
 
+// PNR status lookups (public). Per IP, generous for campus NAT; plus a tight
+// limit per registration number, so one student's status can't be hammered
+// with guessed emails from many machines.
+export const pnrPerIpLimiter = rateLimit({
+  ...common,
+  windowMs: 10 * MINUTE,
+  limit: 30,
+  handler: limited('pnr_ip'),
+});
+
+export const pnrPerRegistrationNoLimiter = rateLimit({
+  ...common,
+  windowMs: 10 * MINUTE,
+  limit: 10,
+  // Same canonical form as utils/registrationNo.js (no whitespace, upper-case).
+  keyGenerator: (req) => `pnr:${String(req.body?.registrationNo ?? '').replace(/\s+/g, '').toUpperCase()}`,
+  handler: limited('pnr_registration_no'),
+});
+
 // Team chat: per user, to stop message floods.
 export const teamChatLimiter = rateLimit({
   ...common,

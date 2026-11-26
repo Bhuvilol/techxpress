@@ -71,12 +71,12 @@ Then update the `DATABASE_URL` secret to point at `vortex-db-restore` (same user
   gcloud run services update vortex-api --cpu 2 --memory 2Gi
   ```
 - If concurrency stays near the limit: the next step is a Redis adapter for Socket.IO and a shared rate-limit store (Memorystore + VPC egress), then 2–3 instances. That is a code change, not a setting; plan it before team formation if the load test shows it's needed.
-- Known load: the team page polls 3 endpoints every 5 s per open tab (KNOWN_ISSUES B3). Fix before team formation.
+- Known load: the team page polls 3 endpoints every 5 s per open tab. Fix before team formation.
 
 ## Launch days
 
 ### Rehearsal (26 Nov)
-Run the checklist in [TECHXPRESS_CONTEXT.md](TECHXPRESS_CONTEXT.md) section 8 on the real domain: train flow and Register → `/vortex/register`; deep-link refreshes; registration validation, honeypot and "opens soon"; coordinator and admin verification with the email arriving; revoke logs out instantly; student team flow and chat; jury scoring; leaderboard toggles; broadcasts; **real client IPs in logs**. Then the k6 load test (raise per-IP limits for the test; all traffic comes from one IP; restore afterwards).
+Run this checklist on the real domain: train flow, Timeline, and Register → `/vortex/`; deep-link refreshes; registration validation, ID card upload, honeypot and "opens soon"; coordinator and admin verification (ID card view, approve, reject, ask to re-register) with the emails arriving; revoke logs out instantly; student team flow and chat; jury scoring; leaderboard toggles; broadcasts; **real client IPs in logs**. Then the k6 load test (raise per-IP limits for the test; all traffic comes from one IP; restore afterwards).
 
 ### Wipe and re-seed (26 Nov evening) — confirm with the organizers first
 This deletes **all** data in the production database. Only before real registrations exist.

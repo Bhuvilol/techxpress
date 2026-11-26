@@ -1,16 +1,12 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
-import './index.css';
+import '@fontsource/barlow-condensed/600.css';
+import '@fontsource/barlow-condensed/700.css';
+import '@fontsource/barlow-condensed/800.css';
+import '@fontsource/noto-sans-devanagari/700.css';
+import './styles/base.css';
 import App from './App.jsx';
-
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').catch(() => {
-      /* Ignore SW registration errors in unsupported contexts */
-    });
-  });
-}
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>

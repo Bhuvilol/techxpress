@@ -1,5 +1,19 @@
 import { userService } from '../services/user.service.js';
 import { rulesService } from '../services/rules.service.js';
+import { berthFor } from '../utils/berth.js';
+
+// Railway wording for each account status (the train site shows it as a stamp).
+const PNR_STATUS = {
+  NO_RESERVATION: 'NO_RESERVATION',
+  PENDING: 'WAITLISTED',
+  REJECTED: 'NOT_CONFIRMED',
+  REVOKED: 'CANCELLED',
+  VERIFIED: 'CONFIRMED',
+};
+
+// Event details printed on the e-ticket.
+const TICKET_TRAIN = '12026 TECHXPRESS';
+const TICKET_DATE = '2026-12-04';
 
 // Public endpoints — no auth.
 
@@ -19,5 +33,29 @@ export const register = async (req, res) => {
   res.status(202).json({
     message: 'Registration submitted. Awaiting organizer verification.',
     user: { id: user.id, publicId: user.publicId, fullName: user.fullName, email: user.email },
+  });
+};
+
+// PNR status: registration number + email → status, and for a confirmed
+// student the details for their souvenir e-ticket. Never returns contact
+// details, the registration number or internal ids.
+export const pnr = async (req, res) => {
+  const { status: accountStatus, user } = await userService.lookupPnr(req.body);
+  const status = PNR_STATUS[accountStatus] ?? PNR_STATUS.NO_RESERVATION;
+
+  res.set('Cache-Control', 'no-store');
+  if (status !== 'CONFIRMED') return res.json({ status });
+
+  res.json({
+    status,
+    ticket: {
+      pnr: user.publicId,
+      name: user.fullName,
+      institution: user.institution?.name ?? null,
+      domain: user.domain?.name ?? null,
+      train: TICKET_TRAIN,
+      date: TICKET_DATE,
+      ...berthFor(user.id),
+    },
   });
 };

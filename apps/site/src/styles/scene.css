@@ -1,0 +1,721 @@
+/* ── The cardboard stage ─────────────────────────────────────────────────
+   Sizes are in scene units: calc(var(--u) * N px), where --u (set by
+   Station.jsx) is the px size of one unit on this screen. */
+
+.stage {
+  --card: #c9a06e;
+  --card-dark: #b08355;
+  --edge: #6b4526;
+  --cut: #f3ead6;
+  --ink: #23180f;
+  --shadow: rgba(28, 12, 8, 0.36);
+
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  background: #241a3a;
+  perspective-origin: 50% 50%;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+/* The 3D group that tilts. Its layers are flat planes at their own depth. */
+.stage__rig {
+  position: absolute;
+  transform-style: preserve-3d;
+  /* The rig's own plane sits in front of every layer in 3D, so it must not
+     catch the pointer; only hotspots do. */
+  pointer-events: none;
+}
+
+.stage--loading .stage__rig {
+  visibility: hidden;
+}
+
+.stage__layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  will-change: transform;
+
+  /* Card thickness step and how far the cast shadow falls: front layers
+     stand further from the layer behind them, so their shadow falls further. */
+  --t: max(0.6px, calc(var(--u) * 1.5px));
+  --off: calc(var(--u) * var(--depth) * 22px);
+}
+
+/* ── Pieces ─────────────────────────────────────────────────────────────── */
+
+.piece {
+  position: absolute;
+  pointer-events: none;
+}
+
+.piece__boil {
+  position: absolute;
+  inset: 0;
+  transform-origin: 50% 100%;
+}
+
+.is-boiling {
+  animation-timing-function: steps(1, end);
+  animation-iteration-count: infinite;
+}
+
+/* Every drawing: the darker card edge (two stacked hard offsets make a
+   solid extrusion to the bottom-right) and a soft shadow behind. The filter
+   is on the drawing itself, which only ever changes opacity, so it is
+   rasterised once and never recomputed per frame. */
+.cut {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  filter:
+    drop-shadow(var(--t) var(--t) 0 var(--edge))
+    drop-shadow(var(--t) var(--t) 0 var(--edge))
+    drop-shadow(var(--off) calc(var(--off) * 1.3) calc(var(--u) * 16px) var(--shadow));
+}
+
+.piece--sky .cut {
+  filter: none;
+}
+
+.cut--b {
+  opacity: 0;
+}
+
+.cut--b.rest-on {
+  opacity: 1;
+}
+
+/* Two-state pieces SWAP drawings, never show both: drawing A runs the exact
+   inverse of B's animation (the -inv keyframes), and is hidden wherever B
+   rests on. */
+.cut--a.rest-off {
+  opacity: 0;
+}
+
+/* ── Placeholder cards (pieces without art yet) ─────────────────────────── */
+
+.ph {
+  --ph1: #d4ab78;
+  --ph2: var(--card);
+  --ph3: var(--card-dark);
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: calc(var(--u) * 6px);
+  overflow: hidden;
+  border: max(1px, calc(var(--u) * 5px)) solid var(--cut);
+  border-radius: calc(var(--u) * 14px);
+  background:
+    repeating-linear-gradient(90deg, rgba(60, 36, 16, 0.08) 0 calc(var(--u) * 2px), transparent 0 calc(var(--u) * 8px)),
+    linear-gradient(170deg, var(--ph1), var(--ph2) 55%, var(--ph3));
+  color: var(--ph-ink, var(--ink));
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  line-height: 0.95;
+  white-space: nowrap;
+}
+
+/* Drawing B of a placeholder: same card, a shade darker, so swaps show. */
+.ph--b {
+  box-shadow: inset 0 0 0 100vmax rgba(70, 30, 10, 0.14);
+}
+
+/* Each placeholder painted roughly like the thing it stands for, so the
+   mock-up already reads as a station at dusk. */
+.piece--sun .ph { --ph1: #ffd27a; --ph2: #f6a54d; --ph3: #e9803a; border-radius: 50%; }
+.piece--birds .ph { --ph1: #e8d9c0; --ph2: #d9c4a3; --ph3: #c8ae88; }
+.piece--platform2 .ph { --ph1: #9a8aa0; --ph2: #85768f; --ph3: #6f6280; --ph-ink: #2c2238; }
+.piece--mast .ph,
+.piece--lamp .ph { --ph1: #6d6672; --ph2: #57505e; --ph3: #433d4a; --ph-ink: #efe6d6; }
+.piece--train .ph { --ph1: #b5483a; --ph2: #9b3a2f; --ph3: #7d2d25; --ph-ink: #f6e7cf; }
+.piece--platform1 .ph,
+.piece--platform2 .ph {
+  justify-content: flex-start;
+  padding-top: calc(var(--u) * 60px);
+}
+
+.piece--platform1 .ph {
+  --ph1: #b9ada0; --ph2: #a5998d; --ph3: #8d8277; --ph-ink: #3a3029;
+  border-top: calc(var(--u) * 22px) solid #e8b93c;
+}
+.piece--kiosk .ph { --ph1: #3f8f86; --ph2: #2f776f; --ph3: #235e58; --ph-ink: #f3ead6; }
+.piece--chai .ph { --ph1: #c76a3c; --ph2: #b0552d; --ph3: #8f4323; --ph-ink: #fbeedb; }
+.piece--timetable .ph { --ph1: #efe4cc; --ph2: #e3d4b4; --ph3: #d0bd98; }
+.piece--rajesh .ph { --ph1: #4a4f6e; --ph2: #3a3e5a; --ph3: #2c2f46; --ph-ink: #f3ead6; }
+.piece--clock .ph,
+.piece--ledboard .ph { --ph1: #5b5560; --ph2: #48434e; --ph3: #36323c; --ph-ink: #efe6d6; }
+
+.ph__label {
+  opacity: 0.7;
+  text-align: center;
+}
+
+.ph__state {
+  opacity: 0.4;
+}
+
+.ph--sky {
+  justify-content: flex-start;
+  border: none;
+  border-radius: 0;
+  padding-top: 23%;
+  background:
+    radial-gradient(ellipse 40% 22% at 76% 30%, rgba(255, 205, 130, 0.55), transparent 70%),
+    linear-gradient(180deg, #221a44 0%, #3f2a64 24%, #8a4570 46%, #d9686a 62%, #f19a62 76%, #f7c27a 100%);
+  color: #fff3df;
+}
+
+.ph--sky .ph__label {
+  opacity: 0.35;
+}
+
+/* ── Overlays drawn by the stage ────────────────────────────────────────── */
+
+.ov {
+  position: absolute;
+  pointer-events: none;
+}
+
+/* Name board: Hindi, English, altitude. */
+.ov-name {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-evenly;
+  color: #17120c;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.ov-name--ph {
+  border-radius: calc(var(--u) * 6px);
+  background: #f2c64a;
+  box-shadow: inset 0 0 0 max(1px, calc(var(--u) * 4px)) #17120c;
+  padding: 0 calc(var(--u) * 10px);
+}
+
+.ov-name > span {
+  display: inline-block;
+  line-height: 1.12;
+}
+
+.ov-name__hi {
+  font-family: 'Noto Sans Devanagari', sans-serif;
+  font-weight: 700;
+}
+
+.ov-name__en {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+}
+
+.ov-name__alt {
+  font-family: 'Barlow Condensed', 'Noto Sans Devanagari', sans-serif;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+/* LED board: unlit dot grid behind, lit dots = text masked by the same grid. */
+.ov-led {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  overflow: hidden;
+  border-radius: calc(var(--u) * 4px);
+  background:
+    radial-gradient(circle, rgba(255, 112, 24, 0.14) 0 36%, transparent 44%) 0 0 / var(--dot) var(--dot),
+    radial-gradient(ellipse at 50% 50%, #1c120d, #0c0807);
+}
+
+.ov-led__row {
+  overflow: hidden;
+  white-space: nowrap;
+  text-align: center;
+  line-height: 1;
+}
+
+.ov-led__row--track {
+  text-align: left;
+}
+
+.ov-led__text {
+  display: inline-block;
+  color: #ff9124;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-shadow: 0 0 calc(var(--dot) * 1.4) rgba(255, 110, 20, 0.95);
+  -webkit-mask: radial-gradient(circle, #000 0 46%, transparent 54%) 0 0 / var(--dot) var(--dot);
+  mask: radial-gradient(circle, #000 0 46%, transparent 54%) 0 0 / var(--dot) var(--dot);
+}
+
+.ov-led__scroll {
+  will-change: transform;
+}
+
+/* Clock hands (and a face of its own on the placeholder card). */
+.ov-clock {
+  border-radius: 50%;
+}
+
+.ov-clock--ph {
+  background: radial-gradient(circle, #fbf6ea 60%, #ece2cc);
+  box-shadow: inset 0 0 0 max(1px, calc(var(--u) * 5px)) #2a2018;
+}
+
+.ov-clock--ph::before {
+  content: '';
+  position: absolute;
+  inset: 9%;
+  border-radius: 50%;
+  background: repeating-conic-gradient(from -1deg, #2a2018 0 2deg, transparent 2deg 30deg);
+  -webkit-mask: radial-gradient(circle, transparent 0 76%, #000 77%);
+  mask: radial-gradient(circle, transparent 0 76%, #000 77%);
+}
+
+.ov-clock__hand {
+  position: absolute;
+  left: 50%;
+  bottom: 50%;
+  border-radius: 999px;
+  background: #1d1712;
+  transform-origin: 50% 100%;
+}
+
+.ov-clock__hand--sec {
+  background: #c8321e;
+}
+
+.ov-clock--live .ov-clock__hand {
+  animation: stage-spin var(--spin) linear infinite;
+}
+
+.ov-clock--live .ov-clock__hand--sec {
+  animation-timing-function: steps(60, end);
+}
+
+.ov-clock__cap {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  translate: -50% -50%;
+  border-radius: 50%;
+  background: #1d1712;
+}
+
+/* Overhead wires. */
+.ov-wires {
+  position: absolute;
+  overflow: visible;
+  fill: none;
+  stroke: #1d1724;
+  stroke-linecap: round;
+  pointer-events: none;
+}
+
+/* ── Hotspots ───────────────────────────────────────────────────────────── */
+
+.hot {
+  pointer-events: auto;
+  cursor: pointer;
+  outline: none;
+  transition: translate 0.4s cubic-bezier(0.34, 1.6, 0.6, 1);
+}
+
+.hot:focus-visible {
+  outline: 3px solid #ffd447;
+  outline-offset: 4px;
+  border-radius: calc(var(--u) * 12px);
+}
+
+.hot--door {
+  position: absolute;
+  border-radius: calc(var(--u) * 10px);
+  transition: background-color 0.25s;
+}
+
+.tag {
+  position: absolute;
+  left: 50%;
+  bottom: 100%;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 10px;
+  padding: 5px 12px 6px;
+  border-radius: 4px;
+  background: var(--cut);
+  box-shadow: 2px 3px 0 var(--edge), 0 8px 18px rgba(0, 0, 0, 0.35);
+  color: var(--ink);
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: max(14px, calc(var(--u) * 22px));
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  line-height: 1.1;
+  text-transform: uppercase;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  translate: -50% 6px;
+  transition: opacity 0.2s, translate 0.25s ease-out;
+}
+
+.tag__hi {
+  font-family: 'Noto Sans Devanagari', sans-serif;
+  font-size: 0.82em;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.hot:focus-visible > .tag {
+  opacity: 1;
+  translate: -50% 0;
+}
+
+/* Lift and label only for real hover (mouse / trackpad). */
+@media (hover: hover) and (pointer: fine) {
+  .piece.hot:hover {
+    translate: 0 calc(var(--u) * -8px);
+  }
+
+  .piece.hot:hover > .piece__boil {
+    filter: brightness(1.08) saturate(1.06);
+  }
+
+  .hot--door:hover {
+    background-color: rgba(255, 206, 110, 0.22);
+  }
+
+  .hot:hover > .tag {
+    opacity: 1;
+    translate: -50% 0;
+  }
+}
+
+/* ── Chrome: dimming and the Skip button ────────────────────────────────── */
+
+.stage__dim {
+  position: absolute;
+  inset: 0;
+  background: #0b0716;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.35s;
+}
+
+.is-dimmed .stage__dim {
+  opacity: 0.15;
+}
+
+.stage__skip {
+  position: absolute;
+  z-index: 10;
+  left: max(16px, env(safe-area-inset-left));
+  bottom: max(16px, env(safe-area-inset-bottom));
+  padding: 8px 18px 9px;
+  border: none;
+  border-radius: 4px;
+  background: var(--cut);
+  box-shadow: 2px 3px 0 var(--edge), 0 6px 16px rgba(0, 0, 0, 0.35);
+  color: var(--ink);
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  cursor: pointer;
+  animation: stage-skip-in 0.4s 0.5s ease-out both;
+}
+
+.stage__skip:focus-visible {
+  outline: 3px solid #ffd447;
+  outline-offset: 3px;
+}
+
+.stage--tall .stage__skip {
+  top: max(16px, env(safe-area-inset-top));
+  bottom: auto;
+}
+
+@keyframes stage-skip-in {
+  from { opacity: 0; }
+}
+
+/* ── The living stage (after the opening; never with reduced motion) ───── */
+
+/* Boil: tiny hand-held jitter, one pose every LOOPS.boil.period. */
+@keyframes stage-boil-a {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  25% { transform: translate(calc(var(--u) * 1px), 0) rotate(0.18deg); }
+  50% { transform: translate(calc(var(--u) * -0.4px), calc(var(--u) * -1px)) rotate(-0.12deg); }
+  75% { transform: translate(calc(var(--u) * -1px), calc(var(--u) * 0.5px)) rotate(0.28deg); }
+}
+
+@keyframes stage-boil-b {
+  0%, 100% { transform: translate(calc(var(--u) * 0.6px), 0) rotate(-0.2deg); }
+  25% { transform: translate(0, calc(var(--u) * 0.8px)) rotate(0.1deg); }
+  50% { transform: translate(calc(var(--u) * -0.8px), 0) rotate(0.26deg); }
+  75% { transform: translate(0, calc(var(--u) * -0.6px)) rotate(-0.06deg); }
+}
+
+@keyframes stage-boil-c {
+  0%, 100% { transform: translate(0, calc(var(--u) * -0.5px)) rotate(0.08deg); }
+  25% { transform: translate(calc(var(--u) * -0.9px), 0) rotate(-0.24deg); }
+  50% { transform: translate(calc(var(--u) * 0.5px), calc(var(--u) * 0.7px)) rotate(0.2deg); }
+  75% { transform: translate(calc(var(--u) * 1px), 0) rotate(-0.1deg); }
+}
+
+@keyframes stage-boil-flat {
+  0%, 100% { transform: translate(0, 0); }
+  25% { transform: translate(calc(var(--u) * 0.8px), 0); }
+  50% { transform: translate(0, calc(var(--u) * -0.8px)); }
+  75% { transform: translate(calc(var(--u) * -0.7px), calc(var(--u) * 0.4px)); }
+}
+
+/* Two-state stop-motion: drawing B on for the second half of the cycle. */
+@keyframes stage-swap {
+  0% { opacity: 0; }
+  50%, 100% { opacity: 1; }
+}
+
+/* Rajesh: wave (B/A flicks) for ~1.4 s of the cycle, then rest on A. */
+@keyframes stage-wave {
+  0% { opacity: 1; }
+  7% { opacity: 0; }
+  10% { opacity: 1; }
+  17% { opacity: 0; }
+  20% { opacity: 1; }
+  26%, 100% { opacity: 0; }
+}
+
+/* Lamps stutter on once, then dip now and then. */
+@keyframes stage-lamp-on {
+  0% { opacity: 0; }
+  14% { opacity: 1; }
+  22% { opacity: 0; }
+  38% { opacity: 1; }
+  45% { opacity: 0; }
+  58%, 100% { opacity: 1; }
+}
+
+@keyframes stage-lamp-dip {
+  0%, 91% { opacity: 1; }
+  92% { opacity: 0.35; }
+  93% { opacity: 1; }
+  95% { opacity: 0.6; }
+  96%, 100% { opacity: 1; }
+}
+
+/* The sun sinks, very slowly, and stays down. */
+.is-live .piece--sun {
+  animation: stage-sun-sink 300s linear forwards;
+}
+
+@keyframes stage-sun-sink {
+  to { translate: 0 calc(var(--u) * 70px); }
+}
+
+/* Birds nudge along a little, a step at a time. */
+.is-live .piece--birds {
+  animation: stage-birds 7.8s steps(1, end) infinite;
+}
+
+@keyframes stage-birds {
+  0%, 100% { translate: 0 0; }
+  20% { translate: calc(var(--u) * 5px) calc(var(--u) * -3px); }
+  40% { translate: calc(var(--u) * 9px) calc(var(--u) * 1px); }
+  60% { translate: calc(var(--u) * 6px) calc(var(--u) * 4px); }
+  80% { translate: calc(var(--u) * 2px) calc(var(--u) * 1px); }
+}
+
+@keyframes stage-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stage *,
+  .stage *::before {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* Contact shadow under everything that stands on platform 1, so the bases
+   read as resting on the floor rather than floating in front of it. */
+.piece--nameboard::before,
+.piece--rajesh::before,
+.piece--chai::before,
+.piece--kiosk::before,
+.piece--timetable::before,
+.piece--lamp::before {
+  content: '';
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  bottom: -2.5%;
+  height: 7%;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(20, 14, 36, 0.55), rgba(20, 14, 36, 0));
+  pointer-events: none;
+}
+.piece--lamp::before { left: -40%; right: -40%; height: 3%; bottom: -1%; }
+
+.ov-tt {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35em;
+  color: #2a2034;
+  font-family: 'Barlow Condensed', sans-serif;
+  overflow: hidden;
+}
+.ov-tt__head {
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-align: center;
+  border-bottom: 2px solid #2a2034;
+  padding-bottom: 0.2em;
+  white-space: nowrap;
+}
+.ov-tt__row {
+  display: flex;
+  gap: 0.5em;
+  font-weight: 600;
+  white-space: nowrap;
+  border-bottom: 1px solid rgba(42, 32, 52, 0.25);
+}
+.ov-tt__when { font-weight: 800; color: #b3263e; min-width: 5.2em; flex: none; }
+.ov-tt__what { overflow: hidden; text-overflow: ellipsis; }
+
+/* Boards turned slightly inward, like signs seen at an angle: the name
+   board's left edge comes towards you, the timetable's right edge does. */
+.piece--nameboard,
+.piece--timetable { perspective: calc(900px * var(--u, 1)); }
+.piece--nameboard > .piece__boil { rotate: y 28deg; transform-origin: 0% 50%; }
+.piece--timetable > .piece__boil { rotate: y 26deg; transform-origin: 0% 50%; }
+
+/* Inverses of the swap animations, for drawing A. */
+@keyframes stage-swap-inv {
+  0% { opacity: 1; }
+  50%, 100% { opacity: 0; }
+}
+@keyframes stage-wave-inv {
+  0% { opacity: 0; }
+  7% { opacity: 1; }
+  10% { opacity: 0; }
+  17% { opacity: 1; }
+  20% { opacity: 0; }
+  26%, 100% { opacity: 1; }
+}
+@keyframes stage-lamp-on-inv {
+  0% { opacity: 1; }
+  14% { opacity: 0; }
+  22% { opacity: 1; }
+  38% { opacity: 0; }
+  45% { opacity: 1; }
+  58%, 100% { opacity: 0; }
+}
+@keyframes stage-lamp-dip-inv {
+  0%, 91% { opacity: 0; }
+  92% { opacity: 0.65; }
+  93% { opacity: 0; }
+  95% { opacity: 0.4; }
+  96%, 100% { opacity: 0; }
+}
+
+/* Platform 2 on wide screens: the second copy is a mirror image, so the two
+   copies meet on matching edges. */
+.piece--platform2[data-index="1"] .cut { transform: scaleX(-1); }
+
+/* Rajesh and the timetable face the other way (mirrored art). The timetable's
+   text overlay is not mirrored, only its board image. */
+.piece--rajesh .cut,
+.piece--timetable .cut { transform: scaleX(-1); }
+
+/* Phones: the timetable stands on the right, so it faces the original way. */
+.stage--tall .piece--timetable .cut { transform: none; }
+.stage--tall .piece--timetable > .piece__boil { rotate: y -26deg; transform-origin: 100% 50%; }
+
+/* Phones: the LED board hangs from the top of the screen. Its two chains are
+   carried up past the screen edge with a tile cut from the board's own chain
+   art (ledboard-chain.webp: one 80 px link period taken at y 100 of the
+   1400 px wide ledboard.webp, so the links line up with the drawn chain). */
+.stage--tall .piece--ledboard::before,
+.stage--tall .piece--ledboard::after {
+  content: '';
+  position: absolute;
+  bottom: 87.58%;
+  width: 7.857%;
+  height: calc(900px * var(--u, 1));
+  background: url('../assets/stage/ledboard-chain.webp') center bottom / 100% auto repeat-y;
+}
+.stage--tall .piece--ledboard::before { left: 14.286%; }
+.stage--tall .piece--ledboard::after { left: 78.5%; }
+
+/* Phones: Rajesh faces the other way. */
+.stage--tall [data-piece="rajesh"] .cut { transform: scaleX(-1); }
+
+/* ── Opening: boarding on a black screen ──────────────────────────────── */
+
+.stage--loading,
+.stage--boot,
+.stage--intro { background: #000; }
+
+/* The scrambling dots flicker like a board powering up. */
+.ov-led--boot .ov-led__row { animation: led-flicker 1.3s steps(1, end) infinite; }
+.ov-led--boot .ov-led__row + .ov-led__row { animation-duration: 0.9s; animation-delay: -0.4s; }
+@keyframes led-flicker {
+  0% { opacity: 1; }
+  9% { opacity: 0.25; }
+  13% { opacity: 1; }
+  41% { opacity: 0.6; }
+  44% { opacity: 1; }
+  70% { opacity: 0.15; }
+  73% { opacity: 0.9; }
+  76% { opacity: 1; }
+}
+
+/* The black curtain over the stage during the opening, and its growing hole
+   (a soft-edged circle around the sun, radius --r). */
+@property --r {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 0px;
+}
+.stage__curtain {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: #000;
+  --sx: 50%;
+  --sy: 50%;
+  -webkit-mask-image: radial-gradient(circle at var(--sx) var(--sy), transparent calc(var(--r) - 90px), #000 var(--r));
+  mask-image: radial-gradient(circle at var(--sx) var(--sy), transparent calc(var(--r) - 90px), #000 var(--r));
+}
+
+/* Flat copies of the LED board and sun, above the curtain. */
+.stage__front {
+  position: absolute;
+  z-index: 2;
+  pointer-events: none;
+}
+
+/* The sun waits for its cue: hidden until the opening proper starts (its
+   rise animation then holds it hidden until the LED text has locked in). */
+.stage--loading .piece--sun,
+.stage--boot .piece--sun { visibility: hidden; }
