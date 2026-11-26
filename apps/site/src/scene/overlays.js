@@ -24,7 +24,7 @@ export const OVERLAYS = {
     pitch: 1 / 26,
   },
   // The timetable board: the cream face inside the frame.
-  timetable: { box: { x: 0.17, y: 0.1, w: 0.68, h: 0.52 }, rows: 6 },
+  timetable: { box: { x: 0.15, y: 0.08, w: 0.7, h: 0.6 }, rows: 6 },
   // Where the overhead wire hangs on each mast (the end of the arm).
   mast: { wireAt: { x: 0.5, y: 0.06 }, contactDrop: 0.06 },
   // The train's door (clickable when open), centred on the manifest `doorAt`.

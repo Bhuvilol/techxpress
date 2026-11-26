@@ -25,7 +25,7 @@ export const PIECES = {
   sky: { layer: 'backdrop', states: 1, fit: 'cover', variants: ['wide', 'tall'] },
   sun: { layer: 'heavens', states: 1 },
   birds: { layer: 'heavens', states: 2 },
-  platform2: { layer: 'far', states: 1, fit: 'fill' }, // stretched across the width
+  platform2: { layer: 'far', states: 1 },
   mast: { layer: 'masts', states: 1, repeat: true },
   train: { layer: 'train', states: 2 }, // A door closed, B door open
   platform1: { layer: 'platform', states: 1 },
@@ -34,7 +34,7 @@ export const PIECES = {
   ledboard: { layer: 'props', states: 1, hotspot: 'countdown' },
   kiosk: { layer: 'props', states: 1, hotspot: 'faq' },
   chai: { layer: 'props', states: 2, hotspot: 'faq' }, // the chaiwala answers questions too
-  timetable: { layer: 'props', states: 1, hotspot: 'timetable' },
+  timetable: { layer: 'cast', states: 1, hotspot: 'timetable' }, // stands in front, level with Rajesh
   rajesh: { layer: 'cast', states: 2, hotspot: 'book' }, // A standing, B waving
 };
 
@@ -49,7 +49,9 @@ export const SLOTS = {
     sky: { x: -340, y: -440, w: 2600, h: 1960 },
     sun: { x: 1480, y: 30, w: 180, h: 180 },
     birds: { x: 560, y: 40, w: 240, h: 120 },
-    platform2: { x: -340, y: 190, w: 2600, h: 230 },
+    // Shown at its real shape, twice side by side to span the width; the
+    // second copy is mirrored (scene.css) so the join reads as one platform.
+    platform2: { instances: [{ x: -340, y: 250, w: 1300, h: 280 }, { x: 960, y: 250, w: 1300, h: 280 }] },
     mast: { instances: [{ x: 45, y: 30, w: 160, h: 680 }, { x: 885, y: 30, w: 160, h: 680 }, { x: 1725, y: 30, w: 160, h: 680 }] },
     train: { h: 470, bottom: 830, doorX: 910 },
     // Wider and taller than the screen on purpose: its top surface hides the
@@ -59,16 +61,16 @@ export const SLOTS = {
     lamp: { instances: [{ x: 170, y: 150, w: 240, h: 680 }, { x: 1400, y: 150, w: 240, h: 680 }] },
     nameboard: { x: -70, y: 410, w: 600, h: 490 },
     ledboard: { x: 800, y: 0, w: 460, h: 260 },
-    timetable: { x: 1210, y: 370, w: 270, h: 560 },
-    chai: { x: 1430, y: 400, w: 500, h: 610 },
+    timetable: { x: 460, y: 390, w: 320, h: 640 },
+    chai: { x: 1490, y: 400, w: 500, h: 610 },
     kiosk: { x: 1630, y: 330, w: 520, h: 510 },
-    rajesh: { x: 520, y: 430, w: 300, h: 600 },
+    rajesh: { x: 1145, y: 430, w: 300, h: 600 },
   },
   tall: {
     sky: { x: -240, y: -340, w: 1560, h: 2600 },
     sun: { x: 780, y: 160, w: 240, h: 240 },
     birds: { x: 80, y: 440, w: 220, h: 110 },
-    platform2: { x: -240, y: 620, w: 1560, h: 190 },
+    platform2: { x: -240, y: 474, w: 1560, h: 336 },
     mast: { instances: [{ x: 0, y: 370, w: 130, h: 640 }, { x: 480, y: 370, w: 130, h: 640 }, { x: 960, y: 370, w: 130, h: 640 }] },
     train: { h: 560, bottom: 1320, doorX: 600 },
     platform1: { x: -2056, y: 1038, w: 5192, h: 1222 },

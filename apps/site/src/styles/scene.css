@@ -598,7 +598,7 @@
   white-space: nowrap;
   border-bottom: 1px solid rgba(42, 32, 52, 0.25);
 }
-.ov-tt__when { font-weight: 800; color: #b3263e; min-width: 5.6em; }
+.ov-tt__when { font-weight: 800; color: #b3263e; min-width: 5.2em; flex: none; }
 .ov-tt__what { overflow: hidden; text-overflow: ellipsis; }
 
 /* Boards turned slightly inward, like signs seen at an angle: the name
@@ -606,8 +606,7 @@
 .piece--nameboard,
 .piece--timetable { perspective: calc(900px * var(--u, 1)); }
 .piece--nameboard > .piece__boil { rotate: y 28deg; transform-origin: 0% 50%; }
-.piece--timetable > .piece__boil { rotate: y -26deg; transform-origin: 100% 50%; }
-.piece--platform2 .cut { object-fit: fill; }
+.piece--timetable > .piece__boil { rotate: y 26deg; transform-origin: 0% 50%; }
 
 /* Inverses of the swap animations, for drawing A. */
 @keyframes stage-swap-inv {
@@ -637,3 +636,12 @@
   95% { opacity: 0.4; }
   96%, 100% { opacity: 0; }
 }
+
+/* Platform 2 on wide screens: the second copy is a mirror image, so the two
+   copies meet on matching edges. */
+.piece--platform2[data-index="1"] .cut { transform: scaleX(-1); }
+
+/* Rajesh and the timetable face the other way (mirrored art). The timetable's
+   text overlay is not mirrored, only its board image. */
+.piece--rajesh .cut,
+.piece--timetable .cut { transform: scaleX(-1); }

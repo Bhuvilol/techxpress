@@ -29,7 +29,7 @@
         "platform2.webp"
       ],
       "w": 2600,
-      "h": 907
+      "h": 560
     },
     "mast": {
       "states": [
@@ -44,8 +44,8 @@
         "train-b.webp"
       ],
       "w": 2600,
-      "h": 504,
-      "doorAt": 0.585
+      "h": 589,
+      "doorAt": 0.62
     },
     "platform1": {
       "states": [
@@ -59,7 +59,7 @@
         "lamp-a.webp",
         "lamp-b.webp"
       ],
-      "w": 496,
+      "w": 444,
       "h": 1400
     },
     "nameboard": {
@@ -95,7 +95,7 @@
       "states": [
         "timetable.webp"
       ],
-      "w": 776,
+      "w": 738,
       "h": 1400
     },
     "rajesh": {

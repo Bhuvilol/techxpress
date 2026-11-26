@@ -161,11 +161,13 @@ export function TimetableText({ box, u }) {
   ].slice(0, f.rows);
   return (
     <div className="ov ov-tt" style={boxStyle(b, u)} aria-hidden="true">
-      <div className="ov-tt__head" style={{ fontSize: px(h * 0.075) }}>
-        <span lang="hi">{LABELS.timetable.hindi}</span> · {LABELS.timetable.english.toUpperCase()}
+      <div className="ov-tt__head">
+        <FitLine size={h * 0.07}>
+          <span lang="hi">{LABELS.timetable.hindi}</span> · {LABELS.timetable.english.toUpperCase()}
+        </FitLine>
       </div>
       {rows.map(([when, what]) => (
-        <div key={when + what} className="ov-tt__row" style={{ fontSize: px(h * 0.052) }}>
+        <div key={when + what} className="ov-tt__row" style={{ fontSize: px(h * 0.044) }}>
           <span className="ov-tt__when">{when}</span>
           <span className="ov-tt__what">{what}</span>
         </div>
