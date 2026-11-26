@@ -7,6 +7,7 @@ import { membershipService } from './membership.service.js';
 import { normalizeRegistrationNo } from '../utils/registrationNo.js';
 import { registryMismatches } from '../utils/registryMismatch.js';
 import { generatePublicId, USER_PUBLIC_PREFIX } from '../utils/publicId.js';
+import { OPEN_DOMAIN } from './taxonomy.service.js';
 
 // Sole owner of User table writes related to the verification lifecycle.
 // Controllers must NOT touch prisma.user directly for these flows.
@@ -131,7 +132,7 @@ export const userService = {
     const domainIds = [...new Set([data.domainId, ...(data.preferredDomains ?? [])].filter(Boolean))];
     const [institution, domainCount] = await Promise.all([
       prisma.institution.findUnique({ where: { id: data.institutionId }, select: { id: true } }),
-      prisma.domain.count({ where: { id: { in: domainIds } } }),
+      prisma.domain.count({ where: { id: { in: domainIds }, ...OPEN_DOMAIN } }),
     ]);
     if (!institution) throw BadRequest('Select your institution from the list.');
     if (domainCount !== domainIds.length) {
@@ -392,7 +393,7 @@ export const userService = {
   // A student changes their 4 domain picks (first = main domain). Every id
   // must be a current domain.
   async updateDomains(userId, preferredDomains) {
-    const found = await prisma.domain.count({ where: { id: { in: preferredDomains } } });
+    const found = await prisma.domain.count({ where: { id: { in: preferredDomains }, ...OPEN_DOMAIN } });
     if (found !== preferredDomains.length) throw BadRequest('Pick your domains from the list.');
     const user = await prisma.user.update({
       where: { id: userId },

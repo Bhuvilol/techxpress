@@ -87,3 +87,22 @@ test('an unknown problem statement is refused', async () => {
   setup({ ps: null });
   await assert.rejects(teamService.changeProblemStatement({ teamId: TEAM, actorId: LEADER, psId: PS }), (err) => err.status === 400);
 });
+
+// ── old domains are hidden ────────────────────────────────────────────────
+
+const { domainService } = await import('../../src/services/taxonomy.service.js');
+
+test('students only see domains that have problem statements; admins see all', async () => {
+  prisma.domain.findMany = mock.fn(async () => []);
+  await domainService.list();
+  assert.deepEqual(prisma.domain.findMany.mock.calls[0].arguments[0].where, { problemStatements: { some: {} } });
+  await domainService.list({ all: true });
+  assert.deepEqual(prisma.domain.findMany.mock.calls[1].arguments[0].where, {});
+});
+
+test('saving domains only accepts domains that have problem statements', async () => {
+  prisma.domain.findMany = mock.fn(async () => []);
+  await userService.updateDomains('cstudent000000000000000a', D);
+  const { where } = prisma.domain.count.mock.calls[0].arguments[0];
+  assert.deepEqual(where.problemStatements, { some: {} });
+});

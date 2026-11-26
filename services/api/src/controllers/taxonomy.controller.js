@@ -14,7 +14,7 @@ export const institutions = {
 
 // Domains
 export const domains = {
-  list:    async (_req, res) => res.json({ domains: await domainService.list() }),
+  list:    async (req, res) => res.json({ domains: await domainService.list({ all: req.user?.role === 'ADMIN' }) }),
   create:  async (req, res)  => res.status(201).json({ domain: await domainService.create(req.body) }),
   update:  async (req, res)  => res.json({ domain: await domainService.update({ id: req.params.id, ...req.body }) }),
   remove:  async (req, res)  => { await domainService.remove({ id: req.params.id }); res.status(204).end(); },
