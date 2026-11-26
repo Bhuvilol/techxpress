@@ -5,6 +5,7 @@ import { ah } from '../utils/asyncHandler.js';
 
 import {
   createTeamSchema,
+  changeProblemStatementSchema,
   teamIdParamSchema,
   listTeamsQuerySchema,
   listJoinableQuerySchema,
@@ -56,6 +57,12 @@ router.get('/:id/evaluation',
 router.get('/:id/scores',
   validate({ params: teamIdParamSchema }),
   ah(evaluation.teamScores),
+);
+
+router.patch('/:id/problem-statement',
+  requireRole('STUDENT'),
+  validate({ params: teamIdParamSchema, body: changeProblemStatementSchema }),
+  ah(team.changeProblemStatement),
 );
 
 router.post('/:id/finalize',

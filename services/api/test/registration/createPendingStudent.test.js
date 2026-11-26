@@ -59,18 +59,19 @@ test('an unknown institution is a 400 and nothing is written', async () => {
 });
 
 test('an unknown preferred domain is a 400 and nothing is written', async () => {
-  // Two distinct domain ids, but only one exists.
-  prisma.domain.count = mock.fn(async () => 1);
-  const body = input({ preferredDomains: ['cdomain00000000000000000a', 'cdomain00000000000000000b'] });
+  // Four distinct domain ids, but only three exist.
+  prisma.domain.count = mock.fn(async () => 3);
+  const body = input();
   await expectError(userService.createPendingStudent(body), 400, 'BAD_REQUEST');
   assert.equal(prisma.user.create.mock.callCount(), 0);
 });
 
-test('domain ids are de-duplicated before the lookup', async () => {
-  // Primary and preferred repeat the same id: one id is looked up, not two.
-  await userService.createPendingStudent(input());
+test('the main domain is the first pick, and each id is looked up once', async () => {
+  // The client sends a different main domain; the first pick wins.
+  await userService.createPendingStudent(input({ domainId: 'cdomain00000000000000000d' }));
   const { where } = prisma.domain.count.mock.calls[0].arguments[0];
-  assert.deepEqual(where.id.in, ['cdomain00000000000000000a']);
+  assert.deepEqual(where.id.in, ['cdomain00000000000000000a', 'cdomain00000000000000000b', 'cdomain00000000000000000c', 'cdomain00000000000000000d']);
+  assert.equal(prisma.user.create.mock.calls[0].arguments[0].data.domainId, 'cdomain00000000000000000a');
 });
 
 test('a duplicate email or registration number is a generic 409 with no field name', async () => {

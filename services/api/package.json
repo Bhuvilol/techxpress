@@ -10,7 +10,8 @@
     "db:migrate:dev": "prisma migrate dev",
     "db:migrate:status": "prisma migrate status",
     "db:seed": "node prisma/seed.js",
-    "db:seed:dev": "node prisma/seed.js --dev"
+    "db:seed:dev": "node prisma/seed.js --dev",
+    "db:clear-domains": "node prisma/clear-domains.js"
   },
   "dependencies": {
     "@prisma/adapter-pg": "7.10.1",

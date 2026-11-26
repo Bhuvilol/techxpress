@@ -72,10 +72,15 @@ test('institution and domain must be ids of the right shape', () => {
   assert.ok(fieldErrors(validBody({ domainId: 'nope' })).domainId);
 });
 
-test('preferred domains: at least one, at most four', () => {
-  assert.ok(fieldErrors(validBody({ preferredDomains: [] })).preferredDomains);
+test('preferred domains: exactly four, all different', () => {
   const five = Array.from({ length: 5 }, (_, i) => `cdomain0000000000000000${String.fromCharCode(97 + i)}`);
+  assert.ok(fieldErrors(validBody({ preferredDomains: [] })).preferredDomains);
+  assert.ok(fieldErrors(validBody({ preferredDomains: five.slice(0, 3) })).preferredDomains);
   assert.ok(fieldErrors(validBody({ preferredDomains: five })).preferredDomains);
+  assert.ok(fieldErrors(validBody({ preferredDomains: [five[0], five[0], five[1], five[2]] })).preferredDomains);
+  const noDomains = validBody();
+  delete noDomains.preferredDomains;
+  assert.ok(fieldErrors(noDomains).preferredDomains);
   assert.equal(parsed(validBody({ preferredDomains: five.slice(0, 4) })).preferredDomains.length, 4);
 });
 

@@ -389,6 +389,26 @@ export const teamService = {
    * Leader-initiated finalization. Refuses if rules unmet (admin override
    * is a separate path). Atomic: re-reads team within tx to avoid TOCTOU.
    */
+  // The leader changes the team's problem statement while the team is still
+  // forming. The team's domain follows the problem statement's domain.
+  // psId null clears it.
+  async changeProblemStatement({ teamId, actorId, psId }) {
+    return prisma.$transaction(async (tx) => {
+      await rulesService.assertTeamMutationsAllowed(tx);
+      const team = await membershipService.loadTeamForUpdate(tx, teamId);
+      if (team.leaderId !== actorId) throw Forbidden('Only the team leader can change the problem statement');
+      if (team.status !== 'FORMING') throw Conflict('The problem statement can only be changed while the team is forming');
+
+      let data = { psId: null };
+      if (psId) {
+        const ps = await tx.problemStatement.findUnique({ where: { id: psId }, select: { id: true, domainId: true } });
+        if (!ps) throw BadRequest('Invalid problem statement');
+        data = { psId: ps.id, domainId: ps.domainId };
+      }
+      return tx.team.update({ where: { id: teamId }, data, include: TEAM_DETAIL_INCLUDE });
+    });
+  },
+
   async finalize({ teamId, actorId }) {
     return prisma.$transaction(async (tx) => {
       await rulesService.assertTeamMutationsAllowed(tx);
