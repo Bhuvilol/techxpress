@@ -634,7 +634,7 @@ export default function ReservationCounter({ titleId, onOpen, onDirtyChange }) {
                 <span className="reg-step-num">02</span>
                 <div>
                   <h3>ACADEMIC STATION</h3>
-                  <p>Institution, preferred domains (up to 4), and academic standing.</p>
+                  <p>Institution, preferred domains (exactly 4), and academic standing.</p>
                 </div>
               </div>
 
