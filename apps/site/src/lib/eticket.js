@@ -273,15 +273,12 @@ export async function drawTicket(ticket, doc = document) {
   // Train.
   let y = 280;
   label(ctx, TICKET.labels.train, L, y);
-  value(ctx, f.train, L, y + 58, { maxWidth: W * 0.62, maxSize: 64, minSize: 34, weight: 800 });
+  // Train on the left, PNR right-aligned on the right, each shrunk to fit its
+  // own share of the row with a clear gap between them.
+  value(ctx, f.train, L, y + 58, { maxWidth: W * 0.54, maxSize: 64, minSize: 30, weight: 800 });
   ctx.textAlign = 'right';
   label(ctx, TICKET.labels.pnr, R, y);
-  ctx.textAlign = 'right';
-  ctx.font = font(800, 58);
-  ctx.fillStyle = C.ink;
-  const pnrW = ctx.measureText(f.pnr).width;
-  if (pnrW > W * 0.36) value(ctx, f.pnr, R - W * 0.36, y + 58, { maxWidth: W * 0.36, maxSize: 58, minSize: 30, weight: 800 });
-  else ctx.fillText(f.pnr, R, y + 58);
+  value(ctx, f.pnr, R, y + 58, { maxWidth: W * 0.38, maxSize: 58, minSize: 28, weight: 800 });
   ctx.textAlign = 'left';
 
   // FROM -> TO.
