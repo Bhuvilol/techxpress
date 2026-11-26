@@ -645,3 +645,77 @@
    text overlay is not mirrored, only its board image. */
 .piece--rajesh .cut,
 .piece--timetable .cut { transform: scaleX(-1); }
+
+/* Phones: the timetable stands on the right, so it faces the original way. */
+.stage--tall .piece--timetable .cut { transform: none; }
+.stage--tall .piece--timetable > .piece__boil { rotate: y -26deg; transform-origin: 100% 50%; }
+
+/* Phones: the LED board hangs from the top of the screen. Its two chains are
+   carried up past the screen edge with a tile cut from the board's own chain
+   art (ledboard-chain.webp: one 80 px link period taken at y 100 of the
+   1400 px wide ledboard.webp, so the links line up with the drawn chain). */
+.stage--tall .piece--ledboard::before,
+.stage--tall .piece--ledboard::after {
+  content: '';
+  position: absolute;
+  bottom: 87.58%;
+  width: 7.857%;
+  height: calc(900px * var(--u, 1));
+  background: url('../assets/stage/ledboard-chain.webp') center bottom / 100% auto repeat-y;
+}
+.stage--tall .piece--ledboard::before { left: 14.286%; }
+.stage--tall .piece--ledboard::after { left: 78.5%; }
+
+/* Phones: Rajesh faces the other way. */
+.stage--tall [data-piece="rajesh"] .cut { transform: scaleX(-1); }
+
+/* ── Opening: boarding on a black screen ──────────────────────────────── */
+
+.stage--loading,
+.stage--boot,
+.stage--intro { background: #000; }
+
+/* The scrambling dots flicker like a board powering up. */
+.ov-led--boot .ov-led__row { animation: led-flicker 1.3s steps(1, end) infinite; }
+.ov-led--boot .ov-led__row + .ov-led__row { animation-duration: 0.9s; animation-delay: -0.4s; }
+@keyframes led-flicker {
+  0% { opacity: 1; }
+  9% { opacity: 0.25; }
+  13% { opacity: 1; }
+  41% { opacity: 0.6; }
+  44% { opacity: 1; }
+  70% { opacity: 0.15; }
+  73% { opacity: 0.9; }
+  76% { opacity: 1; }
+}
+
+/* The black curtain over the stage during the opening, and its growing hole
+   (a soft-edged circle around the sun, radius --r). */
+@property --r {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 0px;
+}
+.stage__curtain {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: #000;
+  --sx: 50%;
+  --sy: 50%;
+  -webkit-mask-image: radial-gradient(circle at var(--sx) var(--sy), transparent calc(var(--r) - 90px), #000 var(--r));
+  mask-image: radial-gradient(circle at var(--sx) var(--sy), transparent calc(var(--r) - 90px), #000 var(--r));
+}
+
+/* Flat copies of the LED board and sun, above the curtain. */
+.stage__front {
+  position: absolute;
+  z-index: 2;
+  pointer-events: none;
+}
+
+/* The sun waits for its cue: hidden until the opening proper starts (its
+   rise animation then holds it hidden until the LED text has locked in). */
+.stage--loading .piece--sun,
+.stage--boot .piece--sun { visibility: hidden; }

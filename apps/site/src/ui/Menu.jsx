@@ -62,6 +62,7 @@ export default function Menu({ onOpen }) {
         ref={buttonRef}
         type="button"
         className="guide-plate"
+        aria-label={LABELS.guide.english}
         aria-expanded={open}
         aria-controls={listId}
         onClick={() => setOpen((v) => !v)}

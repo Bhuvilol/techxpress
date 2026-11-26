@@ -1,67 +1,59 @@
-// The opening sequence: builds the stage piece by piece from INTRO in
-// stage.js, using the Web Animations API. Every animation uses
-// fill: 'backwards' (hidden / off-stage until its cue, then back to the
-// element's own style when done), so skipping is just finish() on all of them.
+// The opening sequence (BOOT and INTRO in stage.js), using the Web
+// Animations API. Every animation uses fill: 'backwards' (hidden / off-stage
+// until its cue, then back to the element's own style when done), so
+// skipping is just finish() on all of them.
 
-import { INTRO, INTRO_TOTAL_MS } from './stage.js';
+import { BOOT, INTRO, INTRO_TOTAL_MS } from './stage.js';
 
-const SESSION_KEY = 'txp.intro';
-const VISITED_KEY = 'txp.visited';
-
-const read = (store, key) => {
-  try { return window[store].getItem(key); } catch { return null; }
-};
-
-// Play once per session, never for returning visitors, deep links (a URL
-// hash opens a panel straight away) or reduced motion.
+// Plays on every visit, except deep links (a URL hash opens a panel straight
+// away) and reduced motion.
 export function shouldPlayIntro() {
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return false;
   if (window.location.hash) return false;
-  if (read('localStorage', VISITED_KEY)) return false;
-  if (read('sessionStorage', SESSION_KEY)) return false;
   return true;
 }
 
-export function markIntroPlayed() {
-  try { window.sessionStorage.setItem(SESSION_KEY, '1'); } catch { /* private mode */ }
-}
-
-// Once someone has seen the station (intro finished, skipped or not shown),
-// later visits open straight on the finished stage.
-export function markVisited() {
-  try { window.localStorage.setItem(VISITED_KEY, '1'); } catch { /* private mode */ }
-}
-
-const RISE_MS = 820;
-const SWING_MS = 900;
-const FADE_MS = 700;
+const DROP_MS = 1700;
+const SUNRISE_MS = 1400;
+const REVEAL_MS = 1300;
 const WOBBLE_MS = 420;
 
-// Keyframes per entry type. `ctx` has the screen geometry in px.
-function riseFrames(el, ctx) {
-  // From just below the bottom of the screen up to its place, with a spring.
-  const top = el.offsetTop + ctx.oy;
-  const d = ctx.vh - top + 30 * ctx.u;
-  const o = 14 * ctx.u;
+// Falls from above the screen on its chains, overshoots, then swings to rest
+// from its top edge like a hanging board.
+function dropFrames(el, ctx) {
+  const d = el.offsetTop + el.offsetHeight + ctx.oy + 1000 * ctx.u;
+  const o = '50% 0%';
   return [
-    { transform: `translateY(${d}px)`, easing: 'cubic-bezier(.2,.7,.3,1)' },
-    { transform: `translateY(${-o}px)`, offset: 0.6, easing: 'ease-in-out' },
-    { transform: `translateY(${o * 0.35}px)`, offset: 0.8, easing: 'ease-in-out' },
-    { transform: 'translateY(0px)' },
+    { transform: `translateY(${-d}px) rotate(0deg)`, transformOrigin: o, easing: 'cubic-bezier(.5,0,.75,.4)' },
+    { transform: 'translateY(0px) rotate(0deg)', transformOrigin: o, offset: 0.34, easing: 'ease-out' },
+    { transform: `translateY(${-22 * ctx.u}px) rotate(2.6deg)`, transformOrigin: o, offset: 0.46, easing: 'ease-in' },
+    { transform: 'translateY(0px) rotate(-2deg)', transformOrigin: o, offset: 0.58, easing: 'ease-in-out' },
+    { transform: 'translateY(0px) rotate(1.1deg)', transformOrigin: o, offset: 0.72, easing: 'ease-in-out' },
+    { transform: 'translateY(0px) rotate(-0.5deg)', transformOrigin: o, offset: 0.86, easing: 'ease-in-out' },
+    { transform: 'translateY(0px) rotate(0deg)', transformOrigin: o },
   ];
 }
 
-function swingFrames(ctx) {
-  // Folded flat toward the audience, then stands up on its bottom edge.
-  const p = `perspective(${1400 * ctx.u}px)`;
-  const o = '50% 100%';
+// The sun comes in from the side it sits on (left on phones, right on wide
+// screens), from just off the screen, on a low arc that eases to a stop.
+function sunriseFrames(el, ctx) {
+  const left = el.offsetLeft + ctx.ox;
+  const fromLeft = left + el.offsetWidth / 2 < ctx.vw / 2;
+  const dx = fromLeft ? -(left + el.offsetWidth + 20 * ctx.u) : ctx.vw - left + 20 * ctx.u;
+  const lift = 90 * ctx.u;
   return [
-    { transform: `${p} rotateX(-88deg)`, transformOrigin: o, opacity: 0, easing: 'cubic-bezier(.3,.6,.4,1)' },
-    { transform: `${p} rotateX(-70deg)`, transformOrigin: o, opacity: 1, offset: 0.12, easing: 'cubic-bezier(.3,.6,.4,1)' },
-    { transform: `${p} rotateX(9deg)`, transformOrigin: o, opacity: 1, offset: 0.66, easing: 'ease-in-out' },
-    { transform: `${p} rotateX(-3deg)`, transformOrigin: o, opacity: 1, offset: 0.85, easing: 'ease-in-out' },
-    { transform: `${p} rotateX(0deg)`, transformOrigin: o, opacity: 1 },
+    { transform: `translate(${dx}px, ${lift}px)`, easing: 'cubic-bezier(.25,.6,.35,1)' },
+    { transform: `translate(${dx * 0.35}px, ${lift * 0.15}px)`, offset: 0.55, easing: 'cubic-bezier(.3,.6,.4,1)' },
+    { transform: 'translate(0px, 0px)' },
   ];
+}
+
+// Centre of the sun on screen (px).
+function sunCentre(root) {
+  const sun = root.querySelector('.stage__front [data-piece="sun"]');
+  if (!sun) return { x: 0, y: 0 };
+  const r = sun.getBoundingClientRect();
+  return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
 }
 
 function slideFrames(el, ctx, travel) {
@@ -84,29 +76,40 @@ function slideFrames(el, ctx, travel) {
   };
 }
 
-// Runs the opening on the stage root. Returns the animations (to finish on
-// skip or cancel on unmount) and promises for the 'ui' cue and the end.
-export function playIntro(root, ctx) {
-  const anims = [];
+const piecesOf = (root, id) => [...root.querySelectorAll(`[data-piece="${id}"]`)]
+  .sort((a, b) => Number(a.dataset.index ?? 0) - Number(b.dataset.index ?? 0));
+
+function runCues(root, ctx, cues, anims) {
   const run = (el, frames, opts) => {
     anims.push(el.animate(frames, { fill: 'backwards', ...opts }));
   };
-  const pieces = (id) => [...root.querySelectorAll(`[data-piece="${id}"]`)]
-    .sort((a, b) => Number(a.dataset.index ?? 0) - Number(b.dataset.index ?? 0));
-
-  for (const cue of INTRO) {
+  for (const cue of cues) {
+    if (cue.enter === 'reveal') {
+      // One soft-edged hole in the black curtain, growing from the sun's
+      // centre until it passes every corner of the screen. Only the curtain
+      // repaints, so the reveal stays smooth.
+      const curtain = root.querySelector('.stage__curtain');
+      if (curtain) {
+        const sun = sunCentre(root);
+        curtain.style.setProperty('--sx', `${sun.x}px`);
+        curtain.style.setProperty('--sy', `${sun.y}px`);
+        const radius = Math.hypot(Math.max(sun.x, ctx.vw - sun.x), Math.max(sun.y, ctx.vh - sun.y)) + 200;
+        anims.push(curtain.animate(
+          [{ '--r': '0px' }, { '--r': `${radius}px` }],
+          { duration: REVEAL_MS, delay: cue.at, easing: 'cubic-bezier(.5,0,.25,1)', fill: 'both' },
+        ));
+      }
+      continue;
+    }
     if (!cue.piece) continue;
-    pieces(cue.piece).forEach((el, i) => {
+    piecesOf(root, cue.piece).forEach((el, i) => {
       const delay = cue.at + i * (cue.stagger ?? 0);
       switch (cue.enter) {
-        case 'fade':
-          run(el, [{ opacity: 0 }, { opacity: 1 }], { duration: FADE_MS, delay, easing: 'ease-out' });
+        case 'drop':
+          run(el, dropFrames(el, ctx), { duration: DROP_MS, delay });
           break;
-        case 'rise':
-          run(el, riseFrames(el, ctx), { duration: RISE_MS, delay });
-          break;
-        case 'swing':
-          run(el, swingFrames(ctx), { duration: SWING_MS, delay });
+        case 'sunrise':
+          run(el, sunriseFrames(el, ctx), { duration: SUNRISE_MS, delay });
           break;
         case 'slide-in': {
           const { duration, frames } = slideFrames(el, ctx, cue.duration ?? 1000);
@@ -126,13 +129,21 @@ export function playIntro(root, ctx) {
           break;
       }
     });
-    // The wires appear once the last mast is up.
-    if (cue.piece === 'mast') {
-      const n = pieces('mast').length;
-      const wires = root.querySelector('[data-piece="wires"]');
-      if (wires) run(wires, [{ opacity: 0 }, { opacity: 1 }], { duration: 500, delay: cue.at + (n - 1) * (cue.stagger ?? 0) + RISE_MS * 0.7 });
-    }
   }
+}
+
+// Part 1: the LED board drops in on the black screen. Returns its animations.
+export function playBoard(root, ctx) {
+  const anims = [];
+  runCues(root, ctx, BOOT, anims);
+  return anims;
+}
+
+// Part 2. Returns the animations (to finish on skip or cancel on unmount)
+// and promises for the 'ui' cue and the end.
+export function playIntro(root, ctx) {
+  const anims = [];
+  runCues(root, ctx, INTRO, anims);
 
   // Two empty "clock" animations on the root carry the cue times, so pausing
   // (hidden tab) and skipping (finish) treat them like everything else.

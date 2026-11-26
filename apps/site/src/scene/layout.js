@@ -22,20 +22,6 @@ export const COMPOSITIONS = {
 // Portrait screens get the tall composition, everything else the wide one.
 export const TALL_QUERY = '(max-aspect-ratio: 1/1)';
 
-// Back to front. `depth` scales the parallax shift (0 = still, 1 = most).
-export const LAYERS = [
-  { id: 'sky', depth: 0.05 },
-  { id: 'far', depth: 0.12 },
-  { id: 'train', depth: 0.25 },
-  { id: 'floor', depth: 0.35 },
-  { id: 'fixtures', depth: 0.55 },
-  { id: 'people', depth: 0.75 },
-  { id: 'air', depth: 1 },
-];
-
-// Largest parallax shift (scene units) for the front layer.
-export const PARALLAX = { x: 26, y: 14 };
-
 // Full drawable box of a composition, including the bleed.
 export const fullBox = (name) => {
   const c = COMPOSITIONS[name];
@@ -47,8 +33,3 @@ export const fullBox = (name) => {
   };
 };
 
-// How many screen pixels one scene unit takes for a viewport (meet scaling).
-export const unitScale = (name, vw, vh) => {
-  const c = COMPOSITIONS[name];
-  return Math.min(vw / c.width, vh / c.height);
-};

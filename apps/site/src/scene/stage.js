@@ -44,8 +44,34 @@ export const PIECES = {
 // The train is special: it is placed by its height, its bottom edge, and the
 // screen x where its DOOR must stop (`doorX`); the door's position inside the
 // image is `doorAt` (0..1 of image width) in the manifest.
+// Wide screens: the front group (boards, lamps, Rajesh, chai, kiosk) is
+// scaled as one canvas around its bottom centre, then that point is moved to
+// the lower centre of the screen. The slot numbers below stay as tuned; only
+// FRONT_GROUP changes the group's size and place.
+const FRONT_GROUP = { ids: ['lamp', 'nameboard', 'timetable', 'chai', 'kiosk', 'rajesh'], scale: 0.88, toX: 960, toBottom: 1060 };
+
+function scaleGroup(slots, { ids, scale, toX, toBottom }) {
+  const boxes = ids.flatMap((id) => slots[id].instances ?? [slots[id]]);
+  const left = Math.min(...boxes.map((b) => b.x));
+  const right = Math.max(...boxes.map((b) => b.x + b.w));
+  const bottom = Math.max(...boxes.map((b) => b.y + b.h));
+  const cx = (left + right) / 2;
+  const move = (b) => ({
+    ...b,
+    x: toX + (b.x - cx) * scale,
+    y: toBottom + (b.y - bottom) * scale,
+    w: b.w * scale,
+    h: b.h * scale,
+  });
+  for (const id of ids) {
+    const slot = slots[id];
+    slots[id] = slot.instances ? { ...slot, instances: slot.instances.map(move) } : move(slot);
+  }
+  return slots;
+}
+
 export const SLOTS = {
-  wide: {
+  wide: scaleGroup({
     sky: { x: -340, y: -440, w: 2600, h: 1960 },
     sun: { x: 1480, y: 30, w: 180, h: 180 },
     birds: { x: 560, y: 40, w: 240, h: 120 },
@@ -65,49 +91,55 @@ export const SLOTS = {
     chai: { x: 1490, y: 400, w: 500, h: 610 },
     kiosk: { x: 1630, y: 330, w: 520, h: 510 },
     rajesh: { x: 1145, y: 430, w: 300, h: 600 },
-  },
+  }, FRONT_GROUP),
   tall: {
     sky: { x: -240, y: -340, w: 1560, h: 2600 },
-    sun: { x: 780, y: 160, w: 240, h: 240 },
-    birds: { x: 80, y: 440, w: 220, h: 110 },
+    sun: { x: 60, y: 330, w: 240, h: 240 },
+    birds: { x: 150, y: 220, w: 300, h: 150 },
     platform2: { x: -240, y: 474, w: 1560, h: 336 },
     mast: { instances: [{ x: 0, y: 370, w: 130, h: 640 }, { x: 480, y: 370, w: 130, h: 640 }, { x: 960, y: 370, w: 130, h: 640 }] },
-    train: { h: 560, bottom: 1320, doorX: 600 },
+    train: { h: 560, bottom: 1320, doorX: 400 },
     platform1: { x: -2056, y: 1038, w: 5192, h: 1222 },
-    lamp: { instances: [{ x: 400, y: 700, w: 250, h: 700 }, { x: 940, y: 700, w: 250, h: 700 }] },
-    nameboard: { x: 10, y: 1070, w: 430, h: 330 },
-    ledboard: { x: 140, y: 0, w: 800, h: 440 },
-    timetable: { x: 920, y: 1070, w: 150, h: 330 },
-    kiosk: { x: 40, y: 1360, w: 360, h: 300 },
-    chai: { x: 640, y: 1240, w: 420, h: 420 },
-    rajesh: { x: 740, y: 920, w: 230, h: 480 },
+    // One lamp, kept clear of the train door.
+    lamp: { instances: [{ x: 60, y: 640, w: 230, h: 700 }] },
+    // Front rows: name board + timetable, then Rajesh + chai stall, all above
+    // the ticket button. No kiosk on phones (the chai stall opens the FAQ).
+    nameboard: { x: 0, y: 940, w: 560, h: 440 },
+    // Top right, hanging from the top of the screen (chains: scene.css).
+    ledboard: { x: 380, y: 60, w: 680, h: 393 },
+    timetable: { x: 720, y: 840, w: 350, h: 600, layer: 'platform' },
+    chai: { x: 400, y: 1140, w: 680, h: 610 },
+    rajesh: { x: 90, y: 1140, w: 310, h: 610 },
   },
 };
 
-// The opening, once per session (ms from start). `enter`: how the piece
-// arrives. 'fade' | 'rise' (slides up from below the stage floor with a
-// spring overshoot) | 'swing' (rotates up from flat, pivot at the bottom) |
-// 'slide-in' (train: from off-screen left to its stop) | 'state:B' (swap to
-// the second drawing) | 'ui' (button and hints).
+// The opening, once per session, in two parts.
+//
+// 1. Boarding (BOOT): a black screen; the LED board drops in on its chains
+//    and its dots scramble while the rest of the art loads unseen. It lasts
+//    at least BOOT_MIN_MS, longer if the art is still loading.
+// 2. INTRO (ms from its start): the LED text locks in, the sun rises, a
+//    circle opens from the sun's centre and shows the whole station except
+//    the train, then the train pulls in from the left.
+//
+// `enter`: 'drop' (falls from above and swings on its chains) | 'sunrise'
+// (slides in from its side of the screen) | 'reveal' (a hole in the black curtain grows
+// from the sun's centre; the LED board and sun sit above the curtain) | 'slide-in' (train: from
+// off-screen left to its stop) | 'state:B' (swap to the second drawing) |
+// 'ui' (logo, buttons and hints).
+export const BOOT_MIN_MS = 2600;
+export const LED_RESOLVE_MS = 900;
+export const BOOT = [{ at: 0, piece: 'ledboard', enter: 'drop' }];
+// Strict order: the LED text locks in (0..LED_RESOLVE_MS), then the sun
+// rises, then the reveal, then the train.
 export const INTRO = [
-  { at: 0, piece: 'sky', enter: 'fade' },
-  { at: 400, piece: 'birds', enter: 'rise' },
-  { at: 700, piece: 'sun', enter: 'rise' },
-  { at: 1200, piece: 'platform2', enter: 'rise' },
-  { at: 1600, piece: 'mast', enter: 'rise', stagger: 140 },
-  { at: 2100, piece: 'platform1', enter: 'rise' },
-  { at: 2200, piece: 'lamp', enter: 'rise', stagger: 120 },
-  { at: 2500, piece: 'nameboard', enter: 'swing' },
-  { at: 2900, piece: 'ledboard', enter: 'rise' },
-  { at: 3050, piece: 'timetable', enter: 'rise' },
-  { at: 3100, piece: 'kiosk', enter: 'rise' },
-  { at: 3150, piece: 'chai', enter: 'rise' },
-  { at: 3300, piece: 'train', enter: 'slide-in', duration: 1000 },
-  { at: 4300, piece: 'train', enter: 'state:B' },
-  { at: 4600, piece: 'rajesh', enter: 'rise' },
-  { at: 5200, piece: null, enter: 'ui' },
+  { at: LED_RESOLVE_MS + 200, piece: 'sun', enter: 'sunrise' },
+  { at: LED_RESOLVE_MS + 1700, piece: null, enter: 'reveal' },
+  { at: LED_RESOLVE_MS + 2800, piece: 'train', enter: 'slide-in', duration: 1300 },
+  { at: LED_RESOLVE_MS + 4400, piece: 'train', enter: 'state:B' },
+  { at: LED_RESOLVE_MS + 4500, piece: null, enter: 'ui' },
 ];
-export const INTRO_TOTAL_MS = 5600;
+export const INTRO_TOTAL_MS = LED_RESOLVE_MS + 4900;
 
 // Living stage after the intro: two-state loops (ms per state), "boil".
 export const LOOPS = {

@@ -2,15 +2,19 @@
 // board and LED board, the timetable rows, and the overhead wires. All
 // boxes come from the tuning table in overlays.js.
 
-import { useEffect, useLayoutEffect, useRef } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { LED, STATION, TIMETABLE, LABELS } from '../content/station.js';
 import { OVERLAYS, ledStatus, subBox } from './overlays.js';
+import { LED_RESOLVE_MS } from './stage.js';
 
 const px = (n) => `${n}px`;
 const boxStyle = (b, u) => ({ left: px(b.x * u), top: px(b.y * u), width: px(b.w * u), height: px(b.h * u) });
 
 // One line of text that shrinks to fit its parent's width (never grows).
-function FitLine({ size, className, children }) {
+// `fitKey` (optional) decides when to measure again; by default the text.
+// The LED scramble passes a fixed key so it does not re-measure (a forced
+// layout) on every random frame.
+function FitLine({ size, className, children, fitKey }) {
   const ref = useRef(null);
   useLayoutEffect(() => {
     const el = ref.current;
@@ -27,7 +31,7 @@ function FitLine({ size, className, children }) {
     fit();
     document.fonts?.ready.then(fit);
     return () => { alive = false; };
-  }, [size, children]);
+  }, [size, fitKey ?? children]); // eslint-disable-line react-hooks/exhaustive-deps
   return <span ref={ref} className={className} style={{ fontSize: px(size) }}>{children}</span>;
 }
 
@@ -48,10 +52,33 @@ export function NameBoardText({ box, u, onPlaceholder }) {
 
 // ── LED board ──────────────────────────────────────────────────────────────
 
+const SCRAMBLE = 'ABCDEFGHJKLMNPRSTUVWXYZ0123456789#*-';
+const randomChar = () => SCRAMBLE[Math.floor(Math.random() * SCRAMBLE.length)];
+
+// The boarding scramble: the same number of characters as `text`, redrawn at
+// random every frame-ish. In 'resolve' mode each character locks onto the
+// real one in turn, left to right, over LED_RESOLVE_MS.
+function useScramble(text, mode) {
+  const scramble = () => [...text].map((ch) => (ch === ' ' ? ch : randomChar())).join('');
+  const [shown, setShown] = useState(scramble);
+  useEffect(() => {
+    if (!mode) return undefined;
+    const start = performance.now();
+    const tick = () => {
+      const t = mode === 'resolve' ? (performance.now() - start) / (LED_RESOLVE_MS * 0.85) : 0;
+      const locked = Math.floor(t * text.length);
+      setShown([...text].map((ch, i) => (ch === ' ' || i < locked ? ch : randomChar())).join(''));
+    };
+    const id = setInterval(tick, 70);
+    return () => clearInterval(id);
+  }, [text, mode]);
+  return mode ? shown : text;
+}
+
 // Orange dot-matrix text. The dots are a CSS mask on the text itself; the
 // scrolling line moves in whole-dot steps so its dots stay on the grid, like
 // a real indicator board.
-export function LedText({ box, u, scroll }) {
+export function LedText({ box, u, scroll, boot = null }) {
   const f = OVERLAYS.ledboard;
   const b = subBox(box, f.box);
   const pitch = Math.max(2, b.h * u * f.pitch);
@@ -59,6 +86,8 @@ export function LedText({ box, u, scroll }) {
   const trackRef = useRef(null);
   const textRef = useRef(null);
   const status = ledStatus();
+  const headline = useScramble(LED.headline, boot);
+  const statusShown = useScramble(status, boot);
 
   useEffect(() => {
     if (!scroll) return undefined;
@@ -85,25 +114,21 @@ export function LedText({ box, u, scroll }) {
 
   const dots = { '--dot': px(pitch), padding: `${px(pitch)} ${px(pitch * 2)}` };
   return (
-    <div className="ov ov-led" style={{ ...boxStyle(b, u), ...dots }} aria-hidden="true">
+    <div className={`ov ov-led${boot ? ' ov-led--boot' : ''}`} style={{ ...boxStyle(b, u), ...dots }} aria-hidden="true">
       <div className="ov-led__row">
-        <FitLine className="ov-led__text" size={rowH}>{LED.headline}</FitLine>
+        <FitLine className="ov-led__text" size={rowH} fitKey={boot ? 'boot' : headline}>{headline}</FitLine>
       </div>
       <div className={`ov-led__row${scroll ? ' ov-led__row--track' : ''}`} ref={trackRef}>
         {scroll
           ? <span ref={textRef} className="ov-led__text ov-led__scroll" style={{ fontSize: px(rowH * 0.82) }}>{status}</span>
-          : <FitLine className="ov-led__text" size={rowH * 0.82}>{status}</FitLine>}
+          : <FitLine className="ov-led__text" size={rowH * 0.82} fitKey={boot ? 'boot' : statusShown}>{statusShown}</FitLine>}
       </div>
     </div>
   );
 }
 
-// ── Clock ──────────────────────────────────────────────────────────────────
+// ── Overhead wires ─────────────────────────────────────────────────────────
 
-// Hands show local time. Each hand holds its current angle in `rotate` and
-// spins from there with a CSS animation (seconds tick in 60 steps), so no
-// timer runs while it is animated. It re-reads the time when the tab comes
-// back (animations pause while hidden) and once a minute with reduced motion.
 export function Wires({ masts, full, u }) {
   const f = OVERLAYS.mast;
   if (!masts.length) return null;

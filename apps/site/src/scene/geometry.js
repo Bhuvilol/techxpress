@@ -44,10 +44,11 @@ export function placePieces(composition) {
     const slot = slots[id];
     if (!slot) continue;
     const art = artFor(id, composition);
+    const layer = slot.layer ?? piece.layer; // a slot may move a piece to another layer
     const base = {
       id,
-      layer: piece.layer,
-      depth: depthOf[piece.layer],
+      layer,
+      depth: depthOf[layer],
       art,
       states: piece.states,
       hotspot: piece.hotspot ?? null,

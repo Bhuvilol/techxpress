@@ -10,10 +10,10 @@
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { COMPOSITIONS, TALL_QUERY, fullBox } from './layout.js';
-import { STAGE_LAYERS } from './stage.js';
+import { BOOT_MIN_MS, LED_RESOLVE_MS, STAGE_LAYERS } from './stage.js';
 import { allSources, placePieces } from './geometry.js';
 import { preload } from './assets.js';
-import { markIntroPlayed, markVisited, playIntro, shouldPlayIntro } from './intro.js';
+import { playBoard, playIntro, shouldPlayIntro } from './intro.js';
 import Piece, { TrainDoor } from './Piece.jsx';
 import { LedText, NameBoardText, TimetableText, Wires } from './Overlays.jsx';
 import useStageTilt from '../motion/useStageTilt.js';
@@ -27,6 +27,9 @@ const PERSPECTIVE = 2200;
 const Z_RANGE = 640;
 const PIVOT = 380;
 const layerZ = (depth) => -(1 - depth) * Z_RANGE;
+
+// Shown above the black curtain while the opening plays.
+const FRONT_PIECES = ['ledboard', 'sun'];
 
 const useMedia = (query) => {
   const [match, setMatch] = useState(() => window.matchMedia(query).matches);
@@ -96,7 +99,8 @@ export default function Station({ onHotspot, dimmed = false, onIntroDone }) {
   const full = fullBox(composition);
   const c = COMPOSITIONS[composition];
 
-  // 'loading' (images decoding) -> 'intro' -> 'done'. Decided once at mount.
+  // 'loading' (LED board art decoding, black) -> 'boot' (board drops and
+  // scrambles while the rest decodes) -> 'intro' -> 'done'. Decided at mount.
   const [phase, setPhase] = useState(() => (shouldPlayIntro() ? 'loading' : 'done'));
   const rootRef = useRef(null);
   const rigRef = useRef(null);
@@ -109,7 +113,6 @@ export default function Station({ onHotspot, dimmed = false, onIntroDone }) {
   const announceDone = useCallback(() => {
     if (doneCalled.current) return;
     doneCalled.current = true;
-    markVisited();
     onIntroDoneRef.current?.();
   }, []);
 
@@ -117,21 +120,38 @@ export default function Station({ onHotspot, dimmed = false, onIntroDone }) {
     if (phase === 'done') announceDone();
   }, [phase, announceDone]);
 
-  // Decode the art before the opening so nothing rises as an empty box.
+  const viewRef = useRef(view);
+  useLayoutEffect(() => { viewRef.current = view; }, [view]);
+
+  // The LED board's art first, so it can open the show almost at once.
   useEffect(() => {
     if (phase !== 'loading') return undefined;
     let alive = true;
-    preload(allSources(placements)).then(() => { if (alive) setPhase('intro'); });
+    const board = placements.filter((p) => p.id === 'ledboard');
+    preload(allSources(board), 2500).then(() => { if (alive) setPhase('boot'); });
     return () => { alive = false; };
+  }, [phase, placements]);
+
+  // Boarding: the board drops in (before paint) and scrambles until the rest
+  // of the art has decoded and at least BOOT_MIN_MS has passed.
+  const bootRef = useRef([]);
+  useLayoutEffect(() => {
+    if (phase !== 'boot') return undefined;
+    bootRef.current = playBoard(rootRef.current, viewRef.current);
+    let alive = true;
+    const minTime = new Promise((resolve) => { setTimeout(resolve, BOOT_MIN_MS); });
+    Promise.all([preload(allSources(placements)), minTime]).then(() => { if (alive) setPhase('intro'); });
+    return () => {
+      alive = false;
+      bootRef.current.forEach((a) => a.finish());
+      bootRef.current = [];
+    };
   }, [phase, placements]);
 
   // The opening. Runs before paint so no piece flashes in its final place.
   // `view` is read once at the start (a resize mid-intro is harmless).
-  const viewRef = useRef(view);
-  useLayoutEffect(() => { viewRef.current = view; }, [view]);
   useLayoutEffect(() => {
     if (phase !== 'intro') return undefined;
-    markIntroPlayed();
     const intro = playIntro(rootRef.current, viewRef.current);
     introRef.current = intro;
     let alive = true;
@@ -146,8 +166,23 @@ export default function Station({ onHotspot, dimmed = false, onIntroDone }) {
 
   const skip = useCallback(() => {
     if (introRef.current) introRef.current.anims.forEach((a) => a.finish());
-    else setPhase('done');
+    else {
+      bootRef.current.forEach((a) => a.finish());
+      setPhase('done');
+    }
   }, []);
+
+  // The LED text scrambles while boarding, locks in at the start of the
+  // opening, then runs as normal.
+  const [ledResolved, setLedResolved] = useState(false);
+  useEffect(() => {
+    if (phase !== 'intro') return undefined;
+    const t = setTimeout(() => setLedResolved(true), LED_RESOLVE_MS);
+    return () => clearTimeout(t);
+  }, [phase]);
+  const ledLocked = phase === 'done' || ledResolved;
+  let ledBoot = null;
+  if (!ledLocked) ledBoot = phase === 'intro' ? 'resolve' : 'scramble';
 
   // Any key skips the opening (taps are handled on the stage itself).
   useEffect(() => {
@@ -157,7 +192,8 @@ export default function Station({ onHotspot, dimmed = false, onIntroDone }) {
   }, [phase, skip]);
 
   usePauseWhenHidden(rootRef);
-  useStageTilt(rigRef, !reduced);
+  // No tilt during the opening, so the front copies line up exactly.
+  useStageTilt(rigRef, !reduced && phase === 'done');
 
   const live = phase === 'done';
   const motion = !reduced;
@@ -166,7 +202,7 @@ export default function Station({ onHotspot, dimmed = false, onIntroDone }) {
   const overlayFor = (p) => {
     const ph = !p.art;
     if (p.id === 'nameboard') return <NameBoardText box={p.box} u={u} onPlaceholder={ph} />;
-    if (p.id === 'ledboard') return <LedText box={p.box} u={u} scroll={live && motion} />;
+    if (p.id === 'ledboard') return <LedText box={p.box} u={u} scroll={ledLocked && motion} boot={ledBoot} />;
     if (p.id === 'timetable') return <TimetableText box={p.box} u={u} />;
     return null;
   };
@@ -222,6 +258,23 @@ export default function Station({ onHotspot, dimmed = false, onIntroDone }) {
           );
         })}
       </div>
+      {!live && (
+        <>
+          {/* The black curtain; the opening grows a hole in it from the sun. */}
+          <div className="stage__curtain" aria-hidden="true" />
+          {/* Flat copies of the LED board and the sun above the curtain. They
+              sit exactly over the real ones and go when the opening ends. */}
+          <div
+            className="stage__front"
+            aria-hidden="true"
+            style={{ left: view.ox, top: view.oy, width: c.width * u, height: c.height * u }}
+          >
+            {placements.filter((p) => FRONT_PIECES.includes(p.id)).map((p) => (
+              <Piece key={p.key} piece={p} u={u} live={false} motion={motion} hotspotsOn={null} overlay={overlayFor(p)} />
+            ))}
+          </div>
+        </>
+      )}
       <div className="stage__dim" aria-hidden="true" />
       {!live && (
         <button type="button" className="stage__skip" onClick={skip}>
