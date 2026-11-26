@@ -208,8 +208,7 @@ const CHECKPOINT_DAYS = [
 
 const EVENING_CARRIAGES = [
   { coach: 'COACH 1', act: 'Danza', time: '4:30 - 5:00 PM' },
-  { coach: 'COACH 2', act: 'TSK', time: '5:00 - 5:30 PM' },
-  { coach: 'COACH 3', act: 'SMC', time: '5:30 - 6:30 PM' },
+  { coach: 'COACH 2', act: 'SMC', time: '5:30 - 6:30 PM' },
 ];
 
 const STATION_GUIDE = [
