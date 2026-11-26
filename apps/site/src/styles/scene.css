@@ -235,7 +235,7 @@
   overflow: hidden;
   border-radius: calc(var(--u) * 4px);
   background:
-    radial-gradient(circle, rgba(255, 112, 24, 0.14) 0 36%, transparent 44%) 0 0 / var(--dot) var(--dot),
+    radial-gradient(circle, rgba(255, 40, 20, 0.14) 0 36%, transparent 44%) 0 0 / var(--dot) var(--dot),
     radial-gradient(ellipse at 50% 50%, #1c120d, #0c0807);
 }
 
@@ -254,9 +254,8 @@
    text, so the light spills past each dot like a real LED panel. */
 .ov-led__row {
   filter:
-    drop-shadow(0 0 calc(var(--dot) * 0.5) rgba(255, 170, 60, 0.95))
-    drop-shadow(0 0 calc(var(--dot) * 1.6) rgba(255, 120, 20, 0.85))
-    drop-shadow(0 0 calc(var(--dot) * 4) rgba(255, 90, 10, 0.55));
+    drop-shadow(0 0 calc(var(--dot) * 0.25) rgba(255, 40, 20, 1))
+    drop-shadow(0 0 calc(var(--dot) * 0.6) rgba(255, 30, 10, 0.8));
 }
 
 /* The notice line breathes gently so the eye goes to it. */
@@ -271,12 +270,12 @@
 
 .ov-led__text {
   display: inline-block;
-  color: #ffb347;
+  color: #ff5a2a;
   font-family: 'Barlow Condensed', sans-serif;
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  text-shadow: 0 0 calc(var(--dot) * 1.4) rgba(255, 110, 20, 0.95);
+  text-shadow: 0 0 calc(var(--dot) * 0.6) rgba(255, 40, 10, 0.95);
   -webkit-mask: radial-gradient(circle, #000 0 46%, transparent 54%) 0 0 / var(--dot) var(--dot);
   mask: radial-gradient(circle, #000 0 46%, transparent 54%) 0 0 / var(--dot) var(--dot);
 }
