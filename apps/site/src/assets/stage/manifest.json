@@ -76,13 +76,6 @@
       "w": 1400,
       "h": 805
     },
-    "clock": {
-      "states": [
-        "clock.webp"
-      ],
-      "w": 1117,
-      "h": 1400
-    },
     "kiosk": {
       "states": [
         "kiosk.webp"

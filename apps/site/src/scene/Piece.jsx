@@ -5,7 +5,7 @@
 //     .piece__boil  the hand-made "boil" jitter (CSS steps loop)
 //       .cut        one <img> (or placeholder card) per drawing, stacked;
 //                   stop-motion swaps toggle the B drawing's opacity.
-//       overlays    text / clock hands drawn by the stage
+//       overlays    text drawn by the stage
 //     .tag          hover label (hotspots only)
 //
 // `hotspotsOn`: null while the opening plays (not clickable yet), true when

@@ -3,7 +3,7 @@ import { EVENT, LED } from '../content/station.js';
 // TUNING TABLE for everything the stage draws ON TOP of the cutout art.
 // Every box is a fraction (0..1) of the piece's fitted image box, so the
 // overlays follow the art at any size. When new art arrives, open it, find
-// the painted area (board face, clock face, door...) and update the numbers
+// the painted area (board face, door...) and update the numbers
 // here; nothing else needs to change.
 
 export const OVERLAYS = {
@@ -25,8 +25,6 @@ export const OVERLAYS = {
   },
   // The timetable board: the cream face inside the frame.
   timetable: { box: { x: 0.17, y: 0.1, w: 0.68, h: 0.52 }, rows: 6 },
-  // The clock face: centre and radius (radius as a fraction of the box width).
-  clock: { cx: 0.5, cy: 0.4, r: 0.4 },
   // Where the overhead wire hangs on each mast (the end of the arm).
   mast: { wireAt: { x: 0.5, y: 0.06 }, contactDrop: 0.06 },
   // The train's door (clickable when open), centred on the manifest `doorAt`.

@@ -14,7 +14,7 @@ export const STAGE_LAYERS = [
   { id: 'masts', depth: 0.26 }, // 4 electricity masts + wires
   { id: 'train', depth: 0.36 }, // 5 train
   { id: 'platform', depth: 0.5 }, // 6 platform 1, lamp posts
-  { id: 'props', depth: 0.68 }, // 7 boards, clock, kiosk, chai stall
+  { id: 'props', depth: 0.68 }, // 7 boards, kiosk, chai stall
   { id: 'cast', depth: 0.85 }, // 8 Rajesh
 ];
 
@@ -32,7 +32,6 @@ export const PIECES = {
   lamp: { layer: 'platform', states: 2, repeat: true }, // A off, B on
   nameboard: { layer: 'props', states: 1, hotspot: 'about' },
   ledboard: { layer: 'props', states: 1, hotspot: 'countdown' },
-  clock: { layer: 'props', states: 1 },
   kiosk: { layer: 'props', states: 1, hotspot: 'faq' },
   chai: { layer: 'props', states: 2, hotspot: 'faq' }, // the chaiwala answers questions too
   timetable: { layer: 'props', states: 1, hotspot: 'timetable' },
@@ -48,7 +47,7 @@ export const PIECES = {
 export const SLOTS = {
   wide: {
     sky: { x: -340, y: -440, w: 2600, h: 1960 },
-    sun: { x: 1700, y: 0, w: 190, h: 190 },
+    sun: { x: 1480, y: 30, w: 180, h: 180 },
     birds: { x: 560, y: 40, w: 240, h: 120 },
     platform2: { x: -340, y: 190, w: 2600, h: 230 },
     mast: { instances: [{ x: 45, y: 30, w: 160, h: 680 }, { x: 885, y: 30, w: 160, h: 680 }, { x: 1725, y: 30, w: 160, h: 680 }] },
@@ -59,8 +58,7 @@ export const SLOTS = {
     platform1: { x: -930, y: 630, w: 3780, h: 890 },
     lamp: { instances: [{ x: 170, y: 150, w: 240, h: 680 }, { x: 1400, y: 150, w: 240, h: 680 }] },
     nameboard: { x: -70, y: 410, w: 600, h: 490 },
-    ledboard: { x: 800, y: -85, w: 460, h: 280 },
-    clock: { x: 1300, y: -75, w: 150, h: 180 },
+    ledboard: { x: 800, y: 0, w: 460, h: 260 },
     timetable: { x: 1210, y: 370, w: 270, h: 560 },
     chai: { x: 1430, y: 400, w: 500, h: 610 },
     kiosk: { x: 1630, y: 330, w: 520, h: 510 },
@@ -76,8 +74,7 @@ export const SLOTS = {
     platform1: { x: -2056, y: 1038, w: 5192, h: 1222 },
     lamp: { instances: [{ x: 400, y: 700, w: 250, h: 700 }, { x: 940, y: 700, w: 250, h: 700 }] },
     nameboard: { x: 10, y: 1070, w: 430, h: 330 },
-    ledboard: { x: 140, y: -110, w: 800, h: 460 },
-    clock: { x: 880, y: 690, w: 150, h: 180 },
+    ledboard: { x: 140, y: 0, w: 800, h: 440 },
     timetable: { x: 920, y: 1070, w: 150, h: 330 },
     kiosk: { x: 40, y: 1360, w: 360, h: 300 },
     chai: { x: 640, y: 1240, w: 420, h: 420 },
@@ -100,7 +97,6 @@ export const INTRO = [
   { at: 2200, piece: 'lamp', enter: 'rise', stagger: 120 },
   { at: 2500, piece: 'nameboard', enter: 'swing' },
   { at: 2900, piece: 'ledboard', enter: 'rise' },
-  { at: 3000, piece: 'clock', enter: 'rise' },
   { at: 3050, piece: 'timetable', enter: 'rise' },
   { at: 3100, piece: 'kiosk', enter: 'rise' },
   { at: 3150, piece: 'chai', enter: 'rise' },
