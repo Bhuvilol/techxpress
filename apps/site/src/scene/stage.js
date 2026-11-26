@@ -57,8 +57,8 @@ export const SLOTS = {
     // train's wheels (like a real platform edge) and it reaches the bottom of
     // the bleed. The sides are cropped.
     platform1: { x: -930, y: 630, w: 3780, h: 890 },
-    lamp: { instances: [{ x: 300, y: 150, w: 240, h: 680 }, { x: 1400, y: 140, w: 270, h: 740 }] },
-    nameboard: { x: 0, y: 390, w: 580, h: 470 },
+    lamp: { instances: [{ x: 170, y: 150, w: 240, h: 680 }, { x: 1400, y: 140, w: 270, h: 740 }] },
+    nameboard: { x: -70, y: 390, w: 580, h: 470 },
     ledboard: { x: 800, y: -85, w: 460, h: 280 },
     clock: { x: 1300, y: -75, w: 150, h: 180 },
     timetable: { x: 1210, y: 370, w: 270, h: 560 },
