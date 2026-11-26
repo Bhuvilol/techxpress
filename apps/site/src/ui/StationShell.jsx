@@ -1,6 +1,6 @@
 import { Suspense, lazy, useCallback, useEffect, useRef, useState } from 'react';
 import Station from '../scene/Station.jsx';
-import { INTRO_TOTAL_MS } from '../scene/stage.js';
+import { BOOT_MIN_MS, INTRO_TOTAL_MS } from '../scene/stage.js';
 import { LED, UI } from '../content/station.js';
 import { applyMotionPref, readMotionOff } from '../lib/station.js';
 import { useLedStatus, usePanelRoute, usePresence } from './hooks.js';
@@ -16,6 +16,7 @@ import Faq from './panels/Faq.jsx';
 import Countdown from './panels/Countdown.jsx';
 import PnrStatus from './panels/PnrStatus.jsx';
 import '../styles/ui.css';
+import logoUrl from '../assets/stage/logo.webp';
 
 const loadCounter = () => import('./panels/ReservationCounter.jsx');
 const ReservationCounter = lazy(loadCounter);
@@ -25,7 +26,8 @@ applyMotionPref(readMotionOff());
 
 const EXIT_MS = 240;
 // If the stage never reports the end of its opening, show the UI anyway.
-const INTRO_FALLBACK_MS = INTRO_TOTAL_MS + 1500;
+// Boarding + art loading (preload gives up after 4 s) + the opening + slack.
+const INTRO_FALLBACK_MS = BOOT_MIN_MS + 4000 + INTRO_TOTAL_MS + 1500;
 
 const PANEL_VIEWS = {
   about: About,
@@ -100,6 +102,7 @@ export default function StationShell() {
 
       {introDone && (
         <div className="txp-chrome" inert={panelOpen}>
+          <img className="txp-logo" src={logoUrl} alt="TechXpress Hackathon" />
           <Menu onOpen={openPanel} />
           <BookButton onOpen={openPanel} />
           <Hints />
