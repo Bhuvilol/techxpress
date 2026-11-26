@@ -12,181 +12,135 @@
     "SHM | SOA"
   ],
   "domains": [
-    "Healthcare & Medical Technology",
-    "Pharmaceutical Innovation",
-    "Nursing & Patient Care",
-    "Mental Health & Wellness",
-    "Dental Healthcare",
-    "Agriculture & Smart Farming",
-    "Veterinary & Animal Welfare",
-    "Food Technology",
-    "Environmental Sustainability",
-    "Climate & Green Technology",
-    "Legal Technology",
-    "Cybersecurity & Digital Safety",
-    "Artificial Intelligence",
-    "Education Technology",
-    "Business & Finance",
-    "Marketing & Consumer Experience",
-    "Hospitality & Tourism",
-    "Smart Campus Solutions",
-    "Social Impact & Community Development",
-    "E-Commerce & Retail",
-    "Productivity & Workflow Automation",
-    "Research & Innovation",
-    "IoT & Smart Devices",
-    "Public Health Systems",
-    "Women Safety & Empowerment",
-    "Accessibility & Inclusion",
-    "Rural Development",
-    "Supply Chain & Logistics",
-    "Open Innovation"
+    "Law",
+    "Agriculture",
+    "Hospital Management",
+    "Biotechnology & Pharmacy",
+    "Electrical",
+    "Mechanical",
+    "Health",
+    "Management"
   ],
   "problemStatements": [
     {
-      "domain": "Healthcare & Medical Technology",
-      "title": "Remote triage assistant for primary care",
-      "description": "Build a multilingual intake workflow that prioritizes patients using symptoms, vitals, and urgency rules."
+      "domain": "Law",
+      "title": "TX-LAW-01 · Legal Aid Case Triage and Dynamic Cause-List Scheduling for Odisha's District Courts",
+      "description": "Theme: Case Management + Decision Support / Scheduling Optimization + Operations Research\n\nDisciplines: Law, Operations Research, Data Science\n\nAbstract. District courts in Odisha process thousands of cases monthly, but legal aid allocation remains manual and inequitable, leaving indigent litigants unrepresented for extended periods. There is no mechanism to assess urgency, match case complexity to available lawyers, or track aid delivery outcomes systematically. The result is repeated adjournments, prolonged detention, and systemic access gaps particularly for SC/ST and BPL populations.\n\nHigh-volume courts in Bhubaneswar and Cuttack generate daily cause lists that rarely reflect realistic hearing durations, resulting in courtrooms sitting idle in early hours and severely overloaded by afternoon. Judge and staff time is wasted; litigants and advocates plan their day around unreliable schedules. No data-driven mechanism exists to optimize slot allocation based on case type complexity or historical duration.\n\nTags. Case triage, Legal aid allocation, Prioritization systems, Court management, Court scheduling, Cause list optimization, Resource efficiency, Duration prediction"
     },
     {
-      "domain": "Pharmaceutical Innovation",
-      "title": "Cold-chain visibility for essential medicines",
-      "description": "Track temperature excursions across storage and transit with automated alerting for quality teams."
+      "domain": "Law",
+      "title": "TX-LAW-02 · Land Mutation Surveillance and Pre-Dispute Alert System for Odisha’s Rural Property Holders",
+      "description": "Theme: Real-Time Monitoring + Fraud Detection\n\nDisciplines: Law, GIS, Software Engineering\n\nAbstract. Land mutation fraud and unauthorized record alteration are among the most common sources of civil disputes in rural Odisha, yet registered landowners have no mechanism to be notified when their records are modified in the Bhulekh system. By the time a farmer learns of a fraudulent mutation, costly litigation is already the only recourse. Legal processes for reversal are slow and inaccessible without professional help.\n\nTags. Land records, Fraud detection, Property rights, Alert systems, Bhulekh"
     },
     {
-      "domain": "Nursing & Patient Care",
-      "title": "Bedside handover companion for nursing shifts",
-      "description": "Design a structured handover tool that captures vitals, medications, and care notes with offline support and audit history."
+      "domain": "Law",
+      "title": "TX-LAW-03 · Cyber Threat Intelligence Platform for the Indian Judiciary",
+      "description": "Theme: Cybersecurity + Agentic AI\n\nDisciplines: Cybersecurity, Law, Computer Science\n\nAbstract. Judicial databases and e-court portals are prime targets for state-sponsored cyberattacks. Build an agentic cyber-threat-intelligence system that continuously monitors judicial IT infrastructure using honeypots and anomaly detection, auto-classifies attack vectors (ransomware, insider threats, supply-chain attacks), and triggers isolation protocols–while generating legally admissible incident reports that satisfy the IT Act 2000 and DPDPA 2023 breach-notification timelines.\n\nTags. Threat intelligence, Honeypots, Anomaly detection, Incident response, DPDPA compliance"
     },
     {
-      "domain": "Mental Health & Wellness",
-      "title": "Early burnout signal detection for students",
-      "description": "Design a privacy-conscious wellbeing check-in system with escalation pathways and self-help interventions."
+      "domain": "Agriculture",
+      "title": "TX-AGR-01 · Autonomous Precision-Spray Coordination System",
+      "description": "Theme: Agentic AI + IoT\n\nDisciplines: Engineering, Agriculture, Robotics\n\nAbstract. Individual drone spraying is inefficient at scale. Design a multi-agent drone coordination system where each UAV is an autonomous agent with local perception (multispectral camera + obstacle avoidance), and a central orchestrator allocates tasks, resolves conflicts, and re-plans in response to wind gusts or no-fly micro-zones. The system must guarantee zero-overlap coverage, log spray events immutably, and support over-the-air firmware security patching.\n\nTags. Drone swarms, Precision spraying, Multi-agent systems, Agricultural IoT, UAV coordination"
     },
     {
-      "domain": "Dental Healthcare",
-      "title": "AI-assisted dental imaging triage",
-      "description": "Help dental clinicians prioritize X-ray reviews by flagging cavities, bone loss, and abnormalities with confidence scores."
+      "domain": "Agriculture",
+      "title": "TX-AGR-02 · Pesticide Use Audit and Residue Traceability System for Export-Oriented Horticultural Producers in Odisha",
+      "description": "Theme: Supply Chain Traceability + Compliance\n\nDisciplines: Agriculture, Chemistry, Data Science\n\nAbstract. Odisha’s growing vegetable and fruit export sector, particularly ginger, turmeric, and vegetables from Kandhamal and Koraput, faces repeated consignment rejections at export ports due to pesticide residue levels exceeding Maximum Residue Limits (MRLs) set by importing countries. Farmers lack real-time guidance on compliant pesticide choices, application timing, and pre-harvest intervals, and there is no digital record of field-level spray activity.\n\nTags. Pesticide residue, MRL compliance, Export traceability, Spray records, Agri-tech"
     },
     {
-      "domain": "Agriculture & Smart Farming",
-      "title": "Precision irrigation for smallholder farms",
-      "description": "Use soil, weather, and crop signals to recommend irrigation schedules that reduce water waste."
+      "domain": "Agriculture",
+      "title": "TX-AGR-03 · Intelligent Pump Scheduling and Water Audit Copilot for Odisha’s Lift Irrigation Schemes",
+      "description": "Theme: IoT + Resource Optimization\n\nDisciplines: Agriculture, Electrical Engineering, Data Science\n\nAbstract. Odisha operates hundreds of state-owned lift irrigation schemes that are chronically inefficient, pumps run on fixed time schedules regardless of actual soil moisture, crop stage, or weather forecasts, wasting both electricity and water. Scheme operators have no visibility into real-time field conditions, and energy bills routinely exceed department budgets. Unscheduled pump failures during critical crop stages cause significant yield loss.\n\nTags. Irrigation scheduling, Energy efficiency, Soil moisture sensing, Pump management, Water audit"
     },
     {
-      "domain": "Veterinary & Animal Welfare",
-      "title": "Livestock health monitoring for rural vets",
-      "description": "Build a low-bandwidth field tool that lets para-vets log symptoms, track outbreaks, and request remote consults."
+      "domain": "Hospital Management",
+      "title": "TX-HSM-01 · Surgical Instrument Sterilization Cycle Compliance and Tray Traceability System for Secondary Care Hospitals",
+      "description": "Theme: Healthcare Quality + IoT Traceability\n\nDisciplines: Healthcare, Biomedical Engineering, Operations Management\n\nAbstract. Tier-2 hospitals in Odisha lack systematic sterilization cycle tracking for surgical instruments, making it impossible to verify that a given instrument set underwent a validated autoclave cycle before use. Instrument mix-ups between sterile and unprocessed trays occur due to manual handling, with no reliable audit trail. Healthcare-associated infection rates are high, but causation cannot be traced to specific instrument handling lapses.\n\nTags. Sterilization tracking, Infection control, Instrument traceability, GMP compliance, HAI prevention"
     },
     {
-      "domain": "Food Technology",
-      "title": "Shelf-life prediction for perishable inventory",
-      "description": "Combine packaging data, storage conditions, and supply timelines to predict spoilage and reduce food waste in retail."
+      "domain": "Hospital Management",
+      "title": "TX-HSM-02 · ICU Nursing Workload Balancer and Handover Briefing Copilot for Understaffed District Hospitals",
+      "description": "Theme: AI-Assisted Clinical Operations\n\nDisciplines: Healthcare, Data Science, Human Factors Engineering\n\nAbstract. ICU nurses in Odisha’s district hospitals routinely manage eight or more critically ill patients per shift due to staffing shortages, creating workload disparities that increase the risk of missed deterioration signs and medication errors. Shift handover briefings are verbal and inconsistent, leading to information loss on patient status changes, pending tasks, and escalation requirements that occurred during the outgoing shift.\n\nTags. ICU management, Nursing workload, Shift handover, Patient safety, Clinical AI"
     },
     {
-      "domain": "Environmental Sustainability",
-      "title": "Smart waste segregation feedback loop",
-      "description": "Prototype a vision-assisted waste sorting system that improves recycling compliance on campus."
+      "domain": "Hospital Management",
+      "title": "TX-HSM-03 · Patient Discharge Bottleneck Analyzer and Multi-Department Clearance Workflow Automator",
+      "description": "Theme: Process Automation + Healthcare Workflow\n\nDisciplines: Healthcare, Operations Management, Software Engineering\n\nAbstract. Patients declared medically ready for discharge in public hospitals frequently remain in wards for three to six additional hours, occupying beds urgently needed by waiting patients, due to sequential delays in billing clearance, pharmacy returns, discharge summary preparation, and transport coordination. These bottlenecks are invisible to administrators because no system captures the time between clinical discharge decision and physical departure.\n\nTags. Discharge workflow, Bottleneck analysis, Bed management, Multi-dept coordination, Process automation"
     },
     {
-      "domain": "Climate & Green Technology",
-      "title": "Hyperlocal air quality reporter",
-      "description": "Aggregate low-cost sensor readings into ward-level air quality dashboards with health-impact guidance for residents."
+      "domain": "Biotechnology & Pharmacy",
+      "title": "TX-BPH-01 · Herbal Extract Standardization and Regulatory Pathway Guidance Platform for Odisha’s Tribal Medicine Entrepreneurs",
+      "description": "Theme: Regulatory Tech + Traditional Medicine\n\nDisciplines: Pharmacy, Biochemistry, Law\n\nAbstract. Odisha’s tribal communities possess documented knowledge of medicinal plant extracts with genuine therapeutic relevance, but commercialization is blocked because producers lack the tools to standardize their preparations, characterize active constituents, and navigate India’s AYUSH licensing and export regulatory pathways. The result is informal sale of unstandardized products with legal and safety risks, forfeiting both IP and market potential.\n\nTags. Herbal standardization, AYUSH regulation, Traditional medicine, IP protection, Commercialization"
     },
     {
-      "domain": "Legal Technology",
-      "title": "Plain-language explainer for legal notices",
-      "description": "Convert dense legal documents into structured summaries, obligations, and timelines that non-lawyers can act on."
+      "domain": "Biotechnology & Pharmacy",
+      "title": "TX-BPH-02 · Cold Chain Failure Risk Prediction System for Biologic Drug Distribution in Eastern India",
+      "description": "Theme: Predictive Analytics + Pharmaceutical Cold Chain\n\nDisciplines: Pharmacy, Supply Chain, Data Science\n\nAbstract. Biologic drugs including insulin, biosimilars, and monoclonal antibodies distributed across eastern India’s pharmaceutical cold chain face significant temperature integrity risks during transit, particularly during summer months when ambient temperatures routinely exceed 42°C in Odisha. Cold chain failures during last-mile distribution are detected only through periodic inspection, often well after product quality is compromised. Patients self-administer biologics without any mechanism to verify whether their medicine has been temperature-compromised.\n\nTags. Cold chain integrity, Biologics, Temperature risk, Last-mile distribution, Drug quality"
     },
     {
-      "domain": "Cybersecurity & Digital Safety",
-      "title": "Phishing-resistant SSO for student portals",
-      "description": "Build a passkey-based SSO with attested device binding and risk-based recovery flows."
+      "domain": "Biotechnology & Pharmacy",
+      "title": "TX-BPH-03 · AI-Assisted Analysis Platform for Brain Organoid Drug Screening",
+      "description": "Theme: Agentic AI + Biomedical Research\n\nDisciplines: Biotechnology, Neuroscience, Computer Vision\n\nAbstract. Brain organoids are revolutionising CNS drug screening, but image analysis is a bottleneck. Build an agentic AI platform that ingests high-content microscopy images of brain organoids, autonomously segments neural structures, quantifies drug-induced morphological changes, integrates electrophysiology data from MEA sensors, and generates structured efficacy/toxicity reports–cutting CNS drug screening timelines from months to days.\n\nTags. Brain organoids, Drug screening, Image segmentation, Neural morphology, CNS drug discovery"
     },
     {
-      "domain": "Artificial Intelligence",
-      "title": "On-device speech-to-action assistant",
-      "description": "Create a low-latency assistant that converts natural speech into reliable actions on constrained devices."
+      "domain": "Electrical",
+      "title": "TX-ELE-01 · IoT-Based Predictive Health Monitoring for Distribution Transformers",
+      "description": "Theme: Predictive Maintenance + IoT\n\nDisciplines: Electrical Engineering, Data Science, Power Systems\n\nAbstract. Distribution transformer failures are the leading cause of rural power outages in Odisha, yet most transformers operate without any monitoring. Install IoT sensors (oil temperature, dissolved gas analysis via DGA, bushing PD, load current) on pole-mounted transformers and build an agentic AI health-monitoring platform that predicts failure 30 days ahead, prioritises maintenance queues by risk, and auto-generates DISCOM work orders.\n\nTags. Transformer health, Predictive maintenance, IoT sensors, DGA analysis, DISCOM automation"
     },
     {
-      "domain": "Education Technology",
-      "title": "Adaptive practice for foundational math gaps",
-      "description": "Diagnose conceptual gaps from short assessments and generate targeted practice that moves at each learner's pace."
+      "domain": "Electrical",
+      "title": "TX-ELE-02 · Rooftop Solar Generation Forecast and Grid Injection Variability Management System for Bhubaneswar Urban Clusters",
+      "description": "Theme: Renewable Energy + Smart Grid\n\nDisciplines: Electrical Engineering, Data Science, Energy Systems\n\nAbstract. Growing rooftop solar penetration in Bhubaneswar’s residential and commercial areas is introducing significant bidirectional power flows in distribution feeders designed for unidirectional flow, causing voltage regulation challenges. Grid operators currently have no real-time visibility into aggregate rooftop generation within a feeder zone, making demand-supply balancing increasingly difficult during partly-cloudy days when generation swings by 40–60% in minutes.\n\nTags. Solar forecasting, Grid stability, Voltage regulation, Rooftop solar, DER management"
     },
     {
-      "domain": "Business & Finance",
-      "title": "Cashflow forecasting for micro-businesses",
-      "description": "Help small shop owners project the next 30 days of cashflow from invoices, receipts, and seasonality patterns."
+      "domain": "Electrical",
+      "title": "TX-ELE-03 · EV Charging Load Coordination System for Residential Apartments and IT Park Campuses",
+      "description": "Theme: Smart Grid + EV Infrastructure\n\nDisciplines: Electrical Engineering, Software Engineering, Data Science\n\nAbstract. Growing EV adoption in Bhubaneswar’s apartment complexes and IT park campuses is creating uncoordinated charging demand spikes, particularly between 6 PM and 10 PM, that push feeder loads beyond capacity limits, causing protective relay trips and damaging transformer equipment. Building electrical infrastructure was not designed for simultaneous multi-EV charging, and no coordination mechanism currently exists to spread load across available charging sessions.\n\nTags. EV charging, Load management, Demand coordination, Smart charging, Grid protection"
     },
     {
-      "domain": "Marketing & Consumer Experience",
-      "title": "Sentiment-aware product feedback inbox",
-      "description": "Cluster reviews and support tickets into themes ranked by emotional intensity and business impact."
+      "domain": "Mechanical",
+      "title": "TX-MEC-01 · Weld Quality Traceability and Process Anomaly Detection System for Coastal Fabrication and Shipbuilding Units",
+      "description": "Theme: Quality Traceability + Industrial AI\n\nDisciplines: Mechanical Engineering, Manufacturing, Data Science\n\nAbstract. Fabrication yards and ship repair units in coastal Odisha produce structural welds whose quality is verified only through post-completion inspection, discovering defects after rework is expensive and structurally risky. Weld process parameters, heat input, inter-pass temperature, travel speed, are not systematically logged per joint, making defect cause traceability to specific welders, machines, or process conditions impossible. Quality failures at final inspection create costly rework cycles and delivery delays.\n\nTags. Weld quality, Process traceability, Anomaly detection, Shipbuilding, NDT"
     },
     {
-      "domain": "Hospitality & Tourism",
-      "title": "Itinerary builder for off-season travel",
-      "description": "Recommend personalized multi-day itineraries that surface lesser-known destinations and balance cost, distance, and weather."
+      "domain": "Mechanical",
+      "title": "TX-MEC-02 · Compressed Air Leak Detection and Energy Recovery Advisor for Manufacturing Plants in Odisha",
+      "description": "Theme: Energy Efficiency + Industrial IoT\n\nDisciplines: Mechanical Engineering, Industrial Engineering, Data Science\n\nAbstract. Compressed air systems in manufacturing plants waste 20–30% of compressor input energy through distribution network leaks that are typically undetected until a plant-wide pressure survey is conducted during a planned shutdown. Individual leak points are diffuse, acoustically masked by production noise, and distributed across large pipe networks, making manual ultrasonic detection labor-intensive and infrequent. Energy waste from air leaks is the single largest recoverable loss in most manufacturing plants yet remains consistently unaddressed.\n\nTags. Compressed air, Leak detection, Energy recovery, Manufacturing efficiency, Acoustic sensing"
     },
     {
-      "domain": "Smart Campus Solutions",
-      "title": "Predictive maintenance for campus infrastructure",
-      "description": "Use equipment telemetry to forecast failures in lifts, labs, and utilities before outages occur."
+      "domain": "Mechanical",
+      "title": "TX-MEC-03 · Cold Storage Refrigeration System Performance Degradation Tracker for Agri-Processing Units in Odisha",
+      "description": "Theme: Predictive Maintenance + Food Cold Chain\n\nDisciplines: Mechanical Engineering, Agriculture, Data Science\n\nAbstract. Cold storage facilities serving Odisha’s agri-processing units, handling produce like potato, tomato, and ginger, operate refrigeration systems on fixed compressor schedules without monitoring actual system efficiency, allowing gradual performance degradation from refrigerant leakage, condenser fouling, and compressor valve wear to go undetected until system failure causes a full product loss event. Energy consumption increases silently as efficiency declines, invisible to operators without dedicated monitoring.\n\nTags. Refrigeration monitoring, Agri cold storage, Compressor health, Degradation tracking, Energy efficiency"
     },
     {
-      "domain": "Social Impact & Community Development",
-      "title": "Volunteer matching for hyperlocal causes",
-      "description": "Match volunteers to nearby NGOs by skill, time slot, and cause area, with verified impact tracking."
+      "domain": "Health",
+      "title": "TX-HLT-01 · Smart Nutrition and Growth Monitoring for Anganwadi and School Children",
+      "description": "Theme: Child Health + Digital Health\n\nDisciplines: Nutrition, Public Health, Software Engineering\n\nAbstract. Under-nutrition and anemia remain issues, while manual growth charting and follow-up in Anganwadi centers and schools can be inconsistent.\n\nTags. Child nutrition, Growth monitoring, Anganwadi, Anemia detection, Digital health"
     },
     {
-      "domain": "E-Commerce & Retail",
-      "title": "Returns intelligence for D2C brands",
-      "description": "Surface root causes of returns from product, fit, and review signals so brands can fix listings and reduce reverse logistics."
+      "domain": "Health",
+      "title": "TX-HLT-02 · Stray Animal Population Management and Zoonotic Risk Surveillance System for Urban Local Bodies in Odisha",
+      "description": "Theme: Urban Health + GIS Analytics\n\nDisciplines: Veterinary Science, Public Health, GIS\n\nAbstract. Urban local bodies in Bhubaneswar and Cuttack manage large populations of stray dogs and urban cattle that pose rabies transmission, road accident, and broader zoonotic disease risks without systematic population data, vaccination coverage maps, or hotspot identification tools. Animal birth control and anti-rabies vaccination programs are conducted without georeferenced population baselines, making coverage assessment impossible and enabling hotspots of under-vaccinated animal populations to persist as outbreak risk zones.\n\nTags. Stray animals, Rabies surveillance, Animal birth control, Zoonotic risk mapping, Urban health"
     },
     {
-      "domain": "Productivity & Workflow Automation",
-      "title": "Meeting-to-action distiller",
-      "description": "Turn long meeting transcripts into prioritized action items with owners, deadlines, and follow-up nudges."
+      "domain": "Health",
+      "title": "TX-HLT-03 · Post-Surgical Complication Early Detection and Nursing Intervention Guidance System for Surgical Wards",
+      "description": "Theme: Clinical AI + Nursing Decision Support\n\nDisciplines: Medicine, Nursing, Data Science\n\nAbstract. Post-operative patients in general surgical wards are monitored through periodic nursing rounds that leave significant time intervals during which early complications, surgical site infection, deep vein thrombosis, pulmonary embolism, and anastomotic leak, develop to symptomatic stages before detection. Nursing staff in high-patient-load Odisha hospitals lack structured complication risk assessment tools, relying on accumulated clinical experience that varies significantly across individual nurses and shifts.\n\nTags. Post-surgical monitoring, Complication detection, DVT, Surgical site infection, Nursing decision support"
     },
     {
-      "domain": "Research & Innovation",
-      "title": "Literature gap finder for student researchers",
-      "description": "Help undergrads spot under-explored sub-topics in a field by clustering recent papers and surfacing thin citation areas."
+      "domain": "Management",
+      "title": "TX-MGT-01 · Retail Inventory Shrinkage Detection and Loss Attribution System for Grocery and FMCG Chains",
+      "description": "Theme: Retail Analytics + Loss Prevention\n\nDisciplines: Management, Retail Operations, Data Science\n\nAbstract. Grocery and FMCG retail chains in Odisha experience inventory shrinkage from theft, spoilage, and mislabeling that cumulatively consumes 2–4% of revenue, yet loss identification is limited to periodic physical stock counts that aggregate losses without attributing them to specific locations, time windows, product categories, or staff shifts. Without attribution granularity, loss prevention efforts cannot be targeted, and the same high-loss conditions persist indefinitely.\n\nTags. Inventory shrinkage, Loss prevention, Retail analytics, FMCG, Attribution analysis"
     },
     {
-      "domain": "IoT & Smart Devices",
-      "title": "Edge-managed energy budget for shared spaces",
-      "description": "Coordinate appliances and lighting in shared housing to stay within an agreed energy budget without manual scheduling."
+      "domain": "Management",
+      "title": "TX-MGT-02 · Integrated Event Operations Management and Real-Time Incident Response System for Large-Scale Institutional Events",
+      "description": "Theme: Operations Management + Real-Time Coordination\n\nDisciplines: Management, Event Management, Software Engineering\n\nAbstract. Odisha’s institutional calendar, encompassing university convocations, state sports meets, cultural festivals like Rath Yatra and Mukteshwar Dance Festival, and government summits, involves large-scale event operations managed through fragmented WhatsApp groups, paper checklists, and verbal coordination that create information gaps, delayed incident response, and post-event accountability failure. No unified operations platform exists that coordinates venue setup, crowd management, vendor delivery, and emergency response in real time.\n\nTags. Event management, Incident response, Real-time coordination, Crowd management, Smart city ops"
     },
     {
-      "domain": "Public Health Systems",
-      "title": "Outbreak-pattern dashboard for district health offices",
-      "description": "Aggregate clinic-level case data into early-warning signals that respect privacy and work over intermittent connectivity."
-    },
-    {
-      "domain": "Women Safety & Empowerment",
-      "title": "Safe-route escort and rapid alert network",
-      "description": "Develop a route-aware system for emergency escalation, volunteer response, and evidence capture."
-    },
-    {
-      "domain": "Accessibility & Inclusion",
-      "title": "Real-time captioning for classroom lectures",
-      "description": "Deliver low-latency captions and glossary support for hearing-impaired students, with teacher controls for terminology."
-    },
-    {
-      "domain": "Rural Development",
-      "title": "Last-mile service request board for panchayats",
-      "description": "Let villagers raise civic requests by voice or SMS and route them to the right department with transparent SLAs."
-    },
-    {
-      "domain": "Supply Chain & Logistics",
-      "title": "Real-time warehouse routing under congestion",
-      "description": "Optimize picking and movement paths using live aisle conditions, queueing data, and operational constraints."
-    },
-    {
-      "domain": "Open Innovation",
-      "title": "Open challenge: pick a real campus problem and ship a 48-hour prototype",
-      "description": "Identify a friction point you observe daily on campus, scope it tightly, and ship a working prototype with a 2-minute demo. Judged on problem clarity and execution."
+      "domain": "Management",
+      "title": "TX-MGT-03 · Municipal Grievance SLA Breach Predictor and Proactive Escalation System for Bhubaneswar Smart City Corporation",
+      "description": "Theme: Civic Tech + Predictive Analytics\n\nDisciplines: Public Administration, Data Science, Software Engineering\n\nAbstract. Bhubaneswar Municipal Corporation’s citizen grievance portal receives thousands of complaints monthly, covering roads, drainage, sanitation, water supply, and street lighting, but response times routinely exceed statutory SLA windows due to manual routing, absence of priority weighting, and no mechanism for proactive escalation when a ticket is trending toward breach. Repeat complaints on the same issue and delayed resolution erode citizen trust and create public accountability gaps.\n\nTags. Grievance management, SLA prediction, Smart city, Citizen services, Proactive escalation"
     }
   ]
 }
