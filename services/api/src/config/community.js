@@ -7,6 +7,6 @@
 //   Discord:  a server invite that doesn't expire, e.g. https://discord.gg/AbCdEf
 
 export const COMMUNITY_LINKS = {
-  whatsapp: 'https://discord.gg/xAhqmVgaz',
-  discord: 'https://discord.gg/xAhqmVgaz',
+  whatsapp: 'https://whatsapp.com/channel/0029Vb9eDgQKWEKwPcpKpu0I',
+  discord: 'https://discord.gg/6JCJrsDJY',
 };
