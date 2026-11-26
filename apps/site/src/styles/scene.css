@@ -250,9 +250,28 @@
   text-align: left;
 }
 
+/* Glow around the lit dots. It sits on the row, outside the dot mask on the
+   text, so the light spills past each dot like a real LED panel. */
+.ov-led__row {
+  filter:
+    drop-shadow(0 0 calc(var(--dot) * 0.5) rgba(255, 170, 60, 0.95))
+    drop-shadow(0 0 calc(var(--dot) * 1.6) rgba(255, 120, 20, 0.85))
+    drop-shadow(0 0 calc(var(--dot) * 4) rgba(255, 90, 10, 0.55));
+}
+
+/* The notice line breathes gently so the eye goes to it. */
+.ov-led__row + .ov-led__row { animation: led-breathe 2.4s ease-in-out infinite; }
+@keyframes led-breathe {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.72; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ov-led__row + .ov-led__row { animation: none; }
+}
+
 .ov-led__text {
   display: inline-block;
-  color: #ff9124;
+  color: #ffb347;
   font-family: 'Barlow Condensed', sans-serif;
   font-weight: 700;
   letter-spacing: 0.1em;
