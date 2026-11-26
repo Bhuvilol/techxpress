@@ -1,4 +1,117 @@
 {
   "version": 1,
-  "pieces": {}
+  "pieces": {
+    "sky": {
+      "variants": {
+        "tall": "sky-tall.webp",
+        "wide": "sky-wide.webp"
+      },
+      "w": 2560,
+      "h": 1429
+    },
+    "sun": {
+      "states": [
+        "sun.webp"
+      ],
+      "w": 1397,
+      "h": 1400
+    },
+    "birds": {
+      "states": [
+        "birds-a.webp",
+        "birds-b.webp"
+      ],
+      "w": 1274,
+      "h": 1400
+    },
+    "platform2": {
+      "states": [
+        "platform2.webp"
+      ],
+      "w": 2600,
+      "h": 907
+    },
+    "mast": {
+      "states": [
+        "mast.webp"
+      ],
+      "w": 413,
+      "h": 1400
+    },
+    "train": {
+      "states": [
+        "train-a.webp",
+        "train-b.webp"
+      ],
+      "w": 2600,
+      "h": 504,
+      "doorAt": 0.585
+    },
+    "platform1": {
+      "states": [
+        "platform1.webp"
+      ],
+      "w": 2600,
+      "h": 612
+    },
+    "lamp": {
+      "states": [
+        "lamp-a.webp",
+        "lamp-b.webp"
+      ],
+      "w": 496,
+      "h": 1400
+    },
+    "nameboard": {
+      "states": [
+        "nameboard.webp"
+      ],
+      "w": 1400,
+      "h": 1071
+    },
+    "ledboard": {
+      "states": [
+        "ledboard.webp"
+      ],
+      "w": 1400,
+      "h": 805
+    },
+    "clock": {
+      "states": [
+        "clock.webp"
+      ],
+      "w": 1117,
+      "h": 1400
+    },
+    "kiosk": {
+      "states": [
+        "kiosk.webp"
+      ],
+      "w": 1400,
+      "h": 1329
+    },
+    "chai": {
+      "states": [
+        "chai-a.webp",
+        "chai-b.webp"
+      ],
+      "w": 1120,
+      "h": 1400
+    },
+    "timetable": {
+      "states": [
+        "timetable.webp"
+      ],
+      "w": 776,
+      "h": 1400
+    },
+    "rajesh": {
+      "states": [
+        "rajesh-a.webp",
+        "rajesh-b.webp"
+      ],
+      "w": 670,
+      "h": 1400
+    }
+  }
 }

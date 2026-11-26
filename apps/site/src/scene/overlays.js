@@ -9,15 +9,17 @@ import { EVENT, LED } from '../content/station.js';
 export const OVERLAYS = {
   // The yellow station name board: area for the three painted lines.
   nameboard: {
-    box: { x: 0.08, y: 0.1, w: 0.84, h: 0.5 },
+    // Measured on nameboard.webp: the yellow face inside the black line.
+    box: { x: 0.11, y: 0.155, w: 0.78, h: 0.31 },
     // Line heights as fractions of the box height.
-    hindi: 0.32,
-    english: 0.36,
-    altitude: 0.11,
+    hindi: 0.34,
+    english: 0.42,
+    altitude: 0.13,
   },
   // The LED indicator: the black panel where the dots light up.
   ledboard: {
-    box: { x: 0.05, y: 0.16, w: 0.9, h: 0.68 },
+    // Measured on ledboard.webp: the dark dot field inside the frame.
+    box: { x: 0.11, y: 0.42, w: 0.78, h: 0.35 },
     // Dot pitch as a fraction of the panel height (≈ rows of LEDs).
     pitch: 1 / 26,
   },
