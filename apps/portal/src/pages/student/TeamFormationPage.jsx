@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import {
   Users, Plus, UserPlus, Send, ShieldCheck, AlertTriangle, LogOut,
-  UserMinus, Crown, Search, CheckCircle2, XCircle,
+  UserMinus, Crown, Search, CheckCircle2, XCircle, ListChecks,
 } from 'lucide-react';
 import { api } from '../../lib/api.js';
 import { useApi } from '../../hooks/useApi.js';
@@ -233,6 +233,62 @@ const JoinableList = () => {
 };
 
 // ── Invite modal (leader only) ────────────────────────────────────────────
+// The leader picks the team's problem statement from every domain (the
+// team's domain follows it), or clears it. Only while the team is forming.
+const ProblemStatementModal = ({ open, onClose, current, onSave }) => {
+  const list = useApi(() => (open ? api.get('/api/taxonomy/problem-statements') : Promise.resolve({ problemStatements: [] })), [open], { refetchOnFocus: false });
+  const [psId, setPsId] = useState(current);
+  const [busy, setBusy] = useState(false);
+  const [seen, setSeen] = useState(open);
+  if (open !== seen) { setSeen(open); if (open) setPsId(current); }
+
+  const groups = useMemo(() => {
+    const byDomain = new Map();
+    for (const ps of list.data?.problemStatements ?? []) {
+      const key = ps.domain?.name ?? 'Other';
+      if (!byDomain.has(key)) byDomain.set(key, []);
+      byDomain.get(key).push(ps);
+    }
+    return [...byDomain.entries()].sort(([a], [b]) => a.localeCompare(b));
+  }, [list.data]);
+
+  const save = async () => {
+    setBusy(true);
+    try { await onSave(psId); onClose(); } finally { setBusy(false); }
+  };
+
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      title="Problem statement"
+      size="md"
+      footer={(
+        <>
+          <button type="button" className="ghost-button" onClick={onClose}>Cancel</button>
+          <button type="button" className="glow-button inline-flex items-center gap-2 disabled:opacity-60" disabled={busy || psId === current} onClick={save}>
+            {busy && <Spinner size={12} />} Save
+          </button>
+        </>
+      )}
+    >
+      <p className="mb-3 font-mono text-[12px] text-text-secondary">
+        You can change this until the team is finalized. The team's domain follows the problem statement.
+      </p>
+      {list.loading ? <Spinner /> : (
+        <select className="select-glass w-full" value={psId} onChange={(e) => setPsId(e.target.value)}>
+          <option value="">No problem statement yet</option>
+          {groups.map(([domain, items]) => (
+            <optgroup key={domain} label={domain}>
+              {items.map((ps) => <option key={ps.id} value={ps.id}>{ps.title}</option>)}
+            </optgroup>
+          ))}
+        </select>
+      )}
+    </Modal>
+  );
+};
+
 const InviteModal = ({ open, onClose, teamId, onSent }) => {
   const toast = useToast();
   const [registrationNo, setRegistrationNo] = useState('');
@@ -371,6 +427,7 @@ const MyTeamView = ({ team, evaluation, onMutate }) => {
   const { user } = useAuth();
   const toast = useToast();
   const [inviteOpen, setInviteOpen] = useState(false);
+  const [psOpen, setPsOpen] = useState(false);
 
   const isLeader = team.leader.id === user.id;
   const isFinalized = team.status === 'FINALIZED';
@@ -642,6 +699,11 @@ const MyTeamView = ({ team, evaluation, onMutate }) => {
             </button>
           )}
           {isLeader && !isFinalized && !teamDisbandPending && (
+            <button className="ghost-button inline-flex items-center gap-2" onClick={() => setPsOpen(true)} disabled={team.status !== 'FORMING'}>
+              <ListChecks size={12} /> {team.problemStatement ? 'Change problem statement' : 'Choose problem statement'}
+            </button>
+          )}
+          {isLeader && !isFinalized && !teamDisbandPending && (
             <button className="ghost-button inline-flex items-center gap-2" onClick={() => setInviteOpen(true)}>
               <UserPlus size={12} /> Invite member
             </button>
@@ -857,6 +919,12 @@ const MyTeamView = ({ team, evaluation, onMutate }) => {
 
 
       <InviteModal open={inviteOpen} onClose={() => setInviteOpen(false)} teamId={team.id} onSent={onMutate} />
+      <ProblemStatementModal
+        open={psOpen}
+        onClose={() => setPsOpen(false)}
+        current={team.problemStatement?.id ?? ''}
+        onSave={(psId) => action(psId ? 'Problem statement updated.' : 'Problem statement cleared.', () => api.patch(`/api/teams/${team.id}/problem-statement`, { psId: psId || null }))}
+      />
     </div>
   );
 };

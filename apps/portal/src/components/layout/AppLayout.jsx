@@ -2,6 +2,7 @@ import { Outlet, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { TopAppBar } from './TopAppBar.jsx';
 import { RetroGrid } from '../ui/RetroGrid.jsx';
+import { DomainBanner } from '../student/DomainBanner.jsx';
 
 // Public-facing shell. Renders the nav + the routed page on top of the
 // retro grid background, with a smooth fade/slide between routes.
@@ -23,6 +24,7 @@ export const AppLayout = () => {
     <div className="relative min-h-screen">
       <RetroGrid className="fixed inset-0 -z-10" />
       <TopAppBar />
+      <DomainBanner />
       <main className="relative">
         <AnimatePresence mode="wait" initial={false}>
           <motion.div
