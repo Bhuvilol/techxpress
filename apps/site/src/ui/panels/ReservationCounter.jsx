@@ -21,6 +21,7 @@ import {
   hasFormData,
   normalizeUrl,
   validateRegistration,
+  TSHIRT_SIZES,
 } from '../../utils/registrationForm';
 
 // The draft survives closing the panel (until the page is left), so a
@@ -611,6 +612,13 @@ export default function ReservationCounter({ titleId, onOpen, onDirtyChange }) {
                     <option value="MALE">Male</option>
                     <option value="FEMALE">Female</option>
                     <option value="OTHER">Other / Prefer not to say</option>
+                  </select>
+                </FieldWrap>
+
+                <FieldWrap field="tshirtSize" label="T-SHIRT SIZE" required error={errors.tshirtSize}>
+                  <select value={form.tshirtSize} onChange={setField('tshirtSize')} disabled={busy}>
+                    <option value="" disabled>Select size</option>
+                    {TSHIRT_SIZES.map((size) => <option key={size} value={size}>{size}</option>)}
                   </select>
                 </FieldWrap>
 

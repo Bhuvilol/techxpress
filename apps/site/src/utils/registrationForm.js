@@ -1,12 +1,16 @@
 // Registration form rules and payload, kept free of React so they can be unit tested.
 // They mirror the server validator (services/api/src/validators/registration.schema.js).
 
+// Kept in step with TSHIRT_SIZES in services/api/src/validators/registration.schema.js.
+export const TSHIRT_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'];
+
 export const INITIAL_FORM = {
   fullName: '',
   email: '',
   registrationNo: '',
   phone: '',
   gender: '', // no default: a guessed value would feed the team gender rules
+  tshirtSize: '',
   idCard: '',
   institutionId: '',
   preferredDomains: [],
@@ -61,6 +65,7 @@ export const FIELD_ORDER = [
   'registrationNo',
   'phone',
   'gender',
+  'tshirtSize',
   'idCard',
   'institutionId',
   'preferredDomains',
@@ -89,6 +94,7 @@ export const FIELD_LABELS = {
   registrationNo: 'Registration Number',
   phone: 'Phone',
   gender: 'Gender',
+  tshirtSize: 'T-shirt size',
   idCard: 'College ID Card',
   institutionId: 'Institution',
   preferredDomains: 'Preferred Domain',
@@ -182,6 +188,7 @@ export const validateRegistration = (f) => {
   if (phone && !/^\d{10}$/.test(phone)) e.phone = 'Phone number must be exactly 10 digits, with no spaces, dashes or +.';
 
   if (!f.gender) e.gender = 'Select your gender.';
+  if (!TSHIRT_SIZES.includes(f.tshirtSize)) e.tshirtSize = 'Select your T-shirt size.';
   if (!f.idCard) e.idCard = 'Upload a photo of your college ID card.';
   if (!f.institutionId) e.institutionId = 'Select your institution from the list.';
   if (f.preferredDomains.length !== 4) e.preferredDomains = 'Pick exactly 4 domains. Your first pick is primary.';
