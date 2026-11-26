@@ -546,3 +546,50 @@
     transition: none !important;
   }
 }
+
+/* Contact shadow under everything that stands on platform 1, so the bases
+   read as resting on the floor rather than floating in front of it. */
+.piece--nameboard::before,
+.piece--rajesh::before,
+.piece--chai::before,
+.piece--kiosk::before,
+.piece--timetable::before,
+.piece--lamp::before {
+  content: '';
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  bottom: -2.5%;
+  height: 7%;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(20, 14, 36, 0.55), rgba(20, 14, 36, 0));
+  pointer-events: none;
+}
+.piece--lamp::before { left: -40%; right: -40%; height: 3%; bottom: -1%; }
+
+.ov-tt {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35em;
+  color: #2a2034;
+  font-family: 'Barlow Condensed', sans-serif;
+  overflow: hidden;
+}
+.ov-tt__head {
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-align: center;
+  border-bottom: 2px solid #2a2034;
+  padding-bottom: 0.2em;
+  white-space: nowrap;
+}
+.ov-tt__row {
+  display: flex;
+  gap: 0.5em;
+  font-weight: 600;
+  white-space: nowrap;
+  border-bottom: 1px solid rgba(42, 32, 52, 0.25);
+}
+.ov-tt__when { font-weight: 800; color: #b3263e; min-width: 5.6em; }
+.ov-tt__what { overflow: hidden; text-overflow: ellipsis; }

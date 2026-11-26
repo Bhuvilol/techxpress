@@ -3,7 +3,7 @@
 // boxes come from the tuning table in overlays.js.
 
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { LED, STATION } from '../content/station.js';
+import { LED, STATION, TIMETABLE, LABELS } from '../content/station.js';
 import { OVERLAYS, ledStatus, subBox } from './overlays.js';
 
 const px = (n) => `${n}px`;
@@ -198,5 +198,30 @@ export function Wires({ masts, full, u }) {
       <path d={catenary} strokeWidth="2.4" />
       <path d={contact} strokeWidth="2.8" />
     </svg>
+  );
+}
+
+// ── Timetable board ────────────────────────────────────────────────────────
+// A few real rows from the timetable, printed on the board's cream face.
+export function TimetableText({ box, u }) {
+  const f = OVERLAYS.timetable;
+  const b = subBox(box, f.box);
+  const h = b.h * u;
+  const rows = [
+    ...TIMETABLE.preDeparture.map((r) => [r.date, r.title]),
+    ...TIMETABLE.days[0].stops.filter((r) => r.key).map((r) => [`04 DEC ${r.time}`, r.title]),
+  ].slice(0, f.rows);
+  return (
+    <div className="ov ov-tt" style={boxStyle(b, u)} aria-hidden="true">
+      <div className="ov-tt__head" style={{ fontSize: px(h * 0.075) }}>
+        <span lang="hi">{LABELS.timetable.hindi}</span> · {LABELS.timetable.english.toUpperCase()}
+      </div>
+      {rows.map(([when, what]) => (
+        <div key={when + what} className="ov-tt__row" style={{ fontSize: px(h * 0.052) }}>
+          <span className="ov-tt__when">{when}</span>
+          <span className="ov-tt__what">{what}</span>
+        </div>
+      ))}
+    </div>
   );
 }

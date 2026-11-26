@@ -15,7 +15,7 @@ import { allSources, placePieces } from './geometry.js';
 import { preload } from './assets.js';
 import { markIntroPlayed, markVisited, playIntro, shouldPlayIntro } from './intro.js';
 import Piece, { TrainDoor } from './Piece.jsx';
-import { ClockHands, LedText, NameBoardText, Wires } from './Overlays.jsx';
+import { ClockHands, LedText, NameBoardText, TimetableText, Wires } from './Overlays.jsx';
 import useStageTilt from '../motion/useStageTilt.js';
 import { HINTS } from '../content/station.js';
 import '../styles/scene.css';
@@ -167,6 +167,7 @@ export default function Station({ onHotspot, dimmed = false, onIntroDone }) {
     const ph = !p.art;
     if (p.id === 'nameboard') return <NameBoardText box={p.box} u={u} onPlaceholder={ph} />;
     if (p.id === 'ledboard') return <LedText box={p.box} u={u} scroll={live && motion} />;
+    if (p.id === 'timetable') return <TimetableText box={p.box} u={u} />;
     if (p.id === 'clock') return <ClockHands box={p.box} u={u} onPlaceholder={ph} live={motion} />;
     return null;
   };

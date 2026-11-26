@@ -23,6 +23,8 @@ export const OVERLAYS = {
     // Dot pitch as a fraction of the panel height (≈ rows of LEDs).
     pitch: 1 / 26,
   },
+  // The timetable board: the cream face inside the frame.
+  timetable: { box: { x: 0.17, y: 0.1, w: 0.68, h: 0.52 }, rows: 6 },
   // The clock face: centre and radius (radius as a fraction of the box width).
   clock: { cx: 0.5, cy: 0.4, r: 0.4 },
   // Where the overhead wire hangs on each mast (the end of the arm).
