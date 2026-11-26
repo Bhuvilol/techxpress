@@ -43,6 +43,15 @@ export default function Timetable({ titleId }) {
                   <td className="tt-event">
                     <span className="tt-junction" aria-hidden="true" />
                     {stop.title}
+                    {stop.who && <span className="tt-who">{stop.who}</span>}
+                    {stop.detail && <span className="tt-detail">{stop.detail}</span>}
+                    {stop.acts && (
+                      <ul className="tt-acts">
+                        {stop.acts.map((act) => (
+                          <li key={act.name}><span className="tt-act-time">{act.time}</span> {act.name}</li>
+                        ))}
+                      </ul>
+                    )}
                   </td>
                   <td className="tt-venue">{stop.venue}</td>
                 </tr>

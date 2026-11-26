@@ -19,11 +19,13 @@ export default function About({ titleId }) {
           <p key={p.slice(0, 24)}>{p}</p>
         ))}
         <h3 className="paper-h3">{ABOUT.whyTitle}</h3>
+        <p>{ABOUT.whyLead}</p>
         <ul className="ticked-list">
           {ABOUT.why.map((w) => (
             <li key={w}>{w}</li>
           ))}
         </ul>
+        <p>{ABOUT.perks}</p>
         <h3 className="paper-h3">{ABOUT.whoTitle}</h3>
         <p className="notice-box">{ABOUT.who}</p>
         <p className="paper-altitude">{STATION.altitude}</p>
