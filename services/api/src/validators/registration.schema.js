@@ -25,10 +25,11 @@ const profileUrl = (message, isValid) => z
   .refine((value) => value === undefined || isValid(value), { message });
 
 const longText = (label, max) => z.string().trim().max(max, `${label} is too long — ${max} characters at most.`).optional();
-const cuidList = z.array(z.string().cuid('Invalid domain selection.'))
-  .min(1, 'Pick at least one domain (up to 4).')
-  .max(4, 'You can pick at most 4 domains.')
-  .optional();
+// Every student picks exactly 4 domains; the first is their main domain.
+export const DOMAIN_PICKS = 4;
+export const domainPicks = z.array(z.string().cuid('Invalid domain selection.'), { required_error: `Pick ${DOMAIN_PICKS} domains.` })
+  .length(DOMAIN_PICKS, `Pick exactly ${DOMAIN_PICKS} domains.`)
+  .refine((ids) => new Set(ids).size === ids.length, { message: 'Pick 4 different domains.' });
 
 // The year / semester choices. Kept in step with the two registration forms
 // (apps/site/src/utils/registrationForm.js and apps/portal RegistrationPage.jsx).
@@ -59,7 +60,7 @@ export const registrationSchema = z.object({
     .transform(normalizeRegistrationNo),
   institutionId: z.string({ required_error: 'Select your institution from the list.' }).cuid('Select your institution from the list.'),
   domainId: z.string({ required_error: 'Pick at least one domain.' }).cuid('Pick at least one domain.'),
-  preferredDomains: cuidList,
+  preferredDomains: domainPicks,
   track: z.string().trim().min(1).max(80).optional(),
   degree: z.string({ required_error: 'Select your degree.' }).trim().min(1, 'Select your degree.').max(80),
   yearSemester: z.enum(YEAR_SEMESTER_OPTIONS, { errorMap: () => ({ message: 'Select your year / semester.' }) }),

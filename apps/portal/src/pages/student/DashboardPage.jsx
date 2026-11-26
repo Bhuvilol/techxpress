@@ -20,12 +20,15 @@ import { CardSkeleton } from '../../components/ui/Skeleton.jsx';
 import { Spinner } from '../../components/ui/Spinner.jsx';
 import { Modal } from '../../components/ui/Modal.jsx';
 import { formatRelative, titleCase } from '../../utils/format.js';
+import { DomainPicker, DOMAINS_SAVED_EVENT } from '../../components/student/DomainPicker.jsx';
 
 const ROLE_TONE = { ADMIN: 'crit', JURY: 'cyan', COORDINATOR: 'warn', STUDENT: 'live' };
 const EXPLORE_CARD_CLASS = 'glass-card flat min-h-[188px] rounded-none px-5 py-6 transition duration-200 ease-out hover:border-white hover:bg-white/[0.04]';
 const joinList = (values) => values?.length ? values.join(', ') : '-';
 
-const ProfileTab = ({ user, myTeam }) => (
+const ProfileTab = ({ user, myTeam }) => {
+  const [editDomains, setEditDomains] = useState(false);
+  return (
   <div className="grid gap-6 md:grid-cols-3">
     <section className="glass-card flat md:col-span-2">
       <div className="mb-6 flex items-center gap-3">
@@ -47,14 +50,24 @@ const ProfileTab = ({ user, myTeam }) => (
       </dl>
 
       <ProfileCopySection title="Bio" value={user.bio} />
-      {user.preferredDomainDetails?.length ? (
+      {user.role === 'STUDENT' || user.preferredDomainDetails?.length ? (
         <div className="mt-8 border-t border-white/5 pt-6">
-          <div className="mb-3 font-mono text-[10px] uppercase tracking-[0.3em] text-white/30">Preferred domains</div>
-          <div className="flex flex-wrap gap-1.5">
-            {user.preferredDomainDetails.map((domain) => (
-              <Badge key={domain.id} tone="dim">{domain.name}</Badge>
-            ))}
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <div className="font-mono text-[10px] uppercase tracking-[0.3em] text-white/30">Preferred domains</div>
+            {user.role === 'STUDENT' && (
+              <button type="button" className="ghost-button" onClick={() => setEditDomains(true)}>Edit domains</button>
+            )}
           </div>
+          <div className="flex flex-wrap gap-1.5">
+            {user.preferredDomainDetails?.length
+              ? user.preferredDomainDetails.map((domain) => <Badge key={domain.id} tone="dim">{domain.name}</Badge>)
+              : <span className="font-mono text-[12px] text-status-warn">No domains chosen yet.</span>}
+          </div>
+          <DomainPicker
+            open={editDomains}
+            onClose={() => setEditDomains(false)}
+            initial={user.preferredDomains ?? []}
+          />
         </div>
       ) : null}
       <ProfileCopySection title="Technical Skills" value={user.technicalSkills} />
@@ -107,7 +120,8 @@ const ProfileTab = ({ user, myTeam }) => (
       </div>
     </aside>
   </div>
-);
+  );
+};
 
 const Field = ({ icon: Icon, label, value }) => (
   <div className="space-y-1">
@@ -850,6 +864,12 @@ export const DashboardPage = () => {
   const { refetch: refetchMe } = me;
   const { refetch: refetchTeam } = myTeam;
   const u = me.data?.user ?? user;
+
+  // Domains saved anywhere (the banner or the profile) refresh this page.
+  useEffect(() => {
+    window.addEventListener(DOMAINS_SAVED_EVENT, refetchMe);
+    return () => window.removeEventListener(DOMAINS_SAVED_EVENT, refetchMe);
+  }, [refetchMe]);
 
   const handleTeamChanged = useCallback(() => {
     refetchTeam();

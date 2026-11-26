@@ -11,6 +11,9 @@ export const createTeamSchema = z.object({
 
 export const teamIdParamSchema = z.object({ id: cuid });
 
+// The leader picks (or clears, with null) the team's problem statement.
+export const changeProblemStatementSchema = z.object({ psId: cuid.nullable() });
+
 export const listTeamsQuerySchema = z.object({
   status: z.enum(['FORMING', 'QUALIFIED', 'FINALIZED', 'DISQUALIFIED']).optional(),
   domainId: cuid.optional(),

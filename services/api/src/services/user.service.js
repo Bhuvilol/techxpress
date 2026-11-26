@@ -117,6 +117,8 @@ export const userService = {
     // The validator already normalizes; do it again so no caller can bypass it.
     const { idCard, ...fields } = input;
     const data = { ...fields, registrationNo: normalizeRegistrationNo(fields.registrationNo) };
+    // The first of the 4 picks is the main domain.
+    if (data.preferredDomains?.length) data.domainId = data.preferredDomains[0];
     const rules = await rulesService.get();
     if (!rules.registrationOpen) {
       // Top-level code, like REGISTRY_MISMATCH: clients read `code`, not `details`.
@@ -385,6 +387,19 @@ export const userService = {
         institution: { select: { id: true, name: true } },
       },
     });
+  },
+
+  // A student changes their 4 domain picks (first = main domain). Every id
+  // must be a current domain.
+  async updateDomains(userId, preferredDomains) {
+    const found = await prisma.domain.count({ where: { id: { in: preferredDomains } } });
+    if (found !== preferredDomains.length) throw BadRequest('Pick your domains from the list.');
+    const user = await prisma.user.update({
+      where: { id: userId },
+      data: { preferredDomains, domainId: preferredDomains[0] },
+      select: PUBLIC_USER_FIELDS,
+    });
+    return attachPreferredDomainDetails(user);
   },
 
   async findById(userId) {

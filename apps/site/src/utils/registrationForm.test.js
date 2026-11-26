@@ -18,7 +18,7 @@ const validForm = (overrides = {}) => ({
   gender: 'FEMALE',
   idCard: 'data:image/jpeg;base64,/9j/',
   institutionId: 'cinstitution0000000000000a',
-  preferredDomains: ['cdomain00000000000000000a'],
+  preferredDomains: ['cdomain00000000000000000a', 'cdomain00000000000000000b', 'cdomain00000000000000000c', 'cdomain00000000000000000d'],
   domainId: 'cdomain00000000000000000a',
   yearSemester: '3rd Year / Semester 6',
   degree: 'B.Tech',
@@ -100,6 +100,13 @@ describe('validateRegistration', () => {
     for (const bad of ['12345', '987654321', '98765432100', '+919876543210', '98765 43210', '98765-43210', '98765abcde']) {
       expect(validateRegistration(validForm({ phone: bad })).phone, bad).toMatch(/exactly 10 digits/);
     }
+  });
+
+  it('needs exactly 4 preferred domains', () => {
+    const d = (n) => Array.from({ length: n }, (_, i) => `cdomain0000000000000000${String.fromCharCode(97 + i)}`);
+    expect(validateRegistration(validForm({ preferredDomains: d(3) })).preferredDomains).toMatch(/exactly 4/);
+    expect(validateRegistration(validForm({ preferredDomains: d(1) })).preferredDomains).toMatch(/exactly 4/);
+    expect(validateRegistration(validForm({ preferredDomains: d(4) })).preferredDomains).toBeUndefined();
   });
 
   it('allows at most 4 preferred domains through the picker, and 12 contribution areas', () => {

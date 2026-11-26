@@ -12,7 +12,7 @@ const src = (path) => new URL(`../../src/${path}`, import.meta.url).href;
 // check calls. `reset()` restores the defaults between tests.
 const defaults = () => ({
   institution: { findUnique: async () => ({ id: 'cinstitution0000000000000a' }) },
-  domain: { count: async () => 1 },
+  domain: { count: async ({ where }) => where?.id?.in?.length ?? 1 },
   user: {
     findFirst: async () => null,
     create: async ({ data }) => ({ id: 'cuser0000000000000000000', publicId: data.publicId, fullName: data.fullName, email: data.email }),
@@ -79,7 +79,7 @@ export const validBody = (overrides = {}) => ({
   registrationNo: '2024 ps 01',
   institutionId: 'cinstitution0000000000000a',
   domainId: 'cdomain00000000000000000a',
-  preferredDomains: ['cdomain00000000000000000a'],
+  preferredDomains: ['cdomain00000000000000000a', 'cdomain00000000000000000b', 'cdomain00000000000000000c', 'cdomain00000000000000000d'],
   degree: 'B.Tech',
   yearSemester: '3rd Year / Semester 6',
   contributionAreas: ['Frontend'],

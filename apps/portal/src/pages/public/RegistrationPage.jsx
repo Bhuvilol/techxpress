@@ -252,7 +252,7 @@ const validateRegistration = (f) => {
   if (!f.gender) e.gender = 'Select your gender.';
   if (!f.idCard) e.idCard = 'Upload a photo of your college ID card.';
   if (!f.institutionId) e.institutionId = 'Select your institution from the list.';
-  if (!f.preferredDomains.length) e.preferredDomains = 'Pick at least one domain (up to 4). Your first pick is your primary domain.';
+  if (f.preferredDomains.length !== 4) e.preferredDomains = 'Pick exactly 4 domains. Your first pick is your primary domain.';
   if (!YEAR_SEMESTER_OPTIONS.includes(f.yearSemester)) e.yearSemester = 'Select your year / semester.';
   if (!f.degree) e.degree = 'Select your degree.';
   if (!f.contributionAreas.length) e.contributionAreas = 'Pick at least one area you can contribute to.';
@@ -620,7 +620,7 @@ export const RegistrationPage = () => {
                 field="domainId" label={requiredLabel('Preferred Domain')}
                 field="preferredDomains"
                 error={errors.domainId ?? errors.preferredDomains}
-                hint="Pick up to 4. Your first pick (#1) is your primary domain, used for team formation and qualification."
+                hint="Pick exactly 4. Your first pick (#1) is your primary domain, used for team formation and qualification."
               >
                 {domLoading ? (
                   <div className="input-glass flex h-12 items-center gap-2 text-white/40"><Spinner size={12} /> Loading...</div>
