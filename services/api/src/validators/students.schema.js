@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { domainPicks } from './registration.schema.js';
+import { domainPicks, TSHIRT_SIZES } from './registration.schema.js';
 
 export const directoryQuerySchema = z.object({
   page: z.coerce.number().int().min(1).optional(),
@@ -14,3 +14,8 @@ export const directoryQuerySchema = z.object({
 
 // PATCH /api/students/me/domains: the student's 4 domain picks.
 export const updateDomainsSchema = z.object({ preferredDomains: domainPicks });
+
+// PATCH /api/students/me/tshirt-size
+export const updateTshirtSizeSchema = z.object({
+  tshirtSize: z.enum(TSHIRT_SIZES, { errorMap: () => ({ message: 'Select your T-shirt size.' }) }),
+});

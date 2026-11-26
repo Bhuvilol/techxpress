@@ -404,6 +404,11 @@ export const userService = {
     return attachPreferredDomainDetails(user);
   },
 
+  async updateTshirtSize(userId, tshirtSize) {
+    const user = await prisma.user.update({ where: { id: userId }, data: { tshirtSize }, select: PUBLIC_USER_FIELDS });
+    return attachPreferredDomainDetails(user);
+  },
+
   async findById(userId) {
     const user = await prisma.user.findUnique({
       where: { id: userId },
