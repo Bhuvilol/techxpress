@@ -52,19 +52,19 @@ export const SLOTS = {
     birds: { x: 560, y: 40, w: 240, h: 120 },
     platform2: { x: -340, y: 190, w: 2600, h: 230 },
     mast: { instances: [{ x: 60, y: 140, w: 130, h: 570 }, { x: 900, y: 140, w: 130, h: 570 }, { x: 1740, y: 140, w: 130, h: 570 }] },
-    train: { h: 470, bottom: 830, doorX: 1040 },
+    train: { h: 470, bottom: 830, doorX: 910 },
     // Wider and taller than the screen on purpose: its top surface hides the
     // train's wheels (like a real platform edge) and it reaches the bottom of
     // the bleed. The sides are cropped.
     platform1: { x: -930, y: 630, w: 3780, h: 890 },
-    lamp: { instances: [{ x: 410, y: 160, w: 270, h: 740 }, { x: 1290, y: 160, w: 270, h: 740 }] },
-    nameboard: { x: 0, y: 450, w: 540, h: 440 },
+    lamp: { instances: [{ x: 300, y: 160, w: 270, h: 740 }, { x: 990, y: 160, w: 270, h: 740 }] },
+    nameboard: { x: 0, y: 410, w: 620, h: 510 },
     ledboard: { x: 800, y: -85, w: 460, h: 280 },
     clock: { x: 1300, y: -75, w: 150, h: 180 },
-    timetable: { x: 1460, y: 420, w: 230, h: 490 },
-    chai: { x: 1150, y: 380, w: 390, h: 480 },
+    timetable: { x: 1210, y: 370, w: 270, h: 560 },
+    chai: { x: 1480, y: 400, w: 420, h: 510 },
     kiosk: { x: 1690, y: 380, w: 560, h: 560 },
-    rajesh: { x: 590, y: 430, w: 270, h: 540 },
+    rajesh: { x: 520, y: 430, w: 300, h: 600 },
   },
   tall: {
     sky: { x: -240, y: -340, w: 1560, h: 2600 },
