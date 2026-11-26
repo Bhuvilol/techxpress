@@ -34,7 +34,7 @@ export const PIECES = {
   ledboard: { layer: 'props', states: 1, hotspot: 'countdown' },
   clock: { layer: 'props', states: 1 },
   kiosk: { layer: 'props', states: 1, hotspot: 'faq' },
-  chai: { layer: 'props', states: 2 },
+  chai: { layer: 'props', states: 2, hotspot: 'faq' }, // the chaiwala answers questions too
   timetable: { layer: 'props', states: 1, hotspot: 'timetable' },
   rajesh: { layer: 'cast', states: 2, hotspot: 'book' }, // A standing, B waving
 };
@@ -62,7 +62,7 @@ export const SLOTS = {
     ledboard: { x: 800, y: -85, w: 460, h: 280 },
     clock: { x: 1300, y: -75, w: 150, h: 180 },
     timetable: { x: 1210, y: 370, w: 270, h: 560 },
-    chai: { x: 1470, y: 420, w: 450, h: 550 },
+    chai: { x: 1430, y: 400, w: 500, h: 610 },
     kiosk: { x: 1630, y: 330, w: 520, h: 510 },
     rajesh: { x: 520, y: 430, w: 300, h: 600 },
   },
