@@ -18,6 +18,7 @@ const defaults = () => ({
     create: async ({ data }) => ({ id: 'cuser0000000000000000000', publicId: data.publicId, fullName: data.fullName, email: data.email }),
     findUnique: async () => null,
     update: async ({ where, data }) => ({ id: where.id, email: 'asha@college.edu', fullName: 'Asha Kumar', ...data }),
+    aggregate: async () => ({ _max: { seatNo: null } }),
   },
   hackathonRules: { findUnique: async () => ({ id: 'rules', registrationOpen: true }) },
   collegeRegistry: { findUnique: async () => null },
@@ -34,11 +35,14 @@ const wrap = (obj) => {
 wrap(defaults());
 // Interactive transactions just run the callback here (no real rollback).
 prisma.$transaction = mock.fn(async (fn) => fn(prisma));
+prisma.$executeRaw = mock.fn(async () => 1);
 
 // Put every fake back to its default and clear recorded calls.
 export const reset = () => {
   for (const key of Object.keys(prisma)) for (const fn of Object.values(prisma[key])) fn.mock.resetCalls();
   wrap(defaults());
+  prisma.$transaction = mock.fn(async (fn) => fn(prisma));
+  prisma.$executeRaw = mock.fn(async () => 1);
 };
 
 let installed = false;

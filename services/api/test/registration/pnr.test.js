@@ -7,7 +7,7 @@ import { install, prisma, reset } from './helpers.js';
 install();
 const { default: registrationRoutes } = await import('../../src/routes/registration.js');
 const { errorHandler, notFoundHandler } = await import('../../src/middleware/error.js');
-const { berthFor } = await import('../../src/utils/berth.js');
+
 
 const app = express();
 app.use('/api/registration', registrationRoutes);
@@ -36,6 +36,7 @@ const student = (overrides = {}) => ({
   verificationStatus: 'VERIFIED',
   fullName: 'Asha Kumar',
   publicId: 'TXP-7K3M-9QWA',
+  seatNo: 73,
   institution: { name: 'ITER | SOA' },
   domain: { name: 'Artificial Intelligence' },
   ...overrides,
@@ -67,7 +68,7 @@ test('a confirmed student gets CONFIRMED and their ticket, and nothing private',
   assert.equal(ticket.domain, 'Artificial Intelligence');
   assert.equal(ticket.train, '12026 TECHXPRESS');
   assert.equal(ticket.date, '2026-12-04');
-  assert.deepEqual({ coach: ticket.coach, berth: ticket.berth, berthType: ticket.berthType }, berthFor('cuserpnr0000000000000000a'));
+  assert.deepEqual({ coach: ticket.coach, berth: ticket.berth, berthType: ticket.berthType }, { coach: 'TX-02', berth: '1', berthType: 'LB' });
   const text = JSON.stringify(res.body);
   for (const secret of ['asha.kumar@college.edu', 'cuserpnr0000000000000000a', 'STUDENT', 'email', 'registrationNo']) {
     assert.ok(!text.includes(secret), `response must not contain ${secret}`);

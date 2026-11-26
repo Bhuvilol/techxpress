@@ -1,23 +1,27 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { berthFor } from '../../src/utils/berth.js';
+import { seatToBerth } from '../../src/utils/berth.js';
 
-test('the same user always gets the same coach and berth', () => {
-  assert.deepEqual(berthFor('cabc123'), berthFor('cabc123'));
+test('seats fill coaches in order, 72 berths each', () => {
+  assert.deepEqual(seatToBerth(1), { coach: 'TX-01', berth: '1', berthType: 'LB' });
+  assert.deepEqual(seatToBerth(8), { coach: 'TX-01', berth: '8', berthType: 'SU' });
+  assert.deepEqual(seatToBerth(72), { coach: 'TX-01', berth: '72', berthType: 'SU' });
+  assert.deepEqual(seatToBerth(73), { coach: 'TX-02', berth: '1', berthType: 'LB' });
+  assert.deepEqual(seatToBerth(865), { coach: 'TX-13', berth: '1', berthType: 'LB' });
 });
 
-test('coach, berth and berth type are always in range and consistent', () => {
-  const types = ['LB', 'MB', 'UB', 'LB', 'MB', 'UB', 'SL', 'SU'];
-  for (let i = 0; i < 2000; i += 1) {
-    const { coach, berth, berthType } = berthFor(`cuser${i}`);
-    assert.match(coach, /^TX-(0[1-9]|1[0-2])$/);
-    const n = Number(berth);
-    assert.ok(Number.isInteger(n) && n >= 1 && n <= 72);
-    assert.equal(berthType, types[(n - 1) % 8]);
+test('different seat numbers never give the same coach and berth', () => {
+  const seen = new Set();
+  for (let n = 1; n <= 2000; n += 1) {
+    const { coach, berth } = seatToBerth(n);
+    const key = `${coach}/${berth}`;
+    assert.equal(seen.has(key), false, `seat ${n} clashes`);
+    seen.add(key);
   }
 });
 
-test('different users are spread across coaches', () => {
-  const coaches = new Set(Array.from({ length: 300 }, (_, i) => berthFor(`cuser${i}`).coach));
-  assert.equal(coaches.size, 12);
+test('no seat yet gives blanks, not a made-up seat', () => {
+  for (const v of [null, undefined, 0, -1, 1.5]) {
+    assert.deepEqual(seatToBerth(v), { coach: null, berth: null, berthType: null });
+  }
 });

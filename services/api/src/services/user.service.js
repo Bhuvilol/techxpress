@@ -83,7 +83,23 @@ const assertInstitutionScope = (user, institutionId) => {
 // A new password is saved and emailed as one step. `deliver` sends the email
 // inside the transaction; if it throws (email not sent), the change is rolled
 // back, so a student never ends up with a password nobody received.
+// Gives the student the next free seat number, unless they already have one
+// (a restored student keeps theirs). The advisory lock makes concurrent
+// approvals take turns, so two students never get the same number; the
+// unique index on seatNo is the final guard. Seats are never reused.
+const SEAT_LOCK = 2026_1127;
+export const assignSeat = async (tx, userId) => {
+  const current = await tx.user.findUnique({ where: { id: userId }, select: { seatNo: true } });
+  if (current?.seatNo) return current.seatNo;
+  await tx.$executeRaw`SELECT pg_advisory_xact_lock(${SEAT_LOCK})`;
+  const { _max: max } = await tx.user.aggregate({ _max: { seatNo: true } });
+  const seatNo = (max?.seatNo ?? 0) + 1;
+  await tx.user.update({ where: { id: userId }, data: { seatNo }, select: { id: true } });
+  return seatNo;
+};
+
 const issueCredentials = (userId, data, plaintextPassword, deliver) => prisma.$transaction(async (tx) => {
+  if (data.verificationStatus === 'VERIFIED') await assignSeat(tx, userId);
   const passwordHash = await hashPassword(plaintextPassword);
   const updated = await tx.user.update({
     where: { id: userId },
@@ -338,6 +354,7 @@ export const userService = {
         verificationStatus: true,
         fullName: true,
         publicId: true,
+        seatNo: true,
         institution: { select: { name: true } },
         domain: { select: { name: true } },
       },
@@ -348,6 +365,8 @@ export const userService = {
       && user.email.toLowerCase() === String(email).toLowerCase();
     if (!matches) return { status: 'NO_RESERVATION' };
     if (user.verificationStatus !== 'VERIFIED') return { status: user.verificationStatus };
+    // Confirmed without a seat (e.g. created by the testing import): give one now.
+    if (!user.seatNo) user.seatNo = await prisma.$transaction((tx) => assignSeat(tx, user.id));
     return { status: 'VERIFIED', user };
   },
 

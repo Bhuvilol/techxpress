@@ -1,6 +1,6 @@
 import { userService } from '../services/user.service.js';
 import { rulesService } from '../services/rules.service.js';
-import { berthFor } from '../utils/berth.js';
+import { seatToBerth } from '../utils/berth.js';
 
 // Railway wording for each account status (the train site shows it as a stamp).
 const PNR_STATUS = {
@@ -55,7 +55,7 @@ export const pnr = async (req, res) => {
       domain: user.domain?.name ?? null,
       train: TICKET_TRAIN,
       date: TICKET_DATE,
-      ...berthFor(user.id),
+      ...seatToBerth(user.seatNo),
     },
   });
 };

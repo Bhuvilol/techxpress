@@ -109,6 +109,8 @@ model User {
   fullName           String
   email              String             @unique
   registrationNo     String?            @unique
+  // Seat on the souvenir e-ticket (coach + berth), given once on approval.
+  seatNo             Int?               @unique
   institutionId      String?
   institution        Institution?       @relation(fields: [institutionId], references: [id])
   domainId           String?
