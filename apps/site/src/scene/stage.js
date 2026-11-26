@@ -25,7 +25,7 @@ export const PIECES = {
   sky: { layer: 'backdrop', states: 1, fit: 'cover', variants: ['wide', 'tall'] },
   sun: { layer: 'heavens', states: 1 },
   birds: { layer: 'heavens', states: 2 },
-  platform2: { layer: 'far', states: 1 },
+  platform2: { layer: 'far', states: 1, fit: 'fill' }, // stretched across the width
   mast: { layer: 'masts', states: 1, repeat: true },
   train: { layer: 'train', states: 2 }, // A door closed, B door open
   platform1: { layer: 'platform', states: 1 },
@@ -48,29 +48,29 @@ export const PIECES = {
 export const SLOTS = {
   wide: {
     sky: { x: -340, y: -440, w: 2600, h: 1960 },
-    sun: { x: 1710, y: 110, w: 200, h: 200 },
+    sun: { x: 1700, y: 0, w: 190, h: 190 },
     birds: { x: 560, y: 40, w: 240, h: 120 },
-    platform2: { instances: [{ x: -340, y: 270, w: 640, h: 220 }, { x: 292, y: 270, w: 640, h: 220 }, { x: 924, y: 270, w: 640, h: 220 }, { x: 1556, y: 270, w: 640, h: 220 }, { x: 2188, y: 270, w: 640, h: 220 }] },
+    platform2: { x: -340, y: 190, w: 2600, h: 230 },
     mast: { instances: [{ x: 60, y: 140, w: 130, h: 570 }, { x: 900, y: 140, w: 130, h: 570 }, { x: 1740, y: 140, w: 130, h: 570 }] },
-    train: { h: 470, bottom: 830, doorX: 830 },
+    train: { h: 470, bottom: 830, doorX: 1040 },
     // Wider and taller than the screen on purpose: its top surface hides the
     // train's wheels (like a real platform edge) and it reaches the bottom of
     // the bleed. The sides are cropped.
     platform1: { x: -930, y: 630, w: 3780, h: 890 },
-    lamp: { instances: [{ x: 820, y: 140, w: 270, h: 740 }, { x: 1440, y: 140, w: 270, h: 740 }] },
-    nameboard: { x: 10, y: 470, w: 540, h: 410 },
+    lamp: { instances: [{ x: 410, y: 160, w: 270, h: 740 }, { x: 1290, y: 160, w: 270, h: 740 }] },
+    nameboard: { x: 0, y: 450, w: 540, h: 440 },
     ledboard: { x: 800, y: -85, w: 460, h: 280 },
     clock: { x: 1300, y: -75, w: 150, h: 180 },
-    timetable: { x: 1020, y: 430, w: 200, h: 450 },
-    chai: { x: 1210, y: 450, w: 340, h: 430 },
-    kiosk: { x: 1560, y: 480, w: 360, h: 400 },
-    rajesh: { x: 545, y: 420, w: 230, h: 460 },
+    timetable: { x: 1460, y: 420, w: 230, h: 490 },
+    chai: { x: 1150, y: 380, w: 390, h: 480 },
+    kiosk: { x: 1690, y: 380, w: 560, h: 560 },
+    rajesh: { x: 590, y: 430, w: 270, h: 540 },
   },
   tall: {
     sky: { x: -240, y: -340, w: 1560, h: 2600 },
     sun: { x: 780, y: 160, w: 240, h: 240 },
     birds: { x: 80, y: 440, w: 220, h: 110 },
-    platform2: { instances: [{ x: -240, y: 600, w: 560, h: 200 }, { x: 312, y: 600, w: 560, h: 200 }, { x: 864, y: 600, w: 560, h: 200 }] },
+    platform2: { x: -240, y: 620, w: 1560, h: 190 },
     mast: { instances: [{ x: 10, y: 470, w: 110, h: 540 }, { x: 490, y: 470, w: 110, h: 540 }, { x: 970, y: 470, w: 110, h: 540 }] },
     train: { h: 560, bottom: 1320, doorX: 600 },
     platform1: { x: -2056, y: 1038, w: 5192, h: 1222 },

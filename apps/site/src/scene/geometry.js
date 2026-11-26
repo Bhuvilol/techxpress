@@ -11,7 +11,7 @@ const TRAIN_FALLBACK = { aspect: 2400 / 610, doorAt: 0.47 };
 // xMidYMax meet: as large as fits, centred, standing on the slot's floor.
 // 'cover' (the sky): fills the slot, centred both ways, cropping the rest.
 export function fitBox(slot, art, fit) {
-  if (!art) return { x: slot.x, y: slot.y, w: slot.w, h: slot.h };
+  if (!art || fit === 'fill') return { x: slot.x, y: slot.y, w: slot.w, h: slot.h };
   const s = fit === 'cover'
     ? Math.max(slot.w / art.w, slot.h / art.h)
     : Math.min(slot.w / art.w, slot.h / art.h);

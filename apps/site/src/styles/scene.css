@@ -593,3 +593,11 @@
 }
 .ov-tt__when { font-weight: 800; color: #b3263e; min-width: 5.6em; }
 .ov-tt__what { overflow: hidden; text-overflow: ellipsis; }
+
+/* Boards turned slightly inward, like signs seen at an angle: the name
+   board's left edge comes towards you, the timetable's right edge does. */
+.piece--nameboard,
+.piece--timetable { perspective: calc(900px * var(--u, 1)); }
+.piece--nameboard > .piece__boil { rotate: y 28deg; transform-origin: 0% 50%; }
+.piece--timetable > .piece__boil { rotate: y -26deg; transform-origin: 100% 50%; }
+.piece--platform2 .cut { object-fit: fill; }
