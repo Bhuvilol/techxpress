@@ -202,7 +202,7 @@ export default function Station({ onHotspot, dimmed = false, onIntroDone }) {
   const overlayFor = (p) => {
     const ph = !p.art;
     if (p.id === 'nameboard') return <NameBoardText box={p.box} u={u} onPlaceholder={ph} />;
-    if (p.id === 'ledboard') return <LedText box={p.box} u={u} scroll={ledLocked && motion} boot={ledBoot} />;
+    if (p.id === 'ledboard') return <LedText box={p.box} u={u} scroll={ledLocked && motion} boot={ledBoot} ready={phase === 'done'} />;
     if (p.id === 'timetable') return <TimetableText box={p.box} u={u} />;
     return null;
   };

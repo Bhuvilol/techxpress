@@ -737,3 +737,6 @@
    rise animation then holds it hidden until the LED text has locked in). */
 .stage--loading .piece--sun,
 .stage--boot .piece--sun { visibility: hidden; }
+
+/* Countdown digits keep the same width, so the timer doesn't jiggle. */
+.ov-led__timer { font-variant-numeric: tabular-nums; }

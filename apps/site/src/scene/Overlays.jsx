@@ -75,10 +75,50 @@ function useScramble(text, mode) {
   return mode ? shown : text;
 }
 
+// Countdown on the board: "HH:MM:SS", with a day count in front when more
+// than a day is left.
+const DEADLINE = Date.parse(LED.countdownTo);
+const SWAP_DELAY_MS = 600; // pause after the opening before the board re-scrambles
+const SWAP_MS = 1400;
+const two = (n) => String(n).padStart(2, '0');
+const timerText = (now) => {
+  const s = Math.max(0, Math.floor((DEADLINE - now) / 1000));
+  const d = Math.floor(s / 86400);
+  const hms = `${two(Math.floor((s % 86400) / 3600))}:${two(Math.floor((s % 3600) / 60))}:${two(s % 60)}`;
+  return d ? `${d}D ${hms}` : hms;
+};
+
+// After the opening (`ready`): 'intro' -> 'swap' (scramble into the timer)
+// -> 'timer' (ticks every second) -> 'closed' when the deadline passes.
+function useCountdown(ready) {
+  const [now, setNow] = useState(() => Date.now());
+  const [stage, setStage] = useState(() => (Date.now() >= DEADLINE ? 'closed' : 'intro'));
+  useEffect(() => {
+    if (!ready || stage !== 'intro') return undefined;
+    const a = setTimeout(() => { setNow(Date.now()); setStage('swap'); }, SWAP_DELAY_MS);
+    return () => clearTimeout(a);
+  }, [ready, stage]);
+  useEffect(() => {
+    if (stage !== 'swap') return undefined;
+    const t = setTimeout(() => setStage('timer'), SWAP_MS);
+    return () => clearTimeout(t);
+  }, [stage]);
+  useEffect(() => {
+    if (stage !== 'timer') return undefined;
+    const id = setInterval(() => {
+      const t = Date.now();
+      setNow(t);
+      if (t >= DEADLINE) setStage('closed');
+    }, 250);
+    return () => clearInterval(id);
+  }, [stage]);
+  return { stage, now };
+}
+
 // Orange dot-matrix text. The dots are a CSS mask on the text itself; the
 // scrolling line moves in whole-dot steps so its dots stay on the grid, like
 // a real indicator board.
-export function LedText({ box, u, scroll, boot = null }) {
+export function LedText({ box, u, scroll, boot = null, ready = false }) {
   const f = OVERLAYS.ledboard;
   const b = subBox(box, f.box);
   const pitch = Math.max(2, b.h * u * f.pitch);
@@ -88,9 +128,15 @@ export function LedText({ box, u, scroll, boot = null }) {
   const status = ledStatus();
   const headline = useScramble(LED.headline, boot);
   const statusShown = useScramble(status, boot);
+  const { stage, now } = useCountdown(ready);
+  const swapping = stage === 'swap' ? 'resolve' : null;
+  const timerShown = useScramble(timerText(now), swapping);
+  const labelShown = useScramble(LED.countdownLabel, swapping);
+  const counting = stage === 'swap' || stage === 'timer';
+  const closed = stage === 'closed';
 
   useEffect(() => {
-    if (!scroll) return undefined;
+    if (!scroll || counting || closed) return undefined;
     const track = trackRef.current;
     const text = textRef.current;
     let anim = null;
@@ -110,19 +156,34 @@ export function LedText({ box, u, scroll, boot = null }) {
       alive = false;
       anim?.cancel();
     };
-  }, [scroll, pitch, u, status]);
+  }, [scroll, pitch, u, status, counting, closed]);
 
   const dots = { '--dot': px(pitch), padding: `${px(pitch)} ${px(pitch * 2)}` };
   return (
     <div className={`ov ov-led${boot ? ' ov-led--boot' : ''}`} style={{ ...boxStyle(b, u), ...dots }} aria-hidden="true">
-      <div className="ov-led__row">
-        <FitLine className="ov-led__text" size={rowH} fitKey={boot ? 'boot' : headline}>{headline}</FitLine>
-      </div>
-      <div className={`ov-led__row${scroll ? ' ov-led__row--track' : ''}`} ref={trackRef}>
-        {scroll
-          ? <span ref={textRef} className="ov-led__text ov-led__scroll" style={{ fontSize: px(rowH * 0.82) }}>{status}</span>
-          : <FitLine className="ov-led__text" size={rowH * 0.82} fitKey={boot ? 'boot' : statusShown}>{statusShown}</FitLine>}
-      </div>
+      {counting ? (
+        <>
+          <div className="ov-led__row">
+            <FitLine className="ov-led__text ov-led__timer" size={rowH} fitKey="timer">{timerShown}</FitLine>
+          </div>
+          <div className="ov-led__row ov-led__row--notice">
+            <FitLine className="ov-led__text" size={rowH * 0.82} fitKey="label">{labelShown}</FitLine>
+          </div>
+        </>
+      ) : (
+        <>
+          <div className="ov-led__row">
+            <FitLine className="ov-led__text" size={rowH} fitKey={boot ? 'boot' : headline}>{headline}</FitLine>
+          </div>
+          <div className={`ov-led__row${scroll && !closed ? ' ov-led__row--track' : ''}`} ref={trackRef}>
+            {closed
+              ? <FitLine className="ov-led__text" size={rowH * 0.82} fitKey="closed">{LED.closedLabel}</FitLine>
+              : scroll
+                ? <span ref={textRef} className="ov-led__text ov-led__scroll" style={{ fontSize: px(rowH * 0.82) }}>{status}</span>
+                : <FitLine className="ov-led__text" size={rowH * 0.82} fitKey={boot ? 'boot' : statusShown}>{statusShown}</FitLine>}
+          </div>
+        </>
+      )}
     </div>
   );
 }
