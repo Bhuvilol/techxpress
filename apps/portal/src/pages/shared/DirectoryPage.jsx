@@ -83,13 +83,6 @@ export const DirectoryPage = () => {
 
   const students = useMemo(() => data?.students ?? [], [data]);
 
-  const stats = useMemo(() => data?.stats ?? {
-    total: 0,
-    colleges: 0,
-    inTeam: 0,
-    looking: 0,
-  }, [data]);
-
   const colleges = useMemo(() => data?.colleges ?? [], [data]);
   const domainOptions = useMemo(() => data?.domains ?? [], [data]);
 
@@ -116,11 +109,6 @@ export const DirectoryPage = () => {
     return [...map.values()].sort((a, b) =>
       (a.id === '_none') - (b.id === '_none') || b.items.length - a.items.length || a.name.localeCompare(b.name));
   }, [students, groupBy, isPerCollege, data]);
-
-  const activeGroupsCount = useMemo(
-    () => groups.filter((g) => g.items.length > 0).length,
-    [groups],
-  );
 
   const hasFilters = !!(search || collegeId || domainId || teamFilter !== 'all');
 
@@ -176,9 +164,9 @@ export const DirectoryPage = () => {
         <>
           {/* College segmentation chips */}
           <div className="mb-5 flex flex-wrap gap-2">
-            <Chip active={!collegeId} onClick={() => { setCollegeId(''); setPage(1); }} label="All colleges" count={stats.total} />
+            <Chip active={!collegeId} onClick={() => { setCollegeId(''); setPage(1); }} label="All colleges" />
             {colleges.map((c) => (
-              <Chip key={c.id} active={collegeId === c.id} onClick={() => handleCollegeToggle(c.id)} label={c.name} count={c.count} />
+              <Chip key={c.id} active={collegeId === c.id} onClick={() => handleCollegeToggle(c.id)} label={c.name} />
             ))}
           </div>
 
@@ -202,17 +190,7 @@ export const DirectoryPage = () => {
           </div>
 
           <div className="mb-4 flex flex-wrap items-center justify-between gap-2 font-mono text-[11px] uppercase tracking-[0.18em] text-white/40">
-            <span>
-              {isPerCollege ? (
-                <>
-                  Showing {students.length} students on this page {data.totalPages > 1 && `(Page ${page} of ${data.totalPages})`} · {activeGroupsCount} of {groups.length} colleges active
-                </>
-              ) : (
-                <>
-                  Showing {students.length} of {data.total} students {data.totalPages > 1 && `(Page ${page} of ${data.totalPages})`} · {groups.length} {groupBy === 'institution' ? 'colleges' : 'domains'}
-                </>
-              )}
-            </span>
+            <span />
             {hasFilters && (
               <button className="inline-flex items-center gap-1 text-white/60 hover:text-white" onClick={clearFilters}>
                 <X size={12} /> Clear filters
@@ -390,7 +368,7 @@ export const DirectoryPage = () => {
   );
 };
 
-const Chip = ({ active, onClick, label, count }) => (
+const Chip = ({ active, onClick, label }) => (
   <button
     type="button"
     onClick={onClick}
@@ -400,7 +378,6 @@ const Chip = ({ active, onClick, label, count }) => (
     )}
   >
     <span>{label}</span>
-    <span className={cn('rounded-full px-1.5 text-[10px] font-bold', active ? 'bg-black/10' : 'bg-white/10 text-white/60')}>{count}</span>
   </button>
 );
 
