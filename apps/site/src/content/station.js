@@ -78,8 +78,8 @@ export const ABOUT = {
   ],
   perks: 'Win prizes, incubation and mentoring support, and a feature on the SOA website.',
   whoTitle: 'Who can travel',
-  // ⚠ CONFIRM: team rules are the current portal settings (min 3, max 5, at least 1 woman).
-  who: 'Any registered SOA student. Teams of 3 to 5 members, with at least one woman in every team.',
+  // ⚠ CONFIRM: team rules are the current portal settings (min 3, max 5, at least 1 girl).
+  who: 'Any registered SOA student. Teams of 3 to 5 members, with at least one girl in every team.',
 };
 
 // Timetable. ⚠ CONFIRM: every date and time here is from a draft schedule.
@@ -155,7 +155,7 @@ export const FARES = {
 export const FAQ = [
   { q: 'Who can register?', a: 'Any SOA student. Register on this site with your college ID card.' },
   { q: 'Is there a fee?', a: 'No, registration is free.' }, // ⚠ CONFIRM
-  { q: 'How big is a team?', a: '3 to 5 members, with at least one woman in every team.' }, // ⚠ CONFIRM
+  { q: 'How big is a team?', a: '3 to 5 members, with at least one girl in every team.' }, // ⚠ CONFIRM
   { q: 'Can I register without a team?', a: 'Yes. Register on your own first, then form or join a team in the VORTEX portal.' },
   { q: 'What happens after I register?', a: 'Your college coordinator checks your details and ID card. Once you are approved, your login code arrives by email from team@soatechxpress.in.' },
   { q: "I haven't received my email.", a: 'Check your spam folder, then check your PNR status here. If it says CONFIRMED but no email arrived, write to the organisers.' },
