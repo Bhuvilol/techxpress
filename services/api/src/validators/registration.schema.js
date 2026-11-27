@@ -48,6 +48,13 @@ export const YEAR_SEMESTER_OPTIONS = [
   '6th Year / Semester 12',
 ];
 
+// Branch: asked only of students of this institution (matched by its name in
+// the Institution table). Kept in step with both registration forms
+// (apps/site/src/utils/registrationForm.js and apps/portal RegistrationPage.jsx).
+export const BRANCH_INSTITUTION_NAME = 'ITER | SOA';
+export const BRANCH_OPTIONS = ['CSE Core', 'CSE AIML', 'CSE CS', 'CSE DS', 'EE', 'ECE', 'EEE', 'Mech'];
+export const branchField = z.enum(BRANCH_OPTIONS, { errorMap: () => ({ message: 'Select your branch.' }) });
+
 export const TSHIRT_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'];
 
 export const registrationSchema = z.object({
@@ -65,6 +72,9 @@ export const registrationSchema = z.object({
   preferredDomains: domainPicks,
   track: z.string().trim().min(1).max(80).optional(),
   degree: z.string({ required_error: 'Select your degree.' }).trim().min(1, 'Select your degree.').max(80),
+  // Required for ITER | SOA, dropped for everyone else (user.service.js).
+  branch: z.string().trim().optional().transform((v) => v || undefined)
+    .refine((v) => v === undefined || BRANCH_OPTIONS.includes(v), { message: 'Select your branch.' }),
   yearSemester: z.enum(YEAR_SEMESTER_OPTIONS, { errorMap: () => ({ message: 'Select your year / semester.' }) }),
   contributionAreas: z.array(z.string().trim().min(1).max(80), { required_error: 'Pick at least one area you can contribute to.' })
     .min(1, 'Pick at least one area you can contribute to.')

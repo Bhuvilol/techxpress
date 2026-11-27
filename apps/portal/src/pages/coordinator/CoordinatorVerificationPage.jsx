@@ -250,7 +250,7 @@ const ScopeCard = ({ institutionName, scoped, filtered }) => (
 );
 
 const buildStudentMeta = (student) => {
-  const parts = [student.degree, student.yearSemester].filter(Boolean);
+  const parts = [student.degree, student.branch, student.yearSemester].filter(Boolean);
   if (!parts.length) return 'Profile details pending';
   return parts.join(' / ');
 };

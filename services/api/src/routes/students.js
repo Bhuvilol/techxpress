@@ -3,7 +3,7 @@ import { requireAuth, requireRole } from '../middleware/auth.js';
 import { validate } from '../middleware/validate.js';
 import { ah } from '../utils/asyncHandler.js';
 import { directoryService } from '../services/directory.service.js';
-import { directoryQuerySchema, updateDomainsSchema, updateTshirtSizeSchema } from '../validators/students.schema.js';
+import { directoryQuerySchema, updateBranchSchema, updateDomainsSchema, updateTshirtSizeSchema } from '../validators/students.schema.js';
 import { userService } from '../services/user.service.js';
 
 // Participant directory — any logged-in user (student, jury, coordinator, admin).
@@ -37,6 +37,18 @@ router.patch('/me/tshirt-size',
   validate({ body: updateTshirtSizeSchema }),
   ah(async (req, res) => {
     const user = await userService.updateTshirtSize(req.user.id, req.body.tshirtSize);
+    res.json({ user });
+  }),
+);
+
+// An ITER | SOA student sets or changes their branch (students who registered
+// before the field existed are asked by a banner in the portal).
+router.patch('/me/branch',
+  requireAuth,
+  requireRole('STUDENT'),
+  validate({ body: updateBranchSchema }),
+  ah(async (req, res) => {
+    const user = await userService.updateBranch(req.user.id, req.body.branch);
     res.json({ user });
   }),
 );

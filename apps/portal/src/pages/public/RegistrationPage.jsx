@@ -91,6 +91,11 @@ const TEAM_ROLE_OPTIONS = [
   'Open to Any Role',
 ];
 
+// Branch is asked only of this institution's students. Kept in step with
+// BRANCH_INSTITUTION_NAME / BRANCH_OPTIONS in the server validator.
+const BRANCH_INSTITUTION_NAME = 'ITER | SOA';
+const BRANCH_OPTIONS = ['CSE Core', 'CSE AIML', 'CSE CS', 'CSE DS', 'EE', 'ECE', 'EEE', 'Mech'];
+
 const DEGREE_OPTIONS = [
   'Undergraduate',
   'Postgraduate',
@@ -105,6 +110,7 @@ const EMPTY = {
   registrationNo: '',
   idCard: '', // data URL of the shrunk ID card photo
   institutionId: '',
+  branch: '',
   domainId: '',
   preferredDomains: [],
   degree: '',
@@ -148,7 +154,7 @@ const TSHIRT_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'];
 
 const FIELD_ORDER = [
   'fullName', 'email', 'registrationNo', 'phone', 'gender', 'tshirtSize', 'idCard',
-  'institutionId', 'preferredDomains', 'domainId', 'yearSemester', 'degree',
+  'institutionId', 'preferredDomains', 'domainId', 'yearSemester', 'degree', 'branch',
   'contributionAreas', 'nonTechnicalSkills', 'technicalSkills', 'preferredTeamRole',
   'linkedinUrl', 'githubUrl', 'resumeDriveLink', 'researchPublicationUrl',
   'certificationsAchievements', 'projectInitiative', 'participationExperience',
@@ -157,7 +163,7 @@ const FIELD_ORDER = [
 
 const FIELD_LABELS = {
   fullName: 'Name', email: 'Email', registrationNo: 'Registration number', phone: 'Phone',
-  gender: 'Gender', tshirtSize: 'T-shirt size', idCard: 'College ID card', institutionId: 'Institution', preferredDomains: 'Preferred domain',
+  gender: 'Gender', tshirtSize: 'T-shirt size', idCard: 'College ID card', institutionId: 'Institution', branch: 'Branch', preferredDomains: 'Preferred domain',
   domainId: 'Preferred domain', yearSemester: 'Year / Semester', degree: 'Degree',
   contributionAreas: 'Contribution areas', preferredTeamRole: 'Preferred team role',
   technicalSkills: 'Technical skills', nonTechnicalSkills: 'Non-technical skills',
@@ -236,7 +242,7 @@ const PROFILE_CHECKS = {
   resumeDriveLink: { valid: isDriveFileLink, message: 'Google Drive file' },
 };
 
-const validateRegistration = (f) => {
+const validateRegistration = (f, { needsBranch = false } = {}) => {
   const e = {};
   const name = f.fullName.trim();
   if (name.length < 2) e.fullName = 'Enter your full name (at least 2 characters).';
@@ -261,6 +267,7 @@ const validateRegistration = (f) => {
   if (f.preferredDomains.length !== 4) e.preferredDomains = 'Pick exactly 4 domains. Your first pick is your primary domain.';
   if (!YEAR_SEMESTER_OPTIONS.includes(f.yearSemester)) e.yearSemester = 'Select your year / semester.';
   if (!f.degree) e.degree = 'Select your degree.';
+  if (needsBranch && !BRANCH_OPTIONS.includes(f.branch)) e.branch = 'Select your branch.';
   if (!f.contributionAreas.length) e.contributionAreas = 'Pick at least one area you can contribute to.';
   if (!f.preferredTeamRole) e.preferredTeamRole = 'Select the role you’d like to play in a team.';
   if (f.technicalSkills.length > 500) e.technicalSkills = 'Keep technical skills under 500 characters.';
@@ -420,8 +427,9 @@ export const RegistrationPage = () => {
     // Registration numbers are shown in their canonical form as you type
     // (no spaces, upper-case) — the same form the server stores.
     const value = key === 'registrationNo' ? normalizeRegistrationNo(e.target.value) : e.target.value;
-    setForm((prev) => ({ ...prev, [key]: value }));
-    clearError(key);
+    // A new institution clears the branch (it is only asked of one institution).
+    setForm((prev) => ({ ...prev, [key]: value, ...(key === 'institutionId' && { branch: '' }) }));
+    clearError(key, ...(key === 'institutionId' ? ['branch'] : []));
   };
   const setList = (key) => (value) => {
     setForm((prev) => ({ ...prev, [key]: toggleListValue(prev[key], value) }));
@@ -438,6 +446,7 @@ export const RegistrationPage = () => {
   const normalizeUrlField = (key) => () => setForm((prev) => ({ ...prev, [key]: normalizeUrl(prev[key]) }));
 
   const { data: instData, loading: instLoading } = useApi(() => api.get('/api/taxonomy/institutions'), []);
+  const needsBranch = instData?.institutions?.find((i) => i.id === form.institutionId)?.name === BRANCH_INSTITUTION_NAME;
   const { data: domData, loading: domLoading } = useApi(() => api.get('/api/taxonomy/domains'), []);
   const { data: regStatus } = useApi(() => api.get('/api/registration/status'), [], { refetchOnFocus: false });
   const registrationClosed = regStatus?.open === false;
@@ -463,7 +472,7 @@ export const RegistrationPage = () => {
     for (const key of URL_FIELDS) normalized[key] = normalizeUrl(normalized[key]);
     setForm(normalized);
 
-    const clientErrors = validateRegistration(normalized);
+    const clientErrors = validateRegistration(normalized, { needsBranch });
     if (Object.keys(clientErrors).length) {
       reportErrors(clientErrors);
       return;
@@ -674,6 +683,20 @@ export const RegistrationPage = () => {
                 </select>
               </div>
             </FormField>
+
+            {needsBranch && (
+              <FormField field="branch" label={requiredLabel('Branch')} error={errors.branch}>
+                <div className="group relative">
+                  <School size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20 transition-colors group-focus-within:text-white" />
+                  <select className="select-glass !pl-14 h-12 border-white/10 bg-black transition-all focus:border-white" required value={form.branch} onChange={set('branch')}>
+                    <option value="">Select branch...</option>
+                    {BRANCH_OPTIONS.map((option) => (
+                      <option key={option} value={option}>{option}</option>
+                    ))}
+                  </select>
+                </div>
+              </FormField>
+            )}
           </div>
         </Section>
 

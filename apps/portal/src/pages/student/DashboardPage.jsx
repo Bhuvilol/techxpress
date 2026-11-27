@@ -44,6 +44,7 @@ const ProfileTab = ({ user, myTeam }) => {
         <Field icon={GraduationCap} label="Institution" value={user.institution?.name ?? '-'} />
         <Field icon={Layers} label="Preferred Domain" value={user.domain?.name ?? '-'} />
         <Field icon={GraduationCap} label="Degree" value={user.degree ?? '-'} />
+        {user.branch ? <Field icon={GraduationCap} label="Branch" value={user.branch} /> : null}
         <Field icon={BookOpen} label="Year / Semester" value={user.yearSemester ?? '-'} />
         <Field icon={Mail} label="Phone" value={user.phone ?? '-'} />
         {user.role === 'STUDENT' ? (
@@ -701,7 +702,7 @@ const ExploreTab = ({ user, myTeam }) => {
                 </button>
 
                 <div className="flex flex-wrap items-center gap-2 font-mono text-[11px] leading-relaxed text-text-secondary">
-                  <span>{[member.degree, member.yearSemester].filter(Boolean).join(' · ') || 'Profile'}</span>
+                  <span>{[member.degree, member.branch, member.yearSemester].filter(Boolean).join(' · ') || 'Profile'}</span>
                   {member.preferredTeamRole && (<><span>·</span><span>{member.preferredTeamRole}</span></>)}
                   {member.membership?.team && (
                     <>

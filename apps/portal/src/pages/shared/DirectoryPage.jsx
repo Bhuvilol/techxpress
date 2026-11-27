@@ -423,8 +423,8 @@ const StudentCard = ({ s, groupBy }) => {
         {s.preferredTeamRole && <Badge tone="dim">{s.preferredTeamRole}</Badge>}
       </div>
 
-      {(s.degree || s.yearSemester) && (
-        <div className="font-mono text-[11px] text-white/50">{[s.degree, s.yearSemester].filter(Boolean).join(' · ')}</div>
+      {(s.degree || s.branch || s.yearSemester) && (
+        <div className="font-mono text-[11px] text-white/50">{[s.degree, s.branch, s.yearSemester].filter(Boolean).join(' · ')}</div>
       )}
 
       {extraDomains.length > 0 && (

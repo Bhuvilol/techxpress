@@ -118,6 +118,7 @@ model User {
   preferredDomains   String[]           @default([])
   track              String?
   degree             String?
+  branch             String?            // ITER | SOA students only (see registration.schema.js)
   yearSemester       String?
   contributionAreas  String[]           @default([])
   preferredTeamRole  String?

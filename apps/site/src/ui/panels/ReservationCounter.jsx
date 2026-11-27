@@ -13,6 +13,8 @@ import { compressImage } from '../../utils/imageCompress';
 import { normalizeRegistrationNo } from '../../utils/registrationNo';
 import {
   YEAR_SEMESTER_OPTIONS,
+  BRANCH_INSTITUTION_NAME,
+  BRANCH_OPTIONS,
   FIELD_LABELS,
   INITIAL_FORM,
   FIELD_ORDER,
@@ -342,9 +344,12 @@ export default function ReservationCounter({ titleId, onOpen, onDirtyChange }) {
   const setField = (key) => (e) => {
     const raw = e.target.value;
     const value = key === 'registrationNo' ? normalizeRegistrationNo(raw) : raw;
-    setForm((prev) => ({ ...prev, [key]: value }));
-    clearError(key);
+    // A new institution clears the branch (it is only asked of one institution).
+    setForm((prev) => ({ ...prev, [key]: value, ...(key === 'institutionId' && { branch: '' }) }));
+    clearError(key, ...(key === 'institutionId' ? ['branch'] : []));
   };
+
+  const needsBranch = institutions.find((i) => i.id === form.institutionId)?.name === BRANCH_INSTITUTION_NAME;
 
   const toggleContribution = (area) => {
     setForm((prev) => {
@@ -388,7 +393,7 @@ export default function ReservationCounter({ titleId, onOpen, onDirtyChange }) {
     for (const key of URL_FIELDS) normalized[key] = normalizeUrl(normalized[key]);
     setForm(normalized);
 
-    const clientErrors = validateRegistration(normalized);
+    const clientErrors = validateRegistration(normalized, { needsBranch });
     if (Object.keys(clientErrors).length) {
       reportErrors(clientErrors);
       return;
@@ -674,6 +679,19 @@ export default function ReservationCounter({ titleId, onOpen, onDirtyChange }) {
                     ))}
                   </select>
                 </FieldWrap>
+
+                {needsBranch && (
+                  <FieldWrap field="branch" label="BRANCH" required error={errors.branch}>
+                    <select value={form.branch} onChange={setField('branch')} disabled={busy}>
+                      <option value="">Select branch...</option>
+                      {BRANCH_OPTIONS.map((opt) => (
+                        <option key={opt} value={opt}>
+                          {opt}
+                        </option>
+                      ))}
+                    </select>
+                  </FieldWrap>
+                )}
 
                 <FieldWrap
                   field="yearSemester"

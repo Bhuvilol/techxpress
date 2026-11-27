@@ -8,6 +8,7 @@ import { normalizeRegistrationNo } from '../utils/registrationNo.js';
 import { registryMismatches } from '../utils/registryMismatch.js';
 import { generatePublicId, USER_PUBLIC_PREFIX } from '../utils/publicId.js';
 import { OPEN_DOMAIN } from './taxonomy.service.js';
+import { BRANCH_INSTITUTION_NAME } from '../validators/registration.schema.js';
 
 // Sole owner of User table writes related to the verification lifecycle.
 // Controllers must NOT touch prisma.user directly for these flows.
@@ -39,6 +40,7 @@ const PUBLIC_USER_FIELDS = {
   isDomainExpert: true,
   track: true,
   degree: true,
+  branch: true,
   yearSemester: true,
   contributionAreas: true,
   preferredTeamRole: true,
@@ -132,10 +134,16 @@ export const userService = {
     // unknown preferred domain would be stored with no check at all.
     const domainIds = [...new Set([data.domainId, ...(data.preferredDomains ?? [])].filter(Boolean))];
     const [institution, domainCount] = await Promise.all([
-      prisma.institution.findUnique({ where: { id: data.institutionId }, select: { id: true } }),
+      prisma.institution.findUnique({ where: { id: data.institutionId }, select: { id: true, name: true } }),
       prisma.domain.count({ where: { id: { in: domainIds }, ...OPEN_DOMAIN } }),
     ]);
     if (!institution) throw BadRequest('Select your institution from the list.');
+    // Branch belongs to one institution only: required there, dropped elsewhere.
+    if (institution.name === BRANCH_INSTITUTION_NAME) {
+      if (!data.branch) throw BadRequest('Select your branch.');
+    } else {
+      delete data.branch;
+    }
     if (domainCount !== domainIds.length) {
       throw BadRequest('Pick your domains from the list.');
     }
@@ -406,6 +414,15 @@ export const userService = {
 
   async updateTshirtSize(userId, tshirtSize) {
     const user = await prisma.user.update({ where: { id: userId }, data: { tshirtSize }, select: PUBLIC_USER_FIELDS });
+    return attachPreferredDomainDetails(user);
+  },
+
+  async updateBranch(userId, branch) {
+    const current = await prisma.user.findUnique({ where: { id: userId }, select: { institution: { select: { name: true } } } });
+    if (current?.institution?.name !== BRANCH_INSTITUTION_NAME) {
+      throw BadRequest(`Branch is only asked of ${BRANCH_INSTITUTION_NAME} students.`);
+    }
+    const user = await prisma.user.update({ where: { id: userId }, data: { branch }, select: PUBLIC_USER_FIELDS });
     return attachPreferredDomainDetails(user);
   },
 

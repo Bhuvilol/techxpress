@@ -51,6 +51,7 @@ const EXPLORE_MEMBER_FIELDS = {
   isDomainExpert: true,
   track: true,
   degree: true,
+  branch: true,
   yearSemester: true,
   contributionAreas: true,
   preferredTeamRole: true,

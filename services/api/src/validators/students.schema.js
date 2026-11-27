@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { domainPicks, TSHIRT_SIZES } from './registration.schema.js';
+import { branchField, domainPicks, TSHIRT_SIZES } from './registration.schema.js';
 
 export const directoryQuerySchema = z.object({
   page: z.coerce.number().int().min(1).optional(),
@@ -19,3 +19,6 @@ export const updateDomainsSchema = z.object({ preferredDomains: domainPicks });
 export const updateTshirtSizeSchema = z.object({
   tshirtSize: z.enum(TSHIRT_SIZES, { errorMap: () => ({ message: 'Select your T-shirt size.' }) }),
 });
+
+// PATCH /api/students/me/branch (ITER | SOA students only)
+export const updateBranchSchema = z.object({ branch: branchField });

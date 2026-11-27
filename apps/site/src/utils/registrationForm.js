@@ -4,6 +4,11 @@
 // Kept in step with TSHIRT_SIZES in services/api/src/validators/registration.schema.js.
 export const TSHIRT_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'];
 
+// Branch is asked only of this institution's students. Kept in step with
+// BRANCH_INSTITUTION_NAME / BRANCH_OPTIONS in the server validator.
+export const BRANCH_INSTITUTION_NAME = 'ITER | SOA';
+export const BRANCH_OPTIONS = ['CSE Core', 'CSE AIML', 'CSE CS', 'CSE DS', 'EE', 'ECE', 'EEE', 'Mech'];
+
 export const INITIAL_FORM = {
   fullName: '',
   email: '',
@@ -17,6 +22,7 @@ export const INITIAL_FORM = {
   domainId: '',
   yearSemester: '',
   degree: '',
+  branch: '',
   contributionAreas: [],
   preferredTeamRole: '',
   technicalSkills: '',
@@ -72,6 +78,7 @@ export const FIELD_ORDER = [
   'domainId',
   'yearSemester',
   'degree',
+  'branch',
   'contributionAreas',
   'preferredTeamRole',
   'technicalSkills',
@@ -101,6 +108,7 @@ export const FIELD_LABELS = {
   domainId: 'Preferred Domain',
   yearSemester: 'Year / Semester',
   degree: 'Degree',
+  branch: 'Branch',
   contributionAreas: 'Contribution Areas',
   preferredTeamRole: 'Preferred Team Role',
   technicalSkills: 'Technical Skills',
@@ -169,7 +177,8 @@ const PROFILE_CHECKS = {
   resumeDriveLink: { valid: isDriveFileLink, message: 'Google Drive file' },
 };
 
-export const validateRegistration = (f) => {
+// needsBranch: the picked institution is BRANCH_INSTITUTION_NAME.
+export const validateRegistration = (f, { needsBranch = false } = {}) => {
   const e = {};
   const name = f.fullName.trim();
   if (name.length < 2) e.fullName = 'Enter your full name (at least 2 characters).';
@@ -194,6 +203,7 @@ export const validateRegistration = (f) => {
   if (f.preferredDomains.length !== 4) e.preferredDomains = 'Pick exactly 4 domains. Your first pick is primary.';
   if (!YEAR_SEMESTER_OPTIONS.includes(f.yearSemester)) e.yearSemester = 'Select your year / semester.';
   if (!f.degree) e.degree = 'Select your degree.';
+  if (needsBranch && !BRANCH_OPTIONS.includes(f.branch)) e.branch = 'Select your branch.';
   if (!f.contributionAreas.length) e.contributionAreas = 'Pick at least one area you can contribute to.';
   else if (f.contributionAreas.length > 12) e.contributionAreas = 'Pick at most 12 contribution areas.';
   if (!f.preferredTeamRole) e.preferredTeamRole = 'Select the role you would like to play in a team.';

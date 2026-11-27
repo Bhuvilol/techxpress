@@ -246,3 +246,14 @@ describe('hasFormData', () => {
     expect(hasFormData({ ...INITIAL_FORM, contributionAreas: ['Problem Solving'] })).toBe(true);
   });
 });
+
+describe('branch (ITER | SOA only)', () => {
+  it('is required only when the institution needs it', async () => {
+    const { validateRegistration, INITIAL_FORM } = await import('./registrationForm.js');
+    const f = { ...INITIAL_FORM, bio: '' };
+    expect(validateRegistration(f).branch).toBeUndefined();
+    expect(validateRegistration(f, { needsBranch: true }).branch).toBe('Select your branch.');
+    expect(validateRegistration({ ...f, branch: 'EEE' }, { needsBranch: true }).branch).toBeUndefined();
+    expect(validateRegistration({ ...f, branch: 'Civil' }, { needsBranch: true }).branch).toBe('Select your branch.');
+  });
+});

@@ -11,6 +11,7 @@ const DIRECTORY_FIELDS = {
   id: true,
   fullName: true,
   degree: true,
+  branch: true,
   yearSemester: true,
   preferredTeamRole: true,
   contributionAreas: true,

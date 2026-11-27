@@ -114,6 +114,7 @@ export const IdCardModal = ({ student, basePath, onClose, onApprove, onReject, o
             ['Name', student.fullName],
             ['Registration no.', student.registrationNo],
             ['Institution', student.institution?.name],
+            ...(student.branch ? [['Branch', student.branch]] : []),
             ['Email', student.email],
           ].map(([label, value]) => (
             <div key={label}>
