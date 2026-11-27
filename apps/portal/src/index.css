@@ -466,3 +466,22 @@ body::before {
 @media (prefers-reduced-motion: reduce) {
   .route-enter { animation: none; }
 }
+
+/* The station's slide into VORTEX ends here: the page slides in the last
+   stretch from the right. Going back, it slides away to the right. */
+.vortex-slide-in #root {
+  animation: vortex-slide-in 520ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+@keyframes vortex-slide-in {
+  from { transform: translateX(8vw); opacity: 0; }
+}
+.vortex-slide-out #root {
+  animation: vortex-slide-out 380ms cubic-bezier(0.65, 0, 0.35, 1) forwards;
+}
+@keyframes vortex-slide-out {
+  to { transform: translateX(40vw); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .vortex-slide-in #root,
+  .vortex-slide-out #root { animation: none; }
+}

@@ -22,9 +22,21 @@ const NavItem = ({ to, children, onClick }) => (
 );
 
 // Back to the TechXpress train site (station experience at domain root)
+// A plain click slides the portal away to the right first (the station then
+// slides in from the left); modified clicks behave normally.
+const goToStation = (event) => {
+  if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  event.preventDefault();
+  try { sessionStorage.setItem('txp:slide', 'back'); } catch { /* private mode */ }
+  document.documentElement.classList.add('vortex-slide-out');
+  setTimeout(() => window.location.assign('/'), 380);
+};
+
 const TechXpressLink = () => (
   <a
     href="/"
+    onClick={goToStation}
     className={cn(
       'inline-flex items-center gap-1.5 rounded-[3px] px-3 py-1 font-cond text-[14px] font-bold uppercase tracking-[0.08em]',
       'border border-txp-yellow/30 bg-txp-yellow/10 text-txp-yellow hover:bg-txp-yellow hover:text-txp-ink transition-all duration-160',

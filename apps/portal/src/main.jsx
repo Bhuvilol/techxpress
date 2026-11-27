@@ -6,6 +6,16 @@ import '@fontsource/barlow-condensed/700.css';
 import '@fontsource/barlow-condensed/800.css';
 import '@fontsource/noto-sans-devanagari/700.css';
 import { App } from './App.jsx';
+
+// Arriving from the station's slide: finish it (the page slides in the last
+// few centimetres). Read once, then cleared.
+try {
+  if (sessionStorage.getItem('txp:slide') === 'in') {
+    sessionStorage.removeItem('txp:slide');
+    document.documentElement.classList.add('vortex-slide-in');
+    setTimeout(() => document.documentElement.classList.remove('vortex-slide-in'), 700);
+  }
+} catch { /* private mode */ }
 import { AuthProvider } from './contexts/AuthContext.jsx';
 import { ToastProvider } from './contexts/ToastContext.jsx';
 import { BroadcastProvider } from './contexts/BroadcastContext.jsx';
