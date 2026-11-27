@@ -1789,7 +1789,9 @@ section > .tt-day:first-child { margin-top: 0; }
     gap: 8px;
     align-items: stretch;
   }
-  .book-ticket {
+  .book-ticket,
+  .book-ticket--login,
+  .book-ticket--register {
     width: 100%;
     transform: none;
   }
@@ -1802,12 +1804,13 @@ section > .tt-day:first-child { margin-top: 0; }
 
 @media (max-width: 680px) and (min-aspect-ratio: 1/1) {
   .book-tickets-wrap {
-    flex-direction: column;
     gap: 8px;
     right: 16px;
     bottom: calc(16px + var(--txp-safe-b));
   }
-  .book-ticket {
+  .book-ticket,
+  .book-ticket--login,
+  .book-ticket--register {
     transform: none;
   }
 }
