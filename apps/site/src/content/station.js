@@ -134,11 +134,13 @@ export const TIMETABLE = {
         { time: '11:00', title: 'Project exhibition', venue: 'CL 3rd floor', who: 'All students', detail: 'Showcase of projects, open to all students', key: true },
         { time: '13:00', title: 'Lunch', venue: 'Glass House, TP Cell', who: 'Invited', detail: 'Guest lunch and networking' },
         { time: '14:30', title: 'Felicitation ceremony', venue: 'BGA A', who: 'Invited', detail: 'Honouring SOA TechXpress and Abinya 3.1 achievers', key: true },
-        { time: '16:30', title: 'Cultural night', venue: 'BGA A', who: 'Invited', detail: 'Evening performances close the journey',
+        {
+          time: '16:30', title: 'Cultural night', venue: 'BGA A', who: 'Invited', detail: 'Evening performances close the journey',
           acts: [
             { time: '16:30–17:00', name: 'Danza' },
             { time: '17:00–17:30', name: 'SMC' },
-          ] },
+          ]
+        },
       ],
     },
   ],
@@ -161,8 +163,8 @@ export const FARES = {
 export const FAQ = [
   { q: 'Who can register?', a: 'Any SOA student. Register on this site with your college ID card.' },
   { q: 'Is there a fee?', a: 'No, registration is free.' }, // ⚠ CONFIRM
-  { q: 'How big is a team?', a: '3 to 5 members, with at least one girl in every team.' }, // ⚠ CONFIRM
-  { q: 'Can I register without a team?', a: 'Yes. Register on your own first, then form or join a team in the VORTEX portal.' },
+  { q: 'How big is a team?', a: ' 5 Members mandatory per team, with atleast one female member' }, // ⚠ CONFIRM
+  { q: 'Can I register without a team?', a: 'You need to register individually and later join the team in the VORTEX portal' },
   { q: 'What happens after I register?', a: 'Your college coordinator checks your details and ID card. Once you are approved, your login code arrives by email from team@soatechxpress.in.' },
   { q: "I haven't received my email.", a: 'Check your spam folder, then check your PNR status here. If it says CONFIRMED but no email arrived, write to the organisers.' },
   { q: 'Where is the hackathon?', a: 'ITER campus, SOA, Bhubaneswar: BGA A and the CL 3rd floor.' }, // ⚠ CONFIRM
