@@ -22,6 +22,8 @@ import { Modal } from '../../components/ui/Modal.jsx';
 import { formatRelative, titleCase } from '../../utils/format.js';
 import { DomainPicker, DOMAINS_SAVED_EVENT } from '../../components/student/DomainPicker.jsx';
 import { TshirtSizePicker } from '../../components/student/TshirtSizePicker.jsx';
+import logoUrl from '../../assets/logo.webp';
+import trainUrl from '../../assets/train-a.webp';
 
 const ROLE_TONE = { ADMIN: 'crit', JURY: 'cyan', COORDINATOR: 'warn', STUDENT: 'live' };
 const EXPLORE_CARD_CLASS = 'glass-card flat min-h-[188px] rounded-none px-5 py-6 transition duration-200 ease-out hover:border-white hover:bg-white/[0.04]';
@@ -31,15 +33,34 @@ const ProfileTab = ({ user, myTeam }) => {
   const [editDomains, setEditDomains] = useState(false);
   return (
   <div className="grid gap-6 md:grid-cols-3">
-    <section className="glass-card flat md:col-span-2">
-      <div className="mb-6 flex items-center gap-3">
-        <User size={18} className="text-white" />
-        <h2 className="font-sans text-[14px] font-black uppercase tracking-[0.2em] text-white">Profile Identity</h2>
+    <section className="glass-card flat md:col-span-2 border-border-mid bg-bg-surface-1 shadow-[0_4px_24px_rgba(0,0,0,0.4)] relative overflow-hidden">
+      {/* Decorative Train Watermark */}
+      <img
+        src={trainUrl}
+        alt=""
+        className="pointer-events-none absolute -bottom-12 -right-12 w-80 opacity-[0.035] select-none anim-train-idle"
+      />
+
+      <div className="relative z-10 mb-6 flex flex-wrap items-center justify-between gap-4 border-b border-border-mid pb-5">
+        <div className="flex items-center gap-3">
+          <div className="flex h-11 w-11 items-center justify-center rounded-[3px] border border-txp-yellow bg-txp-yellow/10 p-1.5 shadow-[0_2px_8px_rgba(245,184,0,0.2)] anim-train-idle">
+            <img src={logoUrl} alt="12026 Locomotive" className="h-full w-full object-contain" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="font-deva text-[12px] font-bold text-txp-yellow">यात्री टिकट // PLATFORM 1</span>
+            </div>
+            <h2 className="font-cond text-[24px] font-black uppercase tracking-[0.05em] text-text-primary leading-tight">Passenger Requisition Ticket</h2>
+            <div className="font-mono text-[10px] uppercase tracking-widest text-text-dim">SOA TechXpress Express · 12026</div>
+          </div>
+        </div>
+        <div className="rounded-[3px] border border-txp-yellow/50 bg-txp-yellow/10 px-3.5 py-1.5 font-mono text-[12px] font-bold text-txp-yellow tracking-wider shadow-[0_0_12px_-2px_rgba(245,184,0,0.3)]">
+          PNR / REF: {user.publicId ?? 'NOT ISSUED'}
+        </div>
       </div>
-      <dl className="grid grid-cols-1 gap-y-3 sm:grid-cols-2">
+      <dl className="relative z-10 grid grid-cols-1 gap-y-4 sm:grid-cols-2">
         <Field icon={User} label="Name" value={user.fullName} />
         <Field icon={Mail} label="Email" value={user.email} />
-        <Field icon={IdCard} label="Passenger ref" value={user.publicId ?? '-'} />
         <Field icon={IdCard} label="Registration #" value={user.registrationNo ?? '-'} />
         <Field icon={GraduationCap} label="Institution" value={user.institution?.name ?? '-'} />
         <Field icon={Layers} label="Preferred Domain" value={user.domain?.name ?? '-'} />
@@ -49,7 +70,7 @@ const ProfileTab = ({ user, myTeam }) => {
         <Field icon={Mail} label="Phone" value={user.phone ?? '-'} />
         {user.role === 'STUDENT' ? (
           <div className="space-y-1">
-            <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.3em] text-white/30"><Shirt size={12} /> T-shirt size</div>
+            <div className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.16em] text-text-dim"><Shirt size={12} className="text-txp-yellow" /> T-shirt size</div>
             <TshirtSizePicker key={user.tshirtSize ?? ''} current={user.tshirtSize ?? ''} compact />
           </div>
         ) : (
@@ -61,16 +82,16 @@ const ProfileTab = ({ user, myTeam }) => {
 
       <ProfileCopySection title="Bio" value={user.bio} />
       {user.role === 'STUDENT' || user.preferredDomainDetails?.length ? (
-        <div className="mt-8 border-t border-white/5 pt-6">
+        <div className="mt-8 border-t border-border-dim pt-6">
           <div className="mb-3 flex items-center justify-between gap-3">
-            <div className="font-mono text-[10px] uppercase tracking-[0.3em] text-white/30">Preferred domains</div>
+            <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-text-dim">Preferred Domains</div>
             {user.role === 'STUDENT' && (
-              <button type="button" className="ghost-button" onClick={() => setEditDomains(true)}>Edit domains</button>
+              <button type="button" className="ghost-button !py-1 !px-2.5 font-cond text-[13px] font-bold uppercase" onClick={() => setEditDomains(true)}>Edit domains</button>
             )}
           </div>
           <div className="flex flex-wrap gap-1.5">
             {user.preferredDomainDetails?.length
-              ? user.preferredDomainDetails.map((domain) => <Badge key={domain.id} tone="dim">{domain.name}</Badge>)
+              ? user.preferredDomainDetails.map((domain) => <Badge key={domain.id} tone="teal">{domain.name}</Badge>)
               : <span className="font-mono text-[12px] text-status-warn">No domains chosen yet.</span>}
           </div>
           <DomainPicker
@@ -91,41 +112,41 @@ const ProfileTab = ({ user, myTeam }) => {
       <ProfileLinks user={user} />
     </section>
 
-    <aside className="glass-card flat space-y-6">
+    <aside className="glass-card flat space-y-6 border-border-mid bg-bg-surface-1 shadow-[0_4px_24px_rgba(0,0,0,0.4)]">
       <div className="flex items-center gap-4">
-        <div className="grid h-14 w-14 place-items-center rounded-none border border-white/10 bg-black font-sans text-[18px] font-black text-white">
+        <div className="grid h-14 w-14 place-items-center rounded-[3px] border-2 border-txp-yellow/40 bg-bg-surface-3 font-cond text-[22px] font-black text-txp-yellow shadow-[0_0_12px_-2px_rgba(245,184,0,0.25)]">
           {(user.fullName ?? '?').slice(0, 2).toUpperCase()}
         </div>
         <div>
-          <div className="font-sans text-[15px] font-black text-white uppercase">{user.fullName}</div>
-          <Badge tone={ROLE_TONE[user.role]}>{user.role}</Badge>
+          <div className="font-cond text-[18px] font-black text-text-primary uppercase tracking-tight">{user.fullName}</div>
+          <Badge tone={ROLE_TONE[user.role] ?? 'dim'}>{user.role}</Badge>
         </div>
       </div>
 
-      <div className="border-t border-white/5 pt-4">
-        <div className="font-mono text-[10px] uppercase tracking-[0.3em] text-white/30 mb-3">Status</div>
-        <Badge tone={user.verificationStatus === 'VERIFIED' ? 'live' : 'warn'}>
+      <div className="border-t border-border-dim pt-4">
+        <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-text-dim mb-2.5">Verification Status</div>
+        <Badge tone={user.verificationStatus === 'VERIFIED' ? 'live' : 'warn'} dot>
           {titleCase(user.verificationStatus)}
         </Badge>
       </div>
 
       {user.role === 'STUDENT' && (
-        <div className="border-t border-white/5 pt-4">
-          <div className="font-mono text-[10px] uppercase tracking-[0.3em] text-white/30 mb-3">Team</div>
+        <div className="border-t border-border-dim pt-4">
+          <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-text-dim mb-2.5">Squad / Berth</div>
           {myTeam ? (
             <div className="space-y-1">
-              <div className="font-sans text-[14px] font-bold text-white">{myTeam.name}</div>
-              <div className="font-mono text-[11px] text-white/50">{myTeam.domain?.name ?? 'No domain'}</div>
+              <div className="font-cond text-[18px] font-black uppercase text-txp-yellow">{myTeam.name}</div>
+              <div className="font-mono text-[11px] text-text-secondary">{myTeam.domain?.name ?? 'No domain selected'}</div>
             </div>
           ) : (
-            <span className="font-mono text-[12px] text-white/40">Not in a team</span>
+            <span className="font-mono text-[12px] text-text-dim">Seeking berth (unassigned)</span>
           )}
         </div>
       )}
 
-      <div className="space-y-2 border-t border-white/10 pt-3">
-        <Link to="/teams" className="glow-button inline-flex w-full items-center justify-center gap-2">
-          Team Hub <ArrowRight size={14} />
+      <div className="space-y-2 border-t border-border-dim pt-4">
+        <Link to="/teams" className="glow-button inline-flex w-full items-center justify-center gap-2 !py-2.5">
+          <span>Manage Squad</span> <ArrowRight size={15} />
         </Link>
       </div>
     </aside>
@@ -135,10 +156,10 @@ const ProfileTab = ({ user, myTeam }) => {
 
 const Field = ({ icon: Icon, label, value }) => (
   <div className="space-y-1">
-    <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.3em] text-white/30">
-      <Icon size={12} /> {label}
+    <div className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.16em] text-text-dim">
+      <Icon size={12} className="text-txp-yellow" /> {label}
     </div>
-    <div className="font-mono text-[13px] font-bold text-white/80">{value}</div>
+    <div className="font-sans text-[14px] font-bold text-text-primary">{value}</div>
   </div>
 );
 
@@ -889,9 +910,9 @@ export const DashboardPage = () => {
   return (
     <section className="mx-auto max-w-6xl px-4 sm:px-6 py-8 sm:py-12">
       <PageHeader
-        kicker={`Session Active: ${u.fullName.split(' ')[0]}`}
-        title="Mission Dashboard"
-        description="Your profile, team status, inbox and live signals."
+        kicker={`Passenger Console: ${u.fullName.split(' ')[0]} // यात्री डैशबोर्ड`}
+        title="Passenger Dashboard"
+        description="Your passenger requisition profile, squad berth reservation, invites, and live signals."
         actions={
           u.role === 'STUDENT'
             ? <Link to="/teams" className="glow-button inline-flex items-center gap-2 px-6"><Users size={14} /> <span>Team Hub</span></Link>

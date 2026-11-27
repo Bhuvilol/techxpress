@@ -152,9 +152,9 @@ export const DirectoryPage = () => {
   return (
     <section className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-12">
       <PageHeader
-        kicker="Participants"
-        title="Verified students"
-        description="Everyone cleared to take part, grouped by college or domain. Find teammates here, then invite them or request to join from the Teams page."
+        kicker="Passenger Directory // यात्री सूची"
+        title="Verified Passengers"
+        description="All candidates cleared for boarding across SOA campuses. Discover skills, academic branches, domains, and squad status."
       />
 
       {loading && !data && <CardSkeleton rows={4} />}
@@ -171,17 +171,17 @@ export const DirectoryPage = () => {
           </div>
 
           {/* Toolbar */}
-          <div className="mb-8 grid gap-3 border border-white/5 bg-[#050505] p-4 lg:grid-cols-[1fr_auto_auto_auto] lg:items-center">
+          <div className="mb-8 grid gap-3 rounded-[4px] border border-border-mid bg-bg-surface-1 p-4 shadow-[0_4px_20px_rgba(0,0,0,0.3)] lg:grid-cols-[1fr_auto_auto_auto] lg:items-center">
             <div className="relative">
-              <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-white/30" />
+              <Search size={16} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-text-dim" />
               <input
-                className="input-glass !pl-10"
+                className="input-glass !pl-10 h-11"
                 placeholder="Search name, role, skills, college, domain…"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
             </div>
-            <select className="select-glass lg:!w-56" value={domainId} onChange={handleDomainChange}>
+            <select className="select-glass lg:!w-56 h-11" value={domainId} onChange={handleDomainChange}>
               <option value="">All domains</option>
               {domainOptions.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
             </select>
@@ -373,8 +373,10 @@ const Chip = ({ active, onClick, label }) => (
     type="button"
     onClick={onClick}
     className={cn(
-      'inline-flex items-center gap-2 rounded-full border px-3.5 py-2 font-mono text-[11px] transition-all',
-      active ? 'border-white bg-white text-black' : 'border-white/12 bg-white/[0.03] text-white/75 hover:border-white/30',
+      'inline-flex items-center gap-2 rounded-[3px] border px-3.5 py-1.5 font-cond text-[14px] font-bold uppercase tracking-wider transition-all duration-160',
+      active
+        ? 'border-txp-ink bg-txp-yellow text-txp-ink shadow-[0_2px_0_#000]'
+        : 'border-border-mid bg-bg-surface-2 text-text-secondary hover:border-txp-yellow/40 hover:text-text-primary',
     )}
   >
     <span>{label}</span>
@@ -382,18 +384,18 @@ const Chip = ({ active, onClick, label }) => (
 );
 
 const Segmented = ({ items, value, onChange }) => (
-  <div className="flex border border-white/10">
+  <div className="flex rounded-[3px] border border-border-mid bg-bg-surface-2 overflow-hidden">
     {items.map((it) => (
       <button
         key={it.value}
         type="button"
         onClick={() => onChange(it.value)}
         className={cn(
-          'inline-flex flex-1 items-center justify-center gap-1.5 whitespace-nowrap px-3 py-2.5 font-mono text-[11px] transition-colors',
-          value === it.value ? 'bg-white text-black' : 'text-white/60 hover:bg-white/5 hover:text-white',
+          'inline-flex flex-1 items-center justify-center gap-1.5 whitespace-nowrap px-3.5 py-2 font-cond text-[13px] font-bold uppercase tracking-wider transition-colors',
+          value === it.value ? 'bg-txp-yellow text-txp-ink' : 'text-text-secondary hover:bg-white/5 hover:text-text-primary',
         )}
       >
-        {it.icon && <it.icon size={12} />}
+        {it.icon && <it.icon size={13} />}
         {it.label}
       </button>
     ))}
@@ -404,40 +406,42 @@ const StudentCard = ({ s, groupBy }) => {
   const secondary = groupBy === 'institution' ? s.domain?.name : s.institution?.name;
   const extraDomains = (s.preferredDomains ?? []).filter((d) => d.id !== s.domain?.id);
   return (
-    <article className="flex flex-col gap-3 border border-white/10 bg-white/[0.02] p-4 transition-colors hover:border-white/30">
-      <div className="flex items-start gap-3">
-        <div className="grid h-10 w-10 shrink-0 place-items-center border border-white/10 bg-black font-sans text-[13px] font-black text-white">
-          {initials(s.fullName)}
+    <article className="flex flex-col justify-between gap-3.5 rounded-[4px] border border-border-mid bg-bg-surface-1 p-5 transition-all hover:border-txp-yellow/50 hover:bg-bg-surface-2 shadow-[0_4px_16px_rgba(0,0,0,0.3)]">
+      <div className="space-y-3">
+        <div className="flex items-start gap-3">
+          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-[3px] border border-border-mid bg-bg-surface-3 font-cond text-[16px] font-black text-txp-yellow">
+            {initials(s.fullName)}
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="truncate font-cond text-[18px] font-black uppercase text-text-primary tracking-tight">{s.fullName}</div>
+            <div className="truncate font-mono text-[11px] text-txp-teal">{secondary ?? '—'}</div>
+          </div>
+          {s.isDomainExpert && <Badge tone="yellow"><Award size={10} /> Expert</Badge>}
         </div>
-        <div className="min-w-0 flex-1">
-          <div className="truncate font-sans text-[14px] font-bold text-white">{s.fullName}</div>
-          <div className="truncate font-mono text-[11px] text-white/45">{secondary ?? '—'}</div>
+
+        <div className="flex flex-wrap gap-1.5">
+          {s.team
+            ? <Badge tone="dim">Berth: {s.team.name}</Badge>
+            : <Badge tone="warn" dot>Looking for squad</Badge>}
+          {s.preferredTeamRole && <Badge tone="teal">{s.preferredTeamRole}</Badge>}
         </div>
-        {s.isDomainExpert && <Badge tone="cyan"><Award size={10} /> Expert</Badge>}
+
+        {(s.degree || s.branch || s.yearSemester) && (
+          <div className="font-mono text-[11px] text-text-secondary font-medium">{[s.degree, s.branch, s.yearSemester].filter(Boolean).join(' · ')}</div>
+        )}
+
+        {extraDomains.length > 0 && (
+          <div className="flex flex-wrap gap-1">
+            {extraDomains.slice(0, 3).map((d) => (
+              <span key={d.id} className="rounded-[2px] border border-border-dim bg-bg-surface-2 px-2 py-0.5 font-mono text-[10px] text-text-dim">{d.name}</span>
+            ))}
+            {extraDomains.length > 3 && <span className="px-1 font-mono text-[10px] text-text-dim">+{extraDomains.length - 3}</span>}
+          </div>
+        )}
       </div>
-
-      <div className="flex flex-wrap gap-1.5">
-        {s.team
-          ? <Badge tone="dim">In team · {s.team.name}</Badge>
-          : <Badge tone="warn" dot>Looking for team</Badge>}
-        {s.preferredTeamRole && <Badge tone="dim">{s.preferredTeamRole}</Badge>}
-      </div>
-
-      {(s.degree || s.branch || s.yearSemester) && (
-        <div className="font-mono text-[11px] text-white/50">{[s.degree, s.branch, s.yearSemester].filter(Boolean).join(' · ')}</div>
-      )}
-
-      {extraDomains.length > 0 && (
-        <div className="flex flex-wrap gap-1">
-          {extraDomains.slice(0, 3).map((d) => (
-            <span key={d.id} className="rounded-full border border-white/10 px-2 py-0.5 font-mono text-[10px] text-white/55">{d.name}</span>
-          ))}
-          {extraDomains.length > 3 && <span className="px-1 font-mono text-[10px] text-white/40">+{extraDomains.length - 3}</span>}
-        </div>
-      )}
 
       {s.technicalSkills && (
-        <p className="line-clamp-2 font-mono text-[11px] leading-relaxed text-white/45">{s.technicalSkills}</p>
+        <p className="line-clamp-2 border-t border-border-dim/60 pt-2 font-mono text-[11px] leading-relaxed text-text-dim">{s.technicalSkills}</p>
       )}
     </article>
   );

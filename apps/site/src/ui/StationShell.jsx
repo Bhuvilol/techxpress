@@ -1,4 +1,5 @@
 import { Suspense, lazy, useCallback, useEffect, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import Station from '../scene/Station.jsx';
 import { BOOT_MIN_MS, INTRO_TOTAL_MS } from '../scene/stage.js';
 import { LED, UI } from '../content/station.js';
@@ -98,7 +99,7 @@ export default function StationShell() {
 
   return (
     <div className={`txp-shell${introDone ? ' is-ready' : ''}${panelOpen ? ' has-panel' : ''}`}>
-      <div className="txp-stage" inert={panelOpen}>
+      <div className="txp-stage" inert={panelOpen ? '' : undefined}>
         <Station onHotspot={(name) => openPanel(name)} dimmed={panelOpen} onIntroDone={onIntroDone} />
       </div>
 

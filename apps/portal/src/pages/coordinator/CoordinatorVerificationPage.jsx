@@ -73,11 +73,11 @@ export const CoordinatorVerificationPage = () => {
   return (
     <>
       <PageHeader
-        kicker="Campus Verification"
-        title="Institution Review Console"
+        kicker={`Campus Desk // सत्यापन केंद्र · ${institutionName}`}
+        title="Candidate Review Console"
         description={scoped
-          ? `Approve or reject student registrations for ${institutionName}. The verified tab lists only approved students from the same institution.`
-          : 'Approve or reject student registrations from every institution. The verified tab lists all approved students.'}
+          ? `Review and verify student registrations from ${institutionName}. Approved candidates receive login codes immediately.`
+          : 'Review and verify student registrations across all campuses. Approved candidates receive login codes immediately.'}
         actions={(
           <div className="min-w-[250px] rounded-none border border-white/10 bg-[#050505] px-4 py-3">
             <label htmlFor="scope-institution" className="font-mono text-[10px] uppercase tracking-[0.2em] text-white/30">
@@ -119,9 +119,9 @@ export const CoordinatorVerificationPage = () => {
       </div>
 
       <div className="relative mb-4 w-full">
-        <Search size={16} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-white/20" />
+        <Search size={16} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-text-dim" />
         <input
-          className="input-glass !h-14 !bg-[#050505] !pl-12 border-white/10 focus:border-white/40"
+          className="input-glass !h-12 !pl-12"
           placeholder="Search name / email / reg #"
           value={search}
           onChange={(e) => setSearch(e.target.value)}

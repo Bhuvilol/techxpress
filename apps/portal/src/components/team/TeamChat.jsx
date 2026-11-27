@@ -147,14 +147,14 @@ export const TeamChat = ({ teamId }) => {
   };
 
   return (
-    <section className="border border-white/10 bg-white/[0.02]">
-      <header className="flex items-center justify-between border-b border-white/10 px-4 py-3">
+    <section className="glass-card flat flex flex-col p-0 border-border-mid bg-bg-surface-1 shadow-[0_4px_24px_rgba(0,0,0,0.4)]">
+      <header className="flex items-center justify-between border-b border-border-mid bg-bg-surface-2 px-5 py-3.5">
         <div className="flex items-center gap-2">
-          <MessageSquare size={14} className="text-white/40" />
-          <h3 className="section-label !text-white/70">Team chat</h3>
+          <MessageSquare size={16} className="text-txp-yellow" />
+          <h3 className="font-cond text-[16px] font-black uppercase tracking-wider text-text-primary">Squad Berth Comms // आंतरिक संचार</h3>
         </div>
-        <span className="inline-flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.18em] text-white/35">
-          <Lock size={10} /> Members only
+        <span className="inline-flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-wider text-text-dim">
+          <Lock size={12} className="text-status-live" /> Members only
         </span>
       </header>
 
@@ -184,21 +184,21 @@ export const TeamChat = ({ teamId }) => {
           return (
             <div key={m.id} className={cn('flex gap-2.5', mine ? 'flex-row-reverse' : 'flex-row', grouped && '!mt-1')}>
               <div className={cn(
-                'grid h-8 w-8 shrink-0 place-items-center border border-white/10 bg-black font-sans text-[11px] font-bold text-white',
+                'grid h-8 w-8 shrink-0 place-items-center rounded-[3px] border border-border-mid bg-bg-surface-3 font-cond text-[13px] font-black text-txp-yellow',
                 grouped && 'invisible',
               )}>
                 {initials(m.sender.fullName)}
               </div>
               <div className={cn('flex max-w-[78%] flex-col', mine ? 'items-end' : 'items-start')}>
                 {!grouped && (
-                  <div className="mb-1 flex items-baseline gap-2 font-mono text-[10px] text-white/40">
-                    <span className="font-bold text-white/70">{mine ? 'You' : m.sender.fullName}</span>
+                  <div className="mb-1 flex items-baseline gap-2 font-mono text-[10px] text-text-dim">
+                    <span className="font-bold text-text-primary">{mine ? 'You' : m.sender.fullName}</span>
                     <span>{timeLabel(m.createdAt)}</span>
                   </div>
                 )}
                 <div className={cn(
-                  'whitespace-pre-wrap break-words border px-3 py-2 font-sans text-[13px] leading-relaxed',
-                  mine ? 'border-accent-cyan/30 bg-accent-cyan-soft text-text-primary' : 'border-white/10 bg-white/[0.04] text-text-primary',
+                  'whitespace-pre-wrap break-words rounded-[4px] border px-3.5 py-2.5 font-sans text-[13px] leading-relaxed',
+                  mine ? 'border-txp-yellow/40 bg-txp-yellow/10 text-text-primary' : 'border-border-mid bg-bg-surface-2 text-text-primary',
                 )}>
                   {m.body}
                 </div>
@@ -208,27 +208,27 @@ export const TeamChat = ({ teamId }) => {
         })}
       </div>
 
-      <div className="border-t border-white/10 p-3">
+      <div className="border-t border-border-mid bg-bg-surface-2/40 p-3">
         <div className="flex items-end gap-2">
           <textarea
             className="input-glass min-h-[44px] max-h-32 resize-none !py-2.5"
             rows={1}
             maxLength={MAX_LEN}
-            placeholder="Message your team…  (Enter to send, Shift+Enter for a new line)"
+            placeholder="Type message to your squad… (Enter to send, Shift+Enter for new line)"
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
             onKeyDown={onKeyDown}
           />
           <button
-            className="glow-button inline-flex h-[44px] shrink-0 items-center gap-1.5 !px-4"
+            className="glow-button inline-flex h-[44px] shrink-0 items-center gap-1.5 !px-5"
             onClick={send}
             disabled={sending || !draft.trim()}
           >
-            {sending ? <Spinner size={13} /> : <Send size={13} />} Send
+            {sending ? <Spinner size={13} /> : <Send size={14} />} Send
           </button>
         </div>
         {draft.length > MAX_LEN * 0.8 && (
-          <div className="mt-1 text-right font-mono text-[10px] text-white/40">{draft.length} / {MAX_LEN}</div>
+          <div className="mt-1 text-right font-mono text-[10px] text-text-dim">{draft.length} / {MAX_LEN}</div>
         )}
       </div>
     </section>

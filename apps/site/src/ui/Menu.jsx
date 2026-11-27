@@ -1,7 +1,7 @@
 import { useEffect, useId, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { BOOK, HINTS, LABELS, UI } from '../content/station.js';
 import { readMotionOff, setMotionOff } from '../lib/station.js';
-import { goToPortal, PORTAL_URL } from './portal.js';
 
 const ITEMS = ['about', 'timetable', 'prizes', 'faq', 'pnr', 'countdown'];
 
@@ -91,10 +91,14 @@ export default function Menu({ onOpen }) {
             </a>
           </li>
           <li>
-            <a href={PORTAL_URL} onClick={goToPortal} className="guide-item guide-item--portal">
+            <Link
+              to="/vortex"
+              onClick={() => setOpen(false)}
+              className="guide-item guide-item--portal"
+            >
               <span className="guide-item-en">{BOOK.login}</span>
               <span className="guide-item-arrow" aria-hidden="true">→</span>
-            </a>
+            </Link>
           </li>
           <li>
             <button type="button" role="switch" className="guide-item guide-item--motion" aria-checked={!motionOff} onClick={toggleMotion}>

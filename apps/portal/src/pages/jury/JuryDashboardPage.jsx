@@ -53,17 +53,17 @@ const RoundChip = ({ round, evalRow, mine, locked, onClick }) => {
       type="button"
       disabled={!clickable}
       onClick={onClick}
-      className={`group flex w-full flex-col gap-1 rounded-[4px] border p-3 text-left transition-colors ${
+      className={`group flex w-full flex-col gap-1 rounded-[4px] border p-3.5 text-left transition-all ${
         clickable
-          ? 'border-border-dim hover:border-accent-cyan hover:bg-white/[0.03]'
-          : 'cursor-not-allowed border-border-dim/60 opacity-70'
+          ? 'border-border-mid hover:border-txp-yellow hover:bg-txp-yellow/5 shadow-[0_2px_8px_rgba(0,0,0,0.3)]'
+          : 'cursor-not-allowed border-border-dim/50 opacity-60'
       }`}
     >
       <div className="flex items-center justify-between">
-        <span className="font-mono text-[10px] uppercase tracking-[0.15em] text-text-dim">{label}</span>
+        <span className="font-cond text-[13px] font-bold uppercase tracking-[0.08em] text-text-dim">{label}</span>
         <Badge tone={tone}>{evalRow ? (mine ? 'Mine' : 'Scored') : (locked ? 'Locked' : 'Open')}</Badge>
       </div>
-      <span className={`font-mono text-[12px] ${tone === 'live' ? 'text-status-live' : tone === 'cyan' ? 'text-accent-cyan' : tone === 'warn' ? 'text-status-warn' : 'text-text-dim'}`}>
+      <span className={`font-mono text-[12px] font-bold ${tone === 'live' ? 'text-status-live' : tone === 'cyan' ? 'text-txp-teal' : tone === 'warn' ? 'text-txp-yellow' : 'text-text-dim'}`}>
         {detail}
       </span>
     </button>
@@ -280,13 +280,13 @@ export const JuryDashboardPage = () => {
   return (
     <section className="mx-auto max-w-6xl px-6 py-12">
       <PageHeader
-        kicker="Jury Console"
-        title="Score teams"
-        description="Open scoring — pick any finalized team and round. First jury to score a round owns it; others can view but not overwrite."
+        kicker="Jury Evaluation Switchboard // मूल्यांकन पटल"
+        title="Team Evaluations"
+        description="Open scoring switchboard — evaluate any finalized squad across the 5 standard metrics. First jury to score owns the evaluation slot."
         actions={
           <div className="relative w-full md:w-72">
-            <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-text-dim" />
-            <input className="input-glass !pl-10" placeholder="Filter team / domain / PS…" value={filter} onChange={(e) => setFilter(e.target.value)} />
+            <Search size={16} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-text-dim" />
+            <input className="input-glass !pl-10 h-11" placeholder="Filter team / domain / challenge…" value={filter} onChange={(e) => setFilter(e.target.value)} />
           </div>
         }
       />

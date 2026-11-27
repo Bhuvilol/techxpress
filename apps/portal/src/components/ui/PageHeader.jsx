@@ -1,7 +1,8 @@
 import { cn } from '../../utils/cn.js';
 
-// Page title + optional kicker eyebrow + right-side actions slot.
-// Title in sans (no uppercase). Kicker is the only ALL-CAPS element.
+// Station Departure Board Header.
+// Bold Condensed typography matching Indian Railways signage,
+// paired with an illuminated LED status kicker and optional actions.
 
 export const PageHeader = ({ kicker, title, description, actions, className }) => (
   <header
@@ -13,11 +14,11 @@ export const PageHeader = ({ kicker, title, description, actions, className }) =
     <div className="flex-1 min-w-0 space-y-3">
       {kicker && (
         <div className="kicker">
-          <span className="h-1.5 w-1.5 rounded-full bg-accent-cyan animate-pulse-soft" />
-          {kicker}
+          <span className="h-2 w-2 rounded-full bg-txp-yellow animate-pulse-soft shadow-[0_0_8px_#f5b800]" />
+          <span>{kicker}</span>
         </div>
       )}
-      <h1 className="font-sans text-[28px] font-extrabold leading-[1.1] tracking-tight text-text-primary md:text-[36px]">
+      <h1 className="font-cond text-[36px] font-black uppercase tracking-[0.04em] text-text-primary md:text-[46px] leading-[1]">
         {title}
       </h1>
       {description && (
