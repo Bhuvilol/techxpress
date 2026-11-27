@@ -34,7 +34,7 @@ export const LED = {
   closedLabel: 'REGISTRATION CLOSED · PLATFORM 1',
   status: {
     beforeOpen: 'REGISTRATION CLOSES 27 NOV · PLATFORM 1',
-    open: 'BOARDING NOW · BOOK YOUR TICKET · PLATFORM 1',
+    open: 'BOARDING NOW · REGISTER HERE · PLATFORM 1',
     closed: 'BOOKING CLOSED · DEPARTS 04 DEC',
     departed: 'DEPARTED · HACKATHON IN PROGRESS',
   },
@@ -49,7 +49,7 @@ export const LABELS = {
   faq: { english: 'Enquiry', hindi: 'पूछताछ', hint: 'Questions and answers' },
   pnr: { english: 'PNR status', hindi: 'पी.एन.आर. स्थिति', hint: 'Check your registration' },
   countdown: { english: 'Departure board', hindi: 'प्रस्थान', hint: 'Countdown to the hackathon' },
-  book: { english: 'Book your ticket', hindi: 'टिकट बुक करें', hint: 'Register for TechXpress' },
+  book: { english: 'Register here', hindi: 'यहाँ रजिस्टर करें', hint: 'Register for TechXpress' },
   guide: { english: 'Station guide', hindi: 'स्टेशन गाइड' },
 };
 
