@@ -306,9 +306,9 @@
   bottom: calc(24px + var(--txp-safe-b));
   z-index: 30;
   display: flex;
-  flex-direction: row;
+  flex-direction: column;
   align-items: flex-end;
-  gap: 14px;
+  gap: 12px;
   pointer-events: none;
 }
 .book-tickets-wrap > * {
