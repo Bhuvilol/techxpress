@@ -34,7 +34,7 @@ export const LED = {
   closedLabel: 'REGISTRATION CLOSED · PLATFORM 1',
   status: {
     beforeOpen: 'REGISTRATION CLOSES 27 NOV · PLATFORM 1',
-    open: 'BOARDING NOW · REGISTER HERE · PLATFORM 1',
+    open: 'BOARDING NOW · BOOK YOUR TICKET · PLATFORM 1',
     closed: 'BOOKING CLOSED · DEPARTS 04 DEC',
     departed: 'DEPARTED · HACKATHON IN PROGRESS',
   },
@@ -173,7 +173,7 @@ export const FAQ = [
   { q: 'Will food be provided?', a: 'Yes, meals are provided during the event. See the timetable.' }, // ⚠ CONFIRM
   {
     q: 'Who do I contact?',
-    a: 'Contact Us\nFor any inquiries, reach out to either number below.\n+91 98618 82015  |  +91 94305 61857\nWhatsApp or SMS preferred',
+    a: 'Call or message either number (WhatsApp or SMS preferred):\n+91 98618 82015  |  +91 94305 61857\nOr write to team@soatechxpress.in.',
   },
 ];
 
