@@ -95,9 +95,10 @@ export const SLOTS = {
   }, FRONT_GROUP),
   tall: {
     sky: { x: -240, y: -340, w: 1560, h: 2600 },
-    // Above the far platform (it starts at y 474), left of the LED board.
-    sun: { x: 60, y: 236, w: 220, h: 220, layer: 'cast' },
-    birds: { x: 110, y: 70, w: 260, h: 130 }, // above the logo
+    // Below the TechXpress logo, above the far platform (it starts at y 474).
+    sun: { x: 84, y: 286, w: 184, h: 184, layer: 'cast' },
+    // Right of centre, in the strip above the LED board, in front of its chain.
+    birds: { x: 560, y: 0, w: 220, h: 110, layer: 'cast' },
     platform2: { x: -240, y: 474, w: 1560, h: 336 },
     mast: { instances: [{ x: 0, y: 370, w: 130, h: 640 }, { x: 480, y: 370, w: 130, h: 640 }, { x: 960, y: 370, w: 130, h: 640 }] },
     train: { h: 560, bottom: 1320, doorX: 400 },
