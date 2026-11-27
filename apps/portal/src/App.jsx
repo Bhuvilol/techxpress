@@ -32,9 +32,11 @@ import { CoordinatorVerificationPage } from './pages/coordinator/CoordinatorVeri
 
 export const App = () => (
   <Routes>
+    {/* No home page: signed out -> login, signed in -> their dashboard.
+        Outside the animated layout, so the redirect is instant. */}
+    <Route path="/" element={<RedirectIfAuth><Navigate to="/login" replace /></RedirectIfAuth>} />
+
     <Route element={<AppLayout />}>
-      {/* No home page: signed out -> login, signed in -> their dashboard. */}
-      <Route path="/" element={<RedirectIfAuth><Navigate to="/login" replace /></RedirectIfAuth>} />
 
       <Route path="/login"    element={<RedirectIfAuth><LoginPage /></RedirectIfAuth>} />
       <Route path="/register" element={<RedirectIfAuth><RegistrationPage /></RedirectIfAuth>} />

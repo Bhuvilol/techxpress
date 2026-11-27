@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { PORTAL_EVENT, PORTAL_URL, SLIDE_KEY, prefetchPortal } from './portal.js';
 import { prefersLessMotion } from '../lib/station.js';
 import logoUrl from '../assets/stage/logo.webp';
@@ -46,13 +47,16 @@ export default function DoorTransition() {
   }, []);
 
   if (!phase) return null;
-  return (
+  // On <body>, not inside the station shell: the shell itself slides away
+  // (a transformed parent would carry this fixed overlay with it).
+  return createPortal(
     <div className={`txp-pan txp-pan--${phase}`} aria-hidden="true">
       <div className="txp-pan-terminal">
         <img src={logoUrl} alt="" className="txp-pan-logo" />
         <span className="txp-pan-label">VORTEX TERMINAL</span>
         <span className="txp-pan-sub" lang="hi">वोर्टेक्स टर्मिनल</span>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

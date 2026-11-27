@@ -128,7 +128,7 @@ export const AdminShell = () => {
             <Menu size={18} />
           </button>
           <div className="font-cond text-[16px] font-black uppercase tracking-wider text-txp-yellow">
-            Admin Switchboard
+            Admin
           </div>
           <div className="w-8" />
         </div>

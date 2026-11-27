@@ -1890,11 +1890,18 @@ section > .tt-day:first-child { margin-top: 0; }
    The station pans left while the VORTEX terminal slides in from the
    right; then the real portal loads on the same navy (#0b0a18). */
 
+/* The shell's layers are position: fixed; while the shell is transformed it
+   becomes their containing block, so it must fill the screen. */
+.txp-panning .txp-shell,
+.txp-from-portal .txp-shell {
+  position: fixed;
+  inset: 0;
+}
 .txp-panning .txp-shell {
   animation: txp-pan-away 600ms cubic-bezier(0.65, 0, 0.35, 1) forwards;
 }
 @keyframes txp-pan-away {
-  to { transform: translateX(-38vw); filter: brightness(0.6); }
+  to { transform: translateX(-38vw); }
 }
 .txp-pan {
   position: fixed;
@@ -1905,9 +1912,10 @@ section > .tt-day:first-child { margin-top: 0; }
 .txp-pan-terminal {
   position: absolute;
   inset: 0;
-  display: grid;
-  place-content: center;
-  justify-items: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   gap: 10px;
   background:
     radial-gradient(ellipse at 50% 40%, rgba(245, 184, 0, 0.1), transparent 60%),
@@ -1924,7 +1932,7 @@ section > .tt-day:first-child { margin-top: 0; }
 .txp-pan--fade .txp-pan-terminal {
   animation: txp-fade-in 150ms linear both;
 }
-.txp-pan-logo { width: min(40vw, 200px); height: auto; }
+.txp-pan-logo { display: block; width: min(40vw, 200px); max-width: none; height: auto; max-height: 30vh; object-fit: contain; }
 .txp-pan-label {
   font: 800 clamp(20px, 4vw, 30px)/1 var(--txp-cond);
   letter-spacing: 0.18em;

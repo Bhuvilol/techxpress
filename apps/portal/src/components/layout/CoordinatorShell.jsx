@@ -106,7 +106,7 @@ export const CoordinatorShell = () => {
             <Menu size={18} />
           </button>
           <div className="font-cond text-[16px] font-black uppercase tracking-wider text-txp-teal">
-            Coordinator Desk
+            Coordinator
           </div>
           <div className="w-8" />
         </div>
