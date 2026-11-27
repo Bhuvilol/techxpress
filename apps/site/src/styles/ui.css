@@ -1799,16 +1799,37 @@ section > .tt-day:first-child { margin-top: 0; }
 
 /* ── Logo, top left ────────────────────────────────────────────────────── */
 
-.txp-logo {
+.txp-brand {
   position: fixed;
   top: max(10px, var(--txp-safe-t));
   left: 14px;
   z-index: 31;
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* the two logos share one centre line */
+  gap: 6px;
+  pointer-events: none;
+}
+.txp-logo {
+  display: block;
   width: clamp(130px, 13vw, 240px);
   height: auto;
-  pointer-events: none;
   filter: drop-shadow(0 4px 6px rgb(0 0 0 / 0.35));
 }
+.txp-soa { display: none; }
 @media (max-aspect-ratio: 1/1) {
   .txp-logo { width: min(33vw, 160px); }
+  .txp-soa {
+    display: block;
+    width: calc(min(33vw, 160px) * 0.52);
+    height: auto;
+    filter: drop-shadow(0 4px 6px rgb(0 0 0 / 0.35));
+    animation: txp-soa-in 0.35s ease-out both;
+  }
+  /* Once the opening is over, the scene's copy steps aside for this one. */
+  .txp-shell.is-ready .piece--sun { visibility: hidden; }
+}
+@keyframes txp-soa-in { from { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .txp-soa { animation: none; }
 }

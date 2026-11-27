@@ -17,6 +17,7 @@ import Countdown from './panels/Countdown.jsx';
 import PnrStatus from './panels/PnrStatus.jsx';
 import '../styles/ui.css';
 import logoUrl from '../assets/stage/logo.webp';
+import soaLogoUrl from '../assets/stage/sun.webp';
 
 const loadCounter = () => import('./panels/ReservationCounter.jsx');
 const ReservationCounter = lazy(loadCounter);
@@ -102,7 +103,12 @@ export default function StationShell() {
 
       {introDone && (
         <div className="txp-chrome" inert={panelOpen}>
-          <img className="txp-logo" src={logoUrl} alt="TechXpress Hackathon" />
+          {/* On phones the SOA logo sits exactly below the TechXpress logo
+              (on wide screens it stays in the sky, as a scene piece). */}
+          <div className="txp-brand">
+            <img className="txp-logo" src={logoUrl} alt="TechXpress Hackathon" />
+            <img className="txp-soa" src={soaLogoUrl} alt="Siksha 'O' Anusandhan" />
+          </div>
           <Menu onOpen={openPanel} />
           <BookButton onOpen={openPanel} />
           <Hints />
