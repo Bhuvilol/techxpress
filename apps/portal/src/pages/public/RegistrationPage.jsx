@@ -27,6 +27,8 @@ import { ScrambleText } from '../../components/ui/ScrambleText.jsx';
 import { Badge } from '../../components/ui/Badge.jsx';
 import { compressImage } from '../../utils/imageCompress.js';
 import { DomainPicker } from '../../components/registration/DomainPicker.jsx';
+import logoUrl from '../../assets/logo.webp';
+import trainUrl from '../../assets/train-a.webp';
 
 const CONTRIBUTION_AREA_OPTIONS = [
   'Research & Documentation',
@@ -317,13 +319,13 @@ const toggleListValue = (list, value) =>
   list.includes(value) ? list.filter((item) => item !== value) : [...list, value];
 
 const Section = ({ number, title, children }) => (
-  <section className="space-y-7 border-t border-white/5 pt-10 first:border-t-0 first:pt-0 md:space-y-8 md:pt-12">
+  <section className="space-y-7 border-t border-border-dim pt-10 first:border-t-0 first:pt-0 md:space-y-8 md:pt-12">
     <div className="flex items-center gap-4">
-      <div className="grid h-10 w-10 shrink-0 place-items-center border border-white/15 bg-white/[0.04] font-mono text-[11px] font-bold text-white/70">
+      <div className="grid h-10 w-10 shrink-0 place-items-center rounded-[3px] border border-txp-yellow/50 bg-txp-yellow/10 font-mono text-[12px] font-bold text-txp-yellow shadow-[0_0_12px_-2px_rgba(245,184,0,0.3)]">
         {number}
       </div>
       <div className="space-y-1">
-        <h2 className="font-sans text-[18px] font-black uppercase tracking-[0.16em] text-white md:text-[20px]">{title}</h2>
+        <h2 className="font-cond text-[22px] font-black uppercase tracking-[0.06em] text-text-primary md:text-[24px]">{title}</h2>
       </div>
     </div>
     {children}
@@ -507,21 +509,22 @@ export const RegistrationPage = () => {
   if (done) {
     return (
       <section className="mx-auto flex min-h-[calc(100vh-64px)] max-w-xl flex-col items-center justify-center px-6 py-12">
-        <div className="mb-8 flex h-20 w-20 items-center justify-center border border-white/20 bg-white/5">
-          <CheckCircle2 size={40} className="text-white" />
+        <div className="mb-8 flex h-20 w-20 items-center justify-center rounded-[4px] border-2 border-txp-ink bg-txp-yellow text-txp-ink shadow-[0_4px_0_#000]">
+          <CheckCircle2 size={40} className="text-txp-ink" />
         </div>
-        <h1 className="text-center font-sans text-[32px] font-black uppercase tracking-tight text-white">Registration Queued</h1>
-        <p className="mt-4 max-w-md text-center font-mono text-[13px] leading-relaxed text-white/40">
-          Your profile is now in review. Campus coordinators or organizers will verify the details and issue access after approval.
+        <h1 className="text-center font-cond text-[36px] font-black uppercase tracking-tight text-text-primary">Reservation Queued // आरक्षण प्रक्रियाधीन</h1>
+        <p className="mt-4 max-w-md text-center font-sans text-[14px] leading-relaxed text-text-secondary">
+          Your passenger profile has been submitted and is in review with your campus coordinator.
+          Your 6-digit access code will be emailed upon approval.
         </p>
 
         <div className="mt-8">
-          <Badge tone="warn">Pending review</Badge>
+          <Badge tone="yellow" dot>Awaiting Coordinator Verification</Badge>
         </div>
 
-        <Link to="/" className="glow-button mt-12 flex items-center gap-3 px-10">
-          <span>Return to control</span>
-          <ArrowRight size={18} />
+        <Link to="/" className="glow-button mt-10 flex items-center gap-3 px-8 !py-3 font-cond text-[16px]">
+          <span>Return to Station</span>
+          <ArrowRight size={17} />
         </Link>
       </section>
     );
@@ -530,25 +533,40 @@ export const RegistrationPage = () => {
   return (
     <section className="mx-auto max-w-6xl px-5 py-10 md:px-6 md:py-16 xl:py-20">
       <div className="flex flex-col items-center text-center">
-        <div className="kicker mb-4 border border-white/20 px-3 py-1 text-white/60">
-          <span className="h-1.5 w-1.5 bg-white" />
-          New Operative
+        {/* Authentic Locomotive Crest */}
+        <div className="relative mb-4 flex h-16 w-16 items-center justify-center rounded-[4px] border border-txp-yellow/50 bg-bg-surface-2 p-2.5 shadow-[0_4px_20px_rgba(245,184,0,0.2)] anim-train-idle">
+          <img src={logoUrl} alt="TechXpress Locomotive" className="h-full w-full object-contain" />
         </div>
-        <h1 className="font-sans text-[42px] font-black text-white sm:text-[56px]">
-          <ScrambleText text="REGISTRATION" duration={0.45} />
+
+        <div className="mb-3 inline-flex items-center gap-2 rounded-[3px] border border-txp-yellow/30 bg-txp-yellow/10 px-3.5 py-1 font-cond text-[13px] font-bold uppercase tracking-[0.14em] text-txp-yellow">
+          <FileText size={14} />
+          <span>RESERVATION REQUISITION // आरक्षण मांग पत्र</span>
+        </div>
+        <h1 className="font-cond text-[48px] font-black uppercase text-text-primary sm:text-[64px] leading-tight">
+          <ScrambleText text="TICKET REGISTRATION" duration={0.45} />
         </h1>
-        <p className="mt-6 max-w-2xl font-mono text-[13px] leading-relaxed text-white/40">
-          Build your Vortex profile for verification, team discovery, and collaboration. Domain and institution options are controlled by the organizers.
+        <div className="mt-1 font-deva text-[18px] font-bold text-text-secondary tracking-wider">
+          टिकट आरक्षण · प्लेटफ़ॉर्म 1
+        </div>
+        <p className="mt-3 max-w-2xl font-sans text-[14px] leading-relaxed text-text-secondary">
+          Register your passenger profile for SOA TechXpress 2026. Select your preferred tracks,
+          contribution roles, and upload your student ID card for campus coordinator review.
         </p>
       </div>
 
       {registrationClosed && (
-        <div className="mt-10 border border-status-warn/40 bg-status-warn/5 px-5 py-4 text-center font-mono text-[13px] leading-relaxed text-status-warn">
-          Registration is currently closed. Please check back later or contact the organizers.
+        <div className="mt-10 rounded-[3px] border border-status-warn/40 bg-status-warn/10 px-5 py-4 text-center font-mono text-[13px] leading-relaxed text-status-warn">
+          Registration is currently closed by organizers. Please check back later or contact the organizers.
         </div>
       )}
 
-      <form onSubmit={submit} noValidate className="glass-card mt-12 space-y-12 border-white/10 bg-[#050505] p-5 sm:p-6 md:mt-14 md:space-y-14 md:p-8 xl:p-10">
+      <form onSubmit={submit} noValidate className="glass-card relative overflow-hidden mt-10 space-y-12 border-border-mid bg-bg-surface-1 p-5 sm:p-6 md:mt-12 md:space-y-12 md:p-8 xl:p-10 shadow-[0_12px_48px_rgba(0,0,0,0.5)]">
+        {/* Train Watermark Stamp */}
+        <img
+          src={trainUrl}
+          alt=""
+          className="pointer-events-none absolute -bottom-16 -right-16 w-96 opacity-[0.035] select-none anim-train-idle"
+        />
         {/* Honeypot: off-screen, skipped by keyboard and screen readers.
             Bots that fill every input get silently discarded server-side. */}
         <div aria-hidden="true" style={{ position: 'absolute', left: '-10000px', top: 'auto', width: 1, height: 1, overflow: 'hidden' }}>

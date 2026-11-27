@@ -1,4 +1,5 @@
 import { Suspense, lazy, useCallback, useEffect, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import Station from '../scene/Station.jsx';
 import { BOOT_MIN_MS, INTRO_TOTAL_MS } from '../scene/stage.js';
 import { LED, UI } from '../content/station.js';
@@ -96,14 +97,34 @@ export default function StationShell() {
 
   return (
     <div className={`txp-shell${introDone ? ' is-ready' : ''}${panelOpen ? ' has-panel' : ''}`}>
-      <div className="txp-stage" inert={panelOpen}>
+      <div className="txp-stage" inert={panelOpen ? '' : undefined}>
         <Station onHotspot={(name) => openPanel(name)} dimmed={panelOpen} onIntroDone={onIntroDone} />
       </div>
 
       {introDone && (
-        <div className="txp-chrome" inert={panelOpen}>
+        <div className="txp-chrome" inert={panelOpen ? '' : undefined}>
           <img className="txp-logo" src={logoUrl} alt="TechXpress Hackathon" />
-          <Menu onOpen={openPanel} />
+          <div className="station-top-nav">
+            <Link
+              to="/vortex"
+              className="vortex-station-btn"
+              aria-label="Enter VORTEX Passenger Terminal"
+            >
+              <span className="vortex-rivet rivet-tl" />
+              <span className="vortex-rivet rivet-tr" />
+              <span className="vortex-rivet rivet-bl" />
+              <span className="vortex-rivet rivet-br" />
+              <span className="vortex-btn-icon">
+                <img src={logoUrl} alt="" className="vortex-btn-engine" />
+              </span>
+              <span className="vortex-btn-body">
+                <span className="vortex-btn-en">VORTEX TERMINAL</span>
+                <span className="vortex-btn-hi" lang="hi">प्रवेश द्वार · मंच 1</span>
+              </span>
+              <span className="vortex-btn-arrow" aria-hidden="true">→</span>
+            </Link>
+            <Menu onOpen={openPanel} />
+          </div>
           <BookButton onOpen={openPanel} />
           <Hints />
         </div>

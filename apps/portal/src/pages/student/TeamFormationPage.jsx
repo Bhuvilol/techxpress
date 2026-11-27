@@ -24,37 +24,37 @@ import { normalizeRegistrationNo } from '../../utils/registrationNo.js';
 const StatusBanner = ({ status, issues }) => {
   if (status === 'DISQUALIFIED') {
     return (
-      <div className="flex items-center gap-3 rounded-[4px] border border-status-crit/40 bg-status-crit/5 px-4 py-3">
-        <XCircle size={16} className="text-status-crit" />
-        <div className="font-mono text-[12px] text-status-crit">This team has been disqualified by the organizers. Contact them if you think this is a mistake.</div>
+      <div className="flex items-center gap-3 rounded-[4px] border border-status-crit/50 bg-status-crit/10 px-4 py-3">
+        <XCircle size={18} className="text-status-crit shrink-0" />
+        <div className="font-mono text-[12px] text-status-crit font-bold">DISQUALIFIED BY ORGANIZERS // अयोग्य घोषित — Contact organizers if you believe this is an error.</div>
       </div>
     );
   }
   if (status === 'FINALIZED') {
     return (
-      <div className="flex items-center gap-3 rounded-[4px] border border-status-live/40 bg-status-live/5 px-4 py-3">
-        <ShieldCheck size={16} className="text-status-live" />
-        <div className="font-mono text-[12px] text-status-live">Team finalized — no further changes.</div>
+      <div className="flex items-center gap-3 rounded-[4px] border border-status-live/50 bg-status-live/10 px-4 py-3 shadow-[0_0_16px_-4px_rgba(16,185,129,0.3)]">
+        <ShieldCheck size={18} className="text-status-live shrink-0" />
+        <div className="font-mono text-[12px] text-status-live font-bold">BERTH CONFIRMED · SQUAD FINALIZED // दल पुष्ट — Team roster is locked for competition.</div>
       </div>
     );
   }
   if (status === 'QUALIFIED') {
     return (
-      <div className="flex items-center gap-3 rounded-[4px] border border-status-live/40 bg-status-live/5 px-4 py-3">
-        <CheckCircle2 size={16} className="text-status-live" />
-        <div className="font-mono text-[12px] text-status-live">All rules met — leader can finalize.</div>
+      <div className="flex items-center gap-3 rounded-[4px] border border-status-live/50 bg-status-live/10 px-4 py-3 shadow-[0_0_16px_-4px_rgba(16,185,129,0.3)]">
+        <CheckCircle2 size={18} className="text-status-live shrink-0" />
+        <div className="font-mono text-[12px] text-status-live font-bold">RULES SATISFIED · READY TO FINALIZE // योग्यता पूर्ण — Squad leader can now lock the berth.</div>
       </div>
     );
   }
   return (
-    <div className="space-y-2 rounded-none border border-white/10 bg-white/5 px-4 py-3">
-      <div className="flex items-center gap-3">
-        <AlertTriangle size={16} className="text-status-warn" />
-        <div className="font-mono text-[12px] text-status-warn">Not yet qualified.</div>
+    <div className="space-y-2 rounded-[4px] border border-txp-yellow/40 bg-txp-yellow/10 px-4 py-3 shadow-[0_0_16px_-4px_rgba(245,184,0,0.2)]">
+      <div className="flex items-center gap-2.5">
+        <AlertTriangle size={17} className="text-txp-yellow shrink-0" />
+        <div className="font-mono text-[12px] text-txp-yellow font-bold uppercase tracking-wider">Reservation In Progress · Pending Rules // गठन जारी</div>
       </div>
-      <div className="flex flex-wrap gap-2 pl-7">
+      <div className="flex flex-wrap gap-2 pl-6">
         {issues.map((i) => (
-          <Badge key={i.code} tone="warn">{issueLabel(i.code)} ({i.have}/{i.need})</Badge>
+          <Badge key={i.code} tone="yellow">{issueLabel(i.code)} ({i.have}/{i.need})</Badge>
         ))}
       </div>
     </div>
@@ -954,15 +954,15 @@ const QueuePanel = ({ title, icon: Icon, count, loading, emptyText, children }) 
 
 // One person per row: avatar, name + subline, badges, actions on the right.
 const QueueRow = ({ name, sub, badges, actions }) => (
-  <div className="flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+  <div className="flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between hover:bg-white/[0.02] transition-colors">
     <div className="flex min-w-0 items-center gap-3">
-      <div className="grid h-9 w-9 shrink-0 place-items-center border border-white/10 bg-black font-sans text-[12px] font-bold text-white">
+      <div className="grid h-9 w-9 shrink-0 place-items-center rounded-[3px] border border-border-mid bg-bg-surface-3 font-cond text-[14px] font-black text-txp-yellow">
         {(name ?? '?').slice(0, 2).toUpperCase()}
       </div>
       <div className="min-w-0">
-        <div className="truncate font-sans text-[13px] font-bold text-text-primary">{name}</div>
+        <div className="truncate font-cond text-[16px] font-black uppercase text-text-primary tracking-wide">{name}</div>
         {sub && <div className="truncate font-mono text-[11px] text-text-secondary">{sub}</div>}
-        {badges && <div className="mt-1.5 flex flex-wrap gap-1">{badges}</div>}
+        {badges && <div className="mt-1 flex flex-wrap gap-1">{badges}</div>}
       </div>
     </div>
     <div className="flex shrink-0 justify-end gap-2">{actions}</div>
@@ -1002,9 +1002,9 @@ export const TeamFormationPage = () => {
   return (
     <section className="mx-auto max-w-6xl px-4 sm:px-6 py-8 sm:py-12">
       <PageHeader
-        kicker="Team Hub"
-        title="Squad formation"
-        description="Create a team, send invites, request to join, transfer leadership, and finalize when ready."
+        kicker="Squad & Berth Hub // दल गठन"
+        title="Squad Formation"
+        description="Assemble your interdisciplinary squad of 3–5 passengers, select a track challenge, verify rules compliance, and lock your berth."
       />
 
       {myTeam.loading && <CardSkeleton rows={3} />}

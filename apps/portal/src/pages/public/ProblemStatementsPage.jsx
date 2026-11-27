@@ -9,9 +9,6 @@ import { CardSkeleton } from '../../components/ui/Skeleton.jsx';
 import { cn } from '../../utils/cn.js';
 import { THEMES, OTHER, themeForDomain } from '../../lib/themes.js';
 
-// Problem statements grouped into themes (lib/themes.js) instead of one
-// section per domain (29 domains × 1 statement made the page endlessly long).
-
 const themeOf = (ps) => themeForDomain(ps.domain?.name);
 
 export const ProblemStatementsPage = () => {
@@ -19,9 +16,6 @@ export const ProblemStatementsPage = () => {
   const [search, setSearch] = useState('');
   const [themeId, setThemeId] = useState('');
   const [domainId, setDomainId] = useState('');
-  // Themes start closed. While a search, theme or domain filter is active
-  // they start open instead, so matches are visible straight away. Each mode
-  // remembers which themes the user flipped.
   const [openedIds, setOpenedIds] = useState(() => new Set());
   const [closedWhileFiltering, setClosedWhileFiltering] = useState(() => new Set());
 
@@ -81,9 +75,9 @@ export const ProblemStatementsPage = () => {
   return (
     <section className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-12">
       <PageHeader
-        kicker="Challenge Catalogue"
-        title="Problem Statements"
-        description="Each team picks one problem statement from its domain when forming the team. Browse by theme, or search."
+        kicker="Tracks & Challenges // ट्रैक और चुनौतियां"
+        title="Challenge Catalogue"
+        description="Every participating squad picks one challenge statement from their preferred domain. Browse by track themes, or search across keywords."
       />
 
       {loading && (
@@ -91,45 +85,59 @@ export const ProblemStatementsPage = () => {
           {Array.from({ length: 6 }).map((_, i) => <CardSkeleton key={i} rows={3} />)}
         </div>
       )}
-      {error && <Empty icon={FileText} title="Couldn't load" description={error.message} />}
+      {error && <Empty icon={FileText} title="Could not load catalogue" description={error.message} />}
 
       {data && all.length === 0 && (
-        <Empty icon={FileText} title="No problem statements" description="Organizers will publish them shortly." />
+        <Empty icon={FileText} title="No challenges published yet" description="Organizers are finalizing the problem statements for this edition." />
       )}
 
       {all.length > 0 && (
         <>
           {/* Theme chips */}
-          <div className="mb-5 flex flex-wrap gap-2">
-            <Chip active={!themeId} onClick={() => setThemeId('')} label="All themes" count={all.length} />
+          <div className="mb-6 flex flex-wrap gap-2">
+            <Chip active={!themeId} onClick={() => setThemeId('')} label="All Tracks" count={all.length} />
             {themes.map((t) => (
               <Chip key={t.id} icon={t.icon} active={themeId === t.id} onClick={() => setThemeId(themeId === t.id ? '' : t.id)} label={t.label} count={themeCounts.get(t.id)} />
             ))}
           </div>
 
-          {/* Search + domain filter */}
-          <div className="mb-6 grid gap-3 border border-white/5 bg-[#050505] p-4 md:grid-cols-[1fr_auto]">
+          {/* Search + domain filter bar */}
+          <div className="mb-6 grid gap-3 rounded-[4px] border border-border-mid bg-bg-surface-1 p-4 md:grid-cols-[1fr_auto] shadow-[0_4px_16px_rgba(0,0,0,0.3)]">
             <div className="relative">
-              <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-white/30" />
-              <input className="input-glass !pl-10" placeholder="Search titles, descriptions, domains…" value={search} onChange={(e) => setSearch(e.target.value)} />
+              <Search size={16} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-text-dim" />
+              <input
+                className="input-glass !pl-10 h-11"
+                placeholder="Search challenges, keywords, domains…"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
             </div>
-            <select className="select-glass md:!w-64" value={domainId} onChange={(e) => setDomainId(e.target.value)}>
-              <option value="">All domains</option>
+            <select
+              className="select-glass md:!w-64 h-11"
+              value={domainId}
+              onChange={(e) => setDomainId(e.target.value)}
+            >
+              <option value="">All SOA Domains</option>
               {domains.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
             </select>
           </div>
 
-          <div className="mb-4 flex items-center justify-between font-mono text-[11px] uppercase tracking-[0.18em] text-white/40">
-            <span>{filtered.length} of {all.length} statements · {groups.length} {groups.length === 1 ? 'theme' : 'themes'}</span>
+          <div className="mb-5 flex items-center justify-between font-mono text-[11px] uppercase tracking-[0.16em] text-text-dim">
+            <span>{filtered.length} of {all.length} challenges · {groups.length} active {groups.length === 1 ? 'track' : 'tracks'}</span>
             {hasFilters && (
-              <button className="inline-flex items-center gap-1 text-white/60 hover:text-white" onClick={clearFilters}>
-                <X size={12} /> Clear filters
+              <button className="inline-flex items-center gap-1.5 text-txp-yellow hover:underline" onClick={clearFilters}>
+                <X size={13} /> Clear filters
               </button>
             )}
           </div>
 
           {filtered.length === 0 && (
-            <Empty icon={Search} title="No matches" description="No problem statement matches these filters." action={<button className="ghost-button" onClick={clearFilters}>Clear filters</button>} />
+            <Empty
+              icon={Search}
+              title="No matching challenges"
+              description="No challenge matches your current filter or search criteria."
+              action={<button className="ghost-button" onClick={clearFilters}>Reset Filters</button>}
+            />
           )}
 
           <div className="space-y-5">
@@ -138,23 +146,25 @@ export const ProblemStatementsPage = () => {
               const Icon = theme.icon;
               const domainCount = new Set(items.map((ps) => ps.domain?.id)).size;
               return (
-                <section key={theme.id} className="border border-white/5 bg-black">
+                <section key={theme.id} className="overflow-hidden rounded-[4px] border border-border-mid bg-bg-surface-1 shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
                   <button
                     type="button"
                     onClick={() => toggle(theme.id)}
                     aria-expanded={!isCollapsed}
-                    className="flex w-full items-center justify-between gap-3 border-b border-white/5 px-5 py-4 text-left transition-colors hover:bg-white/[0.02]"
+                    className="flex w-full items-center justify-between gap-3 border-b border-border-mid bg-bg-surface-2/70 px-5 py-4 text-left transition-colors hover:bg-bg-surface-2"
                   >
                     <div className="flex min-w-0 items-center gap-3">
-                      <Icon size={16} className="shrink-0 text-accent-cyan" />
-                      <h2 className="truncate font-sans text-[15px] font-black uppercase tracking-[0.08em] text-white">{theme.label}</h2>
-                      <Badge tone="dim">{items.length} {items.length === 1 ? 'statement' : 'statements'}</Badge>
-                      <span className="hidden font-mono text-[10px] uppercase tracking-[0.18em] text-white/35 sm:inline">{domainCount} {domainCount === 1 ? 'domain' : 'domains'}</span>
+                      <div className="flex h-8 w-8 items-center justify-center rounded-[3px] border border-txp-yellow/30 bg-txp-yellow/10 text-txp-yellow">
+                        <Icon size={16} />
+                      </div>
+                      <h2 className="truncate font-cond text-[19px] font-black uppercase tracking-[0.05em] text-text-primary">{theme.label}</h2>
+                      <Badge tone="yellow">{items.length} {items.length === 1 ? 'task' : 'tasks'}</Badge>
+                      <span className="hidden font-mono text-[10px] uppercase tracking-[0.16em] text-text-dim sm:inline">{domainCount} {domainCount === 1 ? 'domain' : 'domains'}</span>
                     </div>
-                    <ChevronDown size={16} className={cn('shrink-0 text-white/40 transition-transform', isCollapsed && '-rotate-90')} />
+                    <ChevronDown size={18} className={cn('shrink-0 text-text-dim transition-transform duration-200', isCollapsed && '-rotate-90')} />
                   </button>
                   {!isCollapsed && (
-                    <div className="grid gap-3 p-4 sm:grid-cols-2 lg:grid-cols-3">
+                    <div className="grid gap-4 p-5 sm:grid-cols-2 lg:grid-cols-3">
                       {items.map((ps) => <StatementCard key={ps.id} ps={ps} />)}
                     </div>
                   )}
@@ -173,13 +183,17 @@ const Chip = ({ active, onClick, label, count, icon: Icon }) => (
     type="button"
     onClick={onClick}
     className={cn(
-      'inline-flex items-center gap-2 rounded-full border px-3.5 py-2 font-mono text-[11px] transition-all',
-      active ? 'border-white bg-white text-black' : 'border-white/12 bg-white/[0.03] text-white/75 hover:border-white/30',
+      'inline-flex items-center gap-2 rounded-[3px] border px-3.5 py-1.5 font-cond text-[14px] font-bold uppercase tracking-wider transition-all duration-160',
+      active
+        ? 'border-txp-ink bg-txp-yellow text-txp-ink shadow-[0_2px_0_#000]'
+        : 'border-border-mid bg-bg-surface-2 text-text-secondary hover:border-txp-yellow/40 hover:text-text-primary',
     )}
   >
-    {Icon && <Icon size={12} />}
+    {Icon && <Icon size={13} className={active ? 'text-txp-ink' : 'text-txp-yellow'} />}
     <span>{label}</span>
-    <span className={cn('rounded-full px-1.5 text-[10px] font-bold', active ? 'bg-black/10' : 'bg-white/10 text-white/60')}>{count}</span>
+    <span className={cn('rounded-[2px] px-1.5 text-[10px] font-mono font-bold', active ? 'bg-txp-ink/15 text-txp-ink' : 'bg-bg-surface-3 text-text-dim')}>
+      {count}
+    </span>
   </button>
 );
 
@@ -187,19 +201,26 @@ const StatementCard = ({ ps }) => {
   const [expanded, setExpanded] = useState(false);
   const long = (ps.description?.length ?? 0) > 160;
   return (
-    <article className="flex flex-col gap-2.5 border border-white/10 bg-white/[0.02] p-4 transition-colors hover:border-white/30">
-      <span className="self-start rounded-full border border-accent-cyan/30 bg-accent-cyan-soft px-2.5 py-0.5 font-mono text-[10px] text-accent-cyan">
-        {ps.domain?.name ?? 'Unassigned'}
-      </span>
-      <h3 className="font-sans text-[14px] font-bold leading-snug text-text-primary">{ps.title}</h3>
-      {ps.description && (
-        <p className={cn('font-mono text-[12px] leading-relaxed text-text-secondary', !expanded && 'line-clamp-4')}>
-          {ps.description}
-        </p>
-      )}
+    <article className="flex flex-col justify-between gap-3 rounded-[3px] border border-border-dim bg-bg-surface-2/40 p-4 transition-all hover:border-txp-yellow/40 hover:bg-bg-surface-2">
+      <div>
+        <span className="inline-block rounded-[2px] border border-txp-teal/30 bg-txp-teal/10 px-2 py-0.5 font-mono text-[10px] font-bold text-txp-teal uppercase tracking-wider mb-2">
+          {ps.domain?.name ?? 'General'}
+        </span>
+        <h3 className="font-cond text-[18px] font-black uppercase tracking-tight text-text-primary leading-snug">
+          {ps.title}
+        </h3>
+        {ps.description && (
+          <p className={cn('mt-2 font-sans text-[13px] leading-relaxed text-text-secondary', !expanded && 'line-clamp-4')}>
+            {ps.description}
+          </p>
+        )}
+      </div>
       {long && (
-        <button className="self-start font-mono text-[11px] text-white/50 hover:text-white" onClick={() => setExpanded((e) => !e)}>
-          {expanded ? 'Show less' : 'Read more'}
+        <button
+          className="self-start font-cond text-[13px] font-bold uppercase tracking-wider text-txp-yellow hover:underline"
+          onClick={() => setExpanded((e) => !e)}
+        >
+          {expanded ? '▲ Show less' : '▼ Read full statement'}
         </button>
       )}
     </article>

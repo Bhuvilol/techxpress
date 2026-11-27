@@ -25,9 +25,9 @@ export const AdminOverviewPage = () => {
   return (
     <>
       <PageHeader
-        kicker="Mission Control"
-        title="Overview"
-        description="Realtime snapshot of registrations, teams and the rules engine."
+        kicker="Station Master Console // नियंत्रण कक्ष"
+        title="Platform Overview"
+        description="Real-time operational telemetry of passenger registrations, squads, round locking, and the rules engine."
       />
 
       {loading && <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">{Array.from({length:4}).map((_,i)=><CardSkeleton key={i} rows={1}/>)}</div>}
@@ -53,9 +53,9 @@ export const AdminOverviewPage = () => {
                   const tone = state === 'UNLOCKED' ? 'live' : state === 'CLOSED' ? 'warn' : 'dim';
                   const Icon = state === 'UNLOCKED' ? Unlock : Lock;
                   return (
-                    <div key={r} className="rounded-none border border-white/5 bg-black p-6 text-center transition-all hover:border-white/20">
-                      <Icon size={20} className="mx-auto mb-3 text-white/40" />
-                      <div className="font-sans text-[11px] font-bold uppercase tracking-[0.2em] text-white/60">{r.replace('_',' ')}</div>
+                    <div key={r} className="rounded-[4px] border border-border-mid bg-bg-surface-2 p-6 text-center transition-all hover:border-txp-yellow/40 hover:bg-bg-surface-3 shadow-[0_4px_16px_rgba(0,0,0,0.3)]">
+                      <Icon size={20} className="mx-auto mb-3 text-txp-yellow" />
+                      <div className="font-cond text-[15px] font-black uppercase tracking-[0.1em] text-text-secondary">{r.replace('_',' ')}</div>
                       <div className="mt-4"><Badge tone={tone}>{state}</Badge></div>
                     </div>
                   );

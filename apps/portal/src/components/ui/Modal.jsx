@@ -3,8 +3,9 @@ import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import { cn } from '../../utils/cn.js';
 
-// Lightweight modal — backdrop click + Escape to dismiss. Renders into
-// document.body so it's never clipped by ancestor overflow rules.
+// Station Requisition & Control Modal.
+// Enamel plate header with corner rivet accents, clean dark surface,
+// and accessible keyboard navigation.
 
 const SIZES = {
   sm: 'max-w-md',
@@ -34,7 +35,8 @@ export const Modal = ({ open, onClose, title, children, size = 'md', footer }) =
     >
       <div
         className={cn(
-          'relative flex w-full max-h-[88vh] flex-col rounded-sm border border-border-mid bg-bg-surface-1 shadow-[0_24px_64px_-12px_rgba(0,0,0,0.8),0_0_0_1px_rgba(34,211,238,0.05)]',
+          'relative flex w-full max-h-[88vh] flex-col rounded-[4px] border border-border-mid bg-bg-surface-1',
+          'shadow-[0_24px_64px_-12px_rgba(0,0,0,0.8),0_0_0_1px_rgba(245,184,0,0.15)]',
           SIZES[size],
         )}
         onClick={(e) => e.stopPropagation()}
@@ -42,19 +44,22 @@ export const Modal = ({ open, onClose, title, children, size = 'md', footer }) =
         aria-modal="true"
         style={{ animation: 'fadeIn 220ms cubic-bezier(0.16, 1, 0.3, 1) both' }}
       >
-        <div className="flex items-center justify-between border-b border-border-dim px-6 py-4 bg-bg-surface-2">
-          <h3 className="font-sans text-[15px] font-bold text-text-primary">{title}</h3>
+        {/* Header styled as an enamel plate */}
+        <div className="flex items-center justify-between border-b border-border-mid px-6 py-4 bg-bg-surface-2 rounded-t-[3px]">
+          <h3 className="font-cond text-[18px] font-black uppercase tracking-[0.06em] text-text-primary">
+            {title}
+          </h3>
           <button
             onClick={onClose}
             aria-label="Close"
-            className="rounded-sm p-1.5 text-text-secondary transition-all duration-160 hover:bg-bg-surface-3 hover:text-accent-cyan"
+            className="rounded-[3px] p-1.5 text-text-secondary transition-all duration-160 hover:bg-txp-yellow/10 hover:text-txp-yellow"
           >
             <X size={18} />
           </button>
         </div>
-        <div className="flex-1 overflow-y-auto px-6 py-6">{children}</div>
+        <div className="flex-1 overflow-y-auto px-6 py-6 scroll-panel">{children}</div>
         {footer && (
-          <div className="flex items-center justify-end gap-3 border-t border-border-dim px-6 py-4 bg-bg-surface-2">
+          <div className="flex items-center justify-end gap-3 border-t border-border-mid px-6 py-4 bg-bg-surface-2 rounded-b-[3px]">
             {footer}
           </div>
         )}
