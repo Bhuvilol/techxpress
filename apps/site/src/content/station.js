@@ -50,6 +50,7 @@ export const LABELS = {
   pnr: { english: 'PNR status', hindi: 'पी.एन.आर. स्थिति', hint: 'Check your registration' },
   countdown: { english: 'Departure board', hindi: 'प्रस्थान', hint: 'Countdown to the hackathon' },
   book: { english: 'Register here', hindi: 'यहाँ रजिस्टर करें', hint: 'Register for TechXpress' },
+  login: { english: 'Login here', hindi: 'यहाँ लॉगिन करें', hint: 'Log in to VORTEX' },
   guide: { english: 'Station guide', hindi: 'स्टेशन गाइड' },
 };
 
