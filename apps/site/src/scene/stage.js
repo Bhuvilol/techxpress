@@ -95,8 +95,9 @@ export const SLOTS = {
   }, FRONT_GROUP),
   tall: {
     sky: { x: -240, y: -340, w: 1560, h: 2600 },
-    sun: { x: 60, y: 330, w: 240, h: 240, layer: 'cast' },
-    birds: { x: 150, y: 220, w: 300, h: 150 },
+    // Above the far platform (it starts at y 474), left of the LED board.
+    sun: { x: 60, y: 236, w: 220, h: 220, layer: 'cast' },
+    birds: { x: 110, y: 70, w: 260, h: 130 }, // above the logo
     platform2: { x: -240, y: 474, w: 1560, h: 336 },
     mast: { instances: [{ x: 0, y: 370, w: 130, h: 640 }, { x: 480, y: 370, w: 130, h: 640 }, { x: 960, y: 370, w: 130, h: 640 }] },
     train: { h: 560, bottom: 1320, doorX: 400 },
