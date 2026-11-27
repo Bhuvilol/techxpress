@@ -34,7 +34,7 @@ export const LED = {
   closedLabel: 'REGISTRATION CLOSED · PLATFORM 1',
   status: {
     beforeOpen: 'REGISTRATION CLOSES 27 NOV · PLATFORM 1',
-    open: 'BOARDING NOW · BOOK YOUR TICKET · PLATFORM 1',
+    open: 'BOARDING NOW · REGISTER HERE · PLATFORM 1',
     closed: 'BOOKING CLOSED · DEPARTS 04 DEC',
     departed: 'DEPARTED · HACKATHON IN PROGRESS',
   },
@@ -49,7 +49,8 @@ export const LABELS = {
   faq: { english: 'Enquiry', hindi: 'पूछताछ', hint: 'Questions and answers' },
   pnr: { english: 'PNR status', hindi: 'पी.एन.आर. स्थिति', hint: 'Check your registration' },
   countdown: { english: 'Departure board', hindi: 'प्रस्थान', hint: 'Countdown to the hackathon' },
-  book: { english: 'Book your ticket', hindi: 'टिकट बुक करें', hint: 'Register for TechXpress' },
+  book: { english: 'Register here', hindi: 'यहाँ रजिस्टर करें', hint: 'Register for TechXpress' },
+  login: { english: 'Login here', hindi: 'यहाँ लॉगिन करें', hint: 'Log in to VORTEX' },
   guide: { english: 'Station guide', hindi: 'स्टेशन गाइड' },
 };
 
@@ -170,7 +171,10 @@ export const FAQ = [
   { q: 'Where is the hackathon?', a: 'ITER campus, SOA, Bhubaneswar: BGA A and the CL 3rd floor.' }, // ⚠ CONFIRM
   { q: 'What should I bring?', a: 'Your laptop, charger and college ID card.' }, // ⚠ CONFIRM
   { q: 'Will food be provided?', a: 'Yes, meals are provided during the event. See the timetable.' }, // ⚠ CONFIRM
-  { q: 'Who do I contact?', a: 'Write to team@soatechxpress.in.' },
+  {
+    q: 'Who do I contact?',
+    a: 'Contact Us\nFor any inquiries, reach out to either number below.\n+91 98618 82015  |  +91 94305 61857\nWhatsApp or SMS preferred',
+  },
 ];
 
 export const PNR = {

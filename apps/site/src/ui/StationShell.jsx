@@ -7,6 +7,7 @@ import { useLedStatus, usePanelRoute, usePresence } from './hooks.js';
 import Panel from './Panel.jsx';
 import Menu from './Menu.jsx';
 import BookButton from './BookButton.jsx';
+import LoginButton from './LoginButton.jsx';
 import Hints from './Hints.jsx';
 import DoorTransition from './DoorTransition.jsx';
 import About from './panels/About.jsx';
@@ -110,7 +111,10 @@ export default function StationShell() {
             <img className="txp-soa" src={soaLogoUrl} alt="Siksha 'O' Anusandhan" />
           </div>
           <Menu onOpen={openPanel} />
-          <BookButton onOpen={openPanel} />
+          <div className="book-tickets-wrap">
+            <LoginButton />
+            <BookButton onOpen={openPanel} />
+          </div>
           <Hints />
         </div>
       )}

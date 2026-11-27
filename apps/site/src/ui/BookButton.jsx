@@ -6,7 +6,7 @@ export default function BookButton({ onOpen }) {
   return (
     <a
       href="#book"
-      className="book-ticket"
+      className="book-ticket book-ticket--register"
       onClick={(e) => {
         e.preventDefault();
         onOpen('book', null, e.currentTarget);

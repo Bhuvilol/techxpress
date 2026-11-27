@@ -37,3 +37,8 @@ art-source/
 
 # Agent worktrees (Claude Code)
 .claude/worktrees/
+
+# Local Context & Developer Notes
+context.md
+/docs/plans/task.md
+

@@ -300,18 +300,36 @@
 
 /* ── Book your ticket ──────────────────────────────────────────────────── */
 
-.book-ticket {
+.book-tickets-wrap {
   position: fixed;
   right: 24px;
   bottom: calc(24px + var(--txp-safe-b));
   z-index: 30;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12px;
+  pointer-events: none;
+}
+.book-tickets-wrap > * {
+  pointer-events: auto;
+}
+
+.book-ticket {
   display: block;
+  width: 100%;
   text-decoration: none;
   color: #fff;
   filter: drop-shadow(0 4px 0 #6e0f33) drop-shadow(0 12px 18px rgba(10, 5, 20, 0.5));
   transform: rotate(-2deg);
   transition: transform 180ms var(--txp-ease);
   animation: txp-ticket-in 700ms var(--txp-ease) both;
+}
+.book-ticket--login {
+  transform: rotate(-2deg);
+}
+.book-ticket--register {
+  transform: rotate(1.5deg);
 }
 .book-ticket:hover { transform: rotate(0deg) translateY(-3px); }
 .book-ticket:active { transform: rotate(0deg) translateY(2px); }
@@ -359,6 +377,7 @@
   align-content: center;
   padding: 10px 14px 10px 16px;
   line-height: 1;
+  flex: 1;
 }
 .book-ticket-en {
   font: 800 27px/1 var(--txp-cond);
@@ -1139,7 +1158,11 @@ section > .tt-day:first-child { margin-top: 0; }
 }
 .faq-item[open] .faq-chevron { transform: rotate(225deg) translateY(-3px); }
 .faq-item[open] summary { border-bottom: 1px dashed rgba(21, 19, 32, 0.4); }
-.faq-a { padding: 12px 14px 14px 58px; }
+.faq-a {
+  padding: 12px 14px 14px 58px;
+  white-space: pre-line;
+  line-height: 1.5;
+}
 .faq-contact {
   margin-top: 16px;
   text-align: center;
@@ -1762,17 +1785,38 @@ section > .tt-day:first-child { margin-top: 0; }
   .guide { right: 12px; top: max(12px, var(--txp-safe-t)); }
   .guide-plate { min-height: 48px; padding: 6px 14px 6px 12px; }
   .guide-plate-en { font-size: 18px; }
-  .book-ticket {
+  .book-tickets-wrap {
     left: max(16px, calc(50% - 300px));
     right: max(16px, calc(50% - 300px));
     bottom: calc(16px + var(--txp-safe-b));
+    flex-direction: column;
+    gap: 8px;
+    align-items: stretch;
+  }
+  .book-ticket,
+  .book-ticket--login,
+  .book-ticket--register {
+    width: 100%;
     transform: none;
   }
   .book-ticket:hover { transform: translateY(-2px); }
-  .book-ticket-face { min-height: 70px; }
+  .book-ticket-face { min-height: 64px; }
   .book-ticket-body { flex: 1; }
-  .book-ticket-en { font-size: 26px; }
-  .hints { bottom: calc(104px + var(--txp-safe-b)); flex-direction: column; align-items: center; }
+  .book-ticket-en { font-size: 24px; }
+  .hints { bottom: calc(175px + var(--txp-safe-b)); flex-direction: column; align-items: center; }
+}
+
+@media (max-width: 680px) and (min-aspect-ratio: 1/1) {
+  .book-tickets-wrap {
+    gap: 8px;
+    right: 16px;
+    bottom: calc(16px + var(--txp-safe-b));
+  }
+  .book-ticket,
+  .book-ticket--login,
+  .book-ticket--register {
+    transform: none;
+  }
 }
 
 @container (max-width: 380px) {
