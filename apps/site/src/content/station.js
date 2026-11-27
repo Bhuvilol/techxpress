@@ -86,7 +86,7 @@ export const ABOUT = {
   perks: 'Win prizes, incubation and mentoring support, and a feature on the SOA website.',
   whoTitle: 'Who can travel',
   // ⚠ CONFIRM: team rules are the current portal settings (5 members mandatory, at least 1 female).
-  who: 'Any registered SOA student. 5 Members mandatory per team, with atleast one female member.',
+  who: 'Any registered SOA student. 5 Members mandatory per team, with atleast one female member',
 };
 
 // Timetable. ⚠ CONFIRM: every date and time here is from a draft schedule.
