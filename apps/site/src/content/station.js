@@ -49,7 +49,8 @@ export const LABELS = {
   faq: { english: 'Enquiry', hindi: 'पूछताछ', hint: 'Questions and answers' },
   pnr: { english: 'PNR status', hindi: 'पी.एन.आर. स्थिति', hint: 'Check your registration' },
   countdown: { english: 'Departure board', hindi: 'प्रस्थान', hint: 'Countdown to the hackathon' },
-  book: { english: 'Book your ticket', hindi: 'टिकट बुक करें', hint: 'Register for TechXpress' },
+  book: { english: 'Register here', hindi: 'यहाँ रजिस्टर करें', hint: 'Register for TechXpress' },
+  login: { english: 'Login here', hindi: 'यहाँ लॉगिन करें', hint: 'Log in to VORTEX' },
   guide: { english: 'Station guide', hindi: 'स्टेशन गाइड' },
 };
 
@@ -84,8 +85,8 @@ export const ABOUT = {
   ],
   perks: 'Win prizes, incubation and mentoring support, and a feature on the SOA website.',
   whoTitle: 'Who can travel',
-  // ⚠ CONFIRM: team rules are the current portal settings (min 3, max 5, at least 1 girl).
-  who: 'Any registered SOA student. Teams of 3 to 5 members, with at least one girl in every team.',
+  // Team rule (confirmed 27 Nov): exactly 5 members, at least one female member.
+  who: 'Any registered SOA student. Teams of exactly 5 members, with at least one female member in every team.',
 };
 
 // Timetable. ⚠ CONFIRM: every date and time here is from a draft schedule.
@@ -134,11 +135,13 @@ export const TIMETABLE = {
         { time: '11:00', title: 'Project exhibition', venue: 'CL 3rd floor', who: 'All students', detail: 'Showcase of projects, open to all students', key: true },
         { time: '13:00', title: 'Lunch', venue: 'Glass House, TP Cell', who: 'Invited', detail: 'Guest lunch and networking' },
         { time: '14:30', title: 'Felicitation ceremony', venue: 'BGA A', who: 'Invited', detail: 'Honouring SOA TechXpress and Abinya 3.1 achievers', key: true },
-        { time: '16:30', title: 'Cultural night', venue: 'BGA A', who: 'Invited', detail: 'Evening performances close the journey',
+        {
+          time: '16:30', title: 'Cultural night', venue: 'BGA A', who: 'Invited', detail: 'Evening performances close the journey',
           acts: [
             { time: '16:30–17:00', name: 'Danza' },
             { time: '17:00–17:30', name: 'SMC' },
-          ] },
+          ]
+        },
       ],
     },
   ],
@@ -161,14 +164,17 @@ export const FARES = {
 export const FAQ = [
   { q: 'Who can register?', a: 'Any SOA student. Register on this site with your college ID card.' },
   { q: 'Is there a fee?', a: 'No, registration is free.' }, // ⚠ CONFIRM
-  { q: 'How big is a team?', a: '3 to 5 members, with at least one girl in every team.' }, // ⚠ CONFIRM
-  { q: 'Can I register without a team?', a: 'Yes. Register on your own first, then form or join a team in the VORTEX portal.' },
+  { q: 'How big is a team?', a: '5 members per team (mandatory), with at least one female member.' },
+  { q: 'Can I register without a team?', a: 'Register individually first, then join a team in the VORTEX portal.' },
   { q: 'What happens after I register?', a: 'Your college coordinator checks your details and ID card. Once you are approved, your login code arrives by email from team@soatechxpress.in.' },
   { q: "I haven't received my email.", a: 'Check your spam folder, then check your PNR status here. If it says CONFIRMED but no email arrived, write to the organisers.' },
   { q: 'Where is the hackathon?', a: 'ITER campus, SOA, Bhubaneswar: BGA A and the CL 3rd floor.' }, // ⚠ CONFIRM
   { q: 'What should I bring?', a: 'Your laptop, charger and college ID card.' }, // ⚠ CONFIRM
   { q: 'Will food be provided?', a: 'Yes, meals are provided during the event. See the timetable.' }, // ⚠ CONFIRM
-  { q: 'Who do I contact?', a: 'Write to team@soatechxpress.in.' },
+  {
+    q: 'Who do I contact?',
+    a: 'Call or message either number (WhatsApp or SMS preferred):\n+91 98618 82015  |  +91 94305 61857\nOr write to team@soatechxpress.in.',
+  },
 ];
 
 export const PNR = {

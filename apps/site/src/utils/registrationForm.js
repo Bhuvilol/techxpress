@@ -7,7 +7,7 @@ export const TSHIRT_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'];
 // Branch is asked only of this institution's students. Kept in step with
 // BRANCH_INSTITUTION_NAME / BRANCH_OPTIONS in the server validator.
 export const BRANCH_INSTITUTION_NAME = 'ITER | SOA';
-export const BRANCH_OPTIONS = ['CSE Core', 'CSE AIML', 'CSE CS', 'CSE DS', 'EE', 'ECE', 'EEE', 'Mech'];
+export const BRANCH_OPTIONS = ['CSE Core', 'CSE AIML', 'CSE CS', 'CSE DS', 'CSE IOT', 'EE', 'ECE', 'EEE', 'Mech'];
 
 export const INITIAL_FORM = {
   fullName: '',

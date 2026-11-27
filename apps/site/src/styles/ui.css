@@ -300,18 +300,36 @@
 
 /* ── Book your ticket ──────────────────────────────────────────────────── */
 
-.book-ticket {
+.book-tickets-wrap {
   position: fixed;
   right: 24px;
   bottom: calc(24px + var(--txp-safe-b));
   z-index: 30;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12px;
+  pointer-events: none;
+}
+.book-tickets-wrap > * {
+  pointer-events: auto;
+}
+
+.book-ticket {
   display: block;
+  width: 100%;
   text-decoration: none;
   color: #fff;
   filter: drop-shadow(0 4px 0 #6e0f33) drop-shadow(0 12px 18px rgba(10, 5, 20, 0.5));
   transform: rotate(-2deg);
   transition: transform 180ms var(--txp-ease);
   animation: txp-ticket-in 700ms var(--txp-ease) both;
+}
+.book-ticket--login {
+  transform: rotate(-2deg);
+}
+.book-ticket--register {
+  transform: rotate(1.5deg);
 }
 .book-ticket:hover { transform: rotate(0deg) translateY(-3px); }
 .book-ticket:active { transform: rotate(0deg) translateY(2px); }
@@ -359,6 +377,7 @@
   align-content: center;
   padding: 10px 14px 10px 16px;
   line-height: 1;
+  flex: 1;
 }
 .book-ticket-en {
   font: 800 27px/1 var(--txp-cond);
@@ -1139,7 +1158,11 @@ section > .tt-day:first-child { margin-top: 0; }
 }
 .faq-item[open] .faq-chevron { transform: rotate(225deg) translateY(-3px); }
 .faq-item[open] summary { border-bottom: 1px dashed rgba(21, 19, 32, 0.4); }
-.faq-a { padding: 12px 14px 14px 58px; }
+.faq-a {
+  padding: 12px 14px 14px 58px;
+  white-space: pre-line;
+  line-height: 1.5;
+}
 .faq-contact {
   margin-top: 16px;
   text-align: center;
@@ -1762,17 +1785,46 @@ section > .tt-day:first-child { margin-top: 0; }
   .guide { right: 12px; top: max(12px, var(--txp-safe-t)); }
   .guide-plate { min-height: 48px; padding: 6px 14px 6px 12px; }
   .guide-plate-en { font-size: 18px; }
-  .book-ticket {
-    left: max(16px, calc(50% - 300px));
-    right: max(16px, calc(50% - 300px));
-    bottom: calc(16px + var(--txp-safe-b));
+  /* Phones: Login and Register side by side in one row, the same size, so
+     they take one ticket's height and fit the width. */
+  .book-tickets-wrap {
+    left: max(12px, calc(50% - 300px));
+    right: max(12px, calc(50% - 300px));
+    bottom: calc(14px + var(--txp-safe-b));
+    flex-direction: row;
+    gap: 8px;
+    align-items: stretch;
+  }
+  .book-ticket,
+  .book-ticket--login,
+  .book-ticket--register {
+    min-width: 0;
+    width: auto;
     transform: none;
   }
+  .book-ticket--login { flex: 1 1 0; }
+  .book-ticket--register { flex: 1 1 0; }
   .book-ticket:hover { transform: translateY(-2px); }
-  .book-ticket-face { min-height: 70px; }
-  .book-ticket-body { flex: 1; }
-  .book-ticket-en { font-size: 26px; }
-  .hints { bottom: calc(104px + var(--txp-safe-b)); flex-direction: column; align-items: center; }
+  .book-ticket-face { min-height: 62px; }
+  .book-ticket-stub,
+  .book-ticket-arrow { display: none; }
+  .book-ticket-body { flex: 1; min-width: 0; padding: 8px 10px 8px 18px; }
+  .book-ticket-en { font-size: clamp(17px, 5.4vw, 24px); white-space: nowrap; }
+  .book-ticket-hi { font-size: clamp(11px, 3.4vw, 15px); white-space: nowrap; }
+  .hints { bottom: calc(96px + var(--txp-safe-b)); flex-direction: column; align-items: center; }
+}
+
+@media (max-width: 680px) and (min-aspect-ratio: 1/1) {
+  .book-tickets-wrap {
+    gap: 8px;
+    right: 16px;
+    bottom: calc(16px + var(--txp-safe-b));
+  }
+  .book-ticket,
+  .book-ticket--login,
+  .book-ticket--register {
+    transform: none;
+  }
 }
 
 @container (max-width: 380px) {
@@ -1799,16 +1851,37 @@ section > .tt-day:first-child { margin-top: 0; }
 
 /* ── Logo, top left ────────────────────────────────────────────────────── */
 
-.txp-logo {
+.txp-brand {
   position: fixed;
   top: max(10px, var(--txp-safe-t));
   left: 14px;
   z-index: 31;
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* the two logos share one centre line */
+  gap: 6px;
+  pointer-events: none;
+}
+.txp-logo {
+  display: block;
   width: clamp(130px, 13vw, 240px);
   height: auto;
-  pointer-events: none;
   filter: drop-shadow(0 4px 6px rgb(0 0 0 / 0.35));
 }
+.txp-soa { display: none; }
 @media (max-aspect-ratio: 1/1) {
   .txp-logo { width: min(33vw, 160px); }
+  .txp-soa {
+    display: block;
+    width: calc(min(33vw, 160px) * 0.52);
+    height: auto;
+    filter: drop-shadow(0 4px 6px rgb(0 0 0 / 0.35));
+    animation: txp-soa-in 0.35s ease-out both;
+  }
+  /* Once the opening is over, the scene's copy steps aside for this one. */
+  .txp-shell.is-ready .piece--sun { visibility: hidden; }
+}
+@keyframes txp-soa-in { from { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .txp-soa { animation: none; }
 }

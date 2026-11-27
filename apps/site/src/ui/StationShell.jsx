@@ -8,6 +8,7 @@ import { useLedStatus, usePanelRoute, usePresence } from './hooks.js';
 import Panel from './Panel.jsx';
 import Menu from './Menu.jsx';
 import BookButton from './BookButton.jsx';
+import LoginButton from './LoginButton.jsx';
 import Hints from './Hints.jsx';
 import DoorTransition from './DoorTransition.jsx';
 import About from './panels/About.jsx';
@@ -18,6 +19,7 @@ import Countdown from './panels/Countdown.jsx';
 import PnrStatus from './panels/PnrStatus.jsx';
 import '../styles/ui.css';
 import logoUrl from '../assets/stage/logo.webp';
+import soaLogoUrl from '../assets/stage/sun.webp';
 
 const loadCounter = () => import('./panels/ReservationCounter.jsx');
 const ReservationCounter = lazy(loadCounter);
@@ -102,30 +104,18 @@ export default function StationShell() {
       </div>
 
       {introDone && (
-        <div className="txp-chrome" inert={panelOpen ? '' : undefined}>
-          <img className="txp-logo" src={logoUrl} alt="TechXpress Hackathon" />
-          <div className="station-top-nav">
-            <Link
-              to="/vortex"
-              className="vortex-station-btn"
-              aria-label="Enter VORTEX Passenger Terminal"
-            >
-              <span className="vortex-rivet rivet-tl" />
-              <span className="vortex-rivet rivet-tr" />
-              <span className="vortex-rivet rivet-bl" />
-              <span className="vortex-rivet rivet-br" />
-              <span className="vortex-btn-icon">
-                <img src={logoUrl} alt="" className="vortex-btn-engine" />
-              </span>
-              <span className="vortex-btn-body">
-                <span className="vortex-btn-en">VORTEX TERMINAL</span>
-                <span className="vortex-btn-hi" lang="hi">प्रवेश द्वार · मंच 1</span>
-              </span>
-              <span className="vortex-btn-arrow" aria-hidden="true">→</span>
-            </Link>
-            <Menu onOpen={openPanel} />
+        <div className="txp-chrome" inert={panelOpen}>
+          {/* On phones the SOA logo sits exactly below the TechXpress logo
+              (on wide screens it stays in the sky, as a scene piece). */}
+          <div className="txp-brand">
+            <img className="txp-logo" src={logoUrl} alt="TechXpress Hackathon" />
+            <img className="txp-soa" src={soaLogoUrl} alt="Siksha 'O' Anusandhan" />
           </div>
-          <BookButton onOpen={openPanel} />
+          <Menu onOpen={openPanel} />
+          <div className="book-tickets-wrap">
+            <LoginButton />
+            <BookButton onOpen={openPanel} />
+          </div>
           <Hints />
         </div>
       )}

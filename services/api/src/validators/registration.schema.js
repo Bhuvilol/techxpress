@@ -52,7 +52,7 @@ export const YEAR_SEMESTER_OPTIONS = [
 // the Institution table). Kept in step with both registration forms
 // (apps/site/src/utils/registrationForm.js and apps/portal RegistrationPage.jsx).
 export const BRANCH_INSTITUTION_NAME = 'ITER | SOA';
-export const BRANCH_OPTIONS = ['CSE Core', 'CSE AIML', 'CSE CS', 'CSE DS', 'EE', 'ECE', 'EEE', 'Mech'];
+export const BRANCH_OPTIONS = ['CSE Core', 'CSE AIML', 'CSE CS', 'CSE DS', 'CSE IOT', 'EE', 'ECE', 'EEE', 'Mech'];
 export const branchField = z.enum(BRANCH_OPTIONS, { errorMap: () => ({ message: 'Select your branch.' }) });
 
 export const TSHIRT_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'];
