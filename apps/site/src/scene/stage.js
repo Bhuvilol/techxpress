@@ -73,7 +73,8 @@ function scaleGroup(slots, { ids, scale, toX, toBottom }) {
 export const SLOTS = {
   wide: scaleGroup({
     sky: { x: -340, y: -440, w: 2600, h: 1960 },
-    sun: { x: 1480, y: 30, w: 180, h: 180 },
+    // The SOA logo: on the front layer so no wire, mast or board covers it.
+    sun: { x: 1480, y: 30, w: 180, h: 180, layer: 'cast' },
     birds: { x: 560, y: 40, w: 240, h: 120 },
     // Shown at its real shape, twice side by side to span the width; the
     // second copy is mirrored (scene.css) so the join reads as one platform.
@@ -94,7 +95,7 @@ export const SLOTS = {
   }, FRONT_GROUP),
   tall: {
     sky: { x: -240, y: -340, w: 1560, h: 2600 },
-    sun: { x: 60, y: 330, w: 240, h: 240 },
+    sun: { x: 60, y: 330, w: 240, h: 240, layer: 'cast' },
     birds: { x: 150, y: 220, w: 300, h: 150 },
     platform2: { x: -240, y: 474, w: 1560, h: 336 },
     mast: { instances: [{ x: 0, y: 370, w: 130, h: 640 }, { x: 480, y: 370, w: 130, h: 640 }, { x: 960, y: 370, w: 130, h: 640 }] },

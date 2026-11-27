@@ -538,14 +538,6 @@
   96%, 100% { opacity: 1; }
 }
 
-/* The sun sinks, very slowly, and stays down. */
-.is-live .piece--sun {
-  animation: stage-sun-sink 300s linear forwards;
-}
-
-@keyframes stage-sun-sink {
-  to { translate: 0 calc(var(--u) * 70px); }
-}
 
 /* Birds nudge along a little, a step at a time. */
 .is-live .piece--birds {
