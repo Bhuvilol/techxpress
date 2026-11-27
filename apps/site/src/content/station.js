@@ -163,7 +163,7 @@ export const FAQ = [
   { q: 'Who can register?', a: 'Any SOA student. Register on this site with your college ID card.' },
   { q: 'Is there a fee?', a: 'No, registration is free.' }, // ⚠ CONFIRM
   { q: 'How big is a team?', a: '5 Members mandatory per team, with atleast one female member.' },
-  { q: 'Can I register without a team?', a: 'Yes. Register on your own first, then form or join a team in the VORTEX portal.' },
+  { q: 'Can I register without a team?', a: 'You need to register individually and later join the team in the vortex portal.' },
   { q: 'What happens after I register?', a: 'Your college coordinator checks your details and ID card. Once you are approved, your login code arrives by email from team@soatechxpress.in.' },
   { q: "I haven't received my email.", a: 'Check your spam folder, then check your PNR status here. If it says CONFIRMED but no email arrived, write to the organisers.' },
   { q: 'Where is the hackathon?', a: 'ITER campus, SOA, Bhubaneswar: BGA A and the CL 3rd floor.' }, // ⚠ CONFIRM
