@@ -1,5 +1,5 @@
 import {
-  Trophy, Medal, ScrollText, Rocket, Globe2, Sparkles, Train, Gift
+  Trophy, Medal, ScrollText, Rocket, Globe2, Sparkles, Train, Gift, Users, Award
 } from 'lucide-react';
 import { PageHeader } from '../../components/ui/PageHeader.jsx';
 import { NeonBorderCard } from '../../components/ui/NeonBorderCard.jsx';
@@ -21,11 +21,11 @@ const PODIUM = [
     amount: '₹15,000',
     color: 'border-txp-teal/40 text-txp-teal',
     perks: [
-      { icon: Trophy, text: 'Team runner-up trophy' },
+      { icon: Trophy, text: 'Team trophy' },
       { icon: Medal, text: 'Medal for every team member' },
       { icon: ScrollText, text: 'Certificate of merit' },
       { icon: Rocket, text: 'Incubation & mentoring support' },
-      { icon: Globe2, text: 'Featured on the SOA website' },
+      { icon: Globe2, text: 'Featured on the college website' },
     ],
   },
   {
@@ -37,11 +37,11 @@ const PODIUM = [
     color: 'border-txp-yellow text-txp-yellow',
     winner: true,
     perks: [
-      { icon: Trophy, text: 'Winner’s grand trophy' },
-      { icon: Medal, text: 'Gold medal for every team member' },
-      { icon: ScrollText, text: 'Certificate of excellence' },
-      { icon: Rocket, text: 'Direct incubation & venture mentoring' },
-      { icon: Globe2, text: 'Featured on the SOA university homepage' },
+      { icon: Trophy, text: 'Winner’s trophy' },
+      { icon: Medal, text: 'Medal for every team member' },
+      { icon: ScrollText, text: 'Certificate of merit' },
+      { icon: Rocket, text: 'Incubation & mentoring support' },
+      { icon: Globe2, text: 'Featured on the college website' },
     ],
   },
   {
@@ -52,32 +52,21 @@ const PODIUM = [
     amount: '₹10,000',
     color: 'border-txp-pink/40 text-txp-pink',
     perks: [
-      { icon: Trophy, text: 'Team runner-up trophy' },
+      { icon: Trophy, text: 'Team trophy' },
       { icon: Medal, text: 'Medal for every team member' },
       { icon: ScrollText, text: 'Certificate of merit' },
       { icon: Rocket, text: 'Incubation & mentoring support' },
-      { icon: Globe2, text: 'Featured on the SOA website' },
+      { icon: Globe2, text: 'Featured on the college website' },
     ],
   },
 ];
 
-const SPECIAL = [
-  {
-    title: 'Best Interdisciplinary Prototype',
-    amount: '₹5,000',
-    desc: 'Awarded to the squad uniting distinct domains (e.g. engineering + healthcare/agriculture) with exceptional synergy.',
-  },
-  {
-    title: 'Best Female-Led Innovation',
-    amount: '₹5,000',
-    desc: 'Recognizing outstanding leadership and technical innovation driven by female participants.',
-  },
-  {
-    title: 'Best Social / Campus Impact',
-    amount: '₹5,000',
-    desc: 'Awarded to the solution addressing the most pressing real-world campus or regional challenge.',
-  },
-];
+// Confirmed: the best 3 theme-based ideas get ₹5,000 each.
+const SPECIAL = [1, 2, 3].map((n) => ({
+  title: `Best theme-based idea #${n}`,
+  amount: '₹5,000',
+  desc: 'For one of the three best innovations or ideas within a problem-statement theme.',
+}));
 
 export const AwardsPage = () => {
   return (
@@ -90,7 +79,7 @@ export const AwardsPage = () => {
       <PageHeader
         kicker="Railway Fare Chart & Awards // किराया सूची एवं पुरस्कार"
         title="Prizes & Recognition"
-        description="A total bounty of ₹65,000 across overall championship tiers and specialized category awards, accompanied by incubation and faculty mentoring."
+        description="A total bounty of ₹65,000 across overall championship tiers and specialized category awards, with incubation and mentoring support for the winners."
         actions={
           <div className="flex items-center gap-2 rounded-[4px] border-2 border-txp-ink bg-txp-yellow px-4 py-2 text-txp-ink shadow-[0_3px_0_#000]">
             <Sparkles size={16} />
@@ -192,10 +181,24 @@ export const AwardsPage = () => {
               </div>
               <div className="mt-6 flex items-center gap-2 font-mono text-[10px] uppercase tracking-wider text-text-dim border-t border-border-dim pt-3">
                 <Gift size={12} className="text-txp-teal" />
-                <span>Certificate + Incubation Mentorship</span>
+                <span>Certificate · mentoring · college website feature</span>
               </div>
             </div>
           ))}
+        </div>
+      </div>
+
+      {/* Every participant */}
+      <div className="mt-12 glass-card flex flex-wrap items-center gap-x-8 gap-y-3 border-border-mid p-6">
+        <div className="flex items-center gap-3">
+          <Users size={18} className="text-txp-yellow" />
+          <h2 className="font-cond text-[22px] font-black uppercase tracking-[0.06em] text-text-primary">Every participant</h2>
+        </div>
+        <div className="flex items-center gap-2 font-sans text-[14px] text-text-secondary">
+          <Award size={16} className="text-txp-yellow" /> Certificate of participation
+        </div>
+        <div className="flex items-center gap-2 font-sans text-[14px] text-text-secondary">
+          <Gift size={16} className="text-txp-yellow" /> Goodies
         </div>
       </div>
     </section>

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { NavLink, Outlet, Link } from 'react-router-dom';
+import { NavLink, Outlet, Link, useLocation } from 'react-router-dom';
 import {
   Users, ShieldCheck, Settings, Lock, Megaphone,
   History, Layers, ListChecks, LogOut, Menu, FlaskConical, Database, IdCard, KeyRound, Train
@@ -12,15 +12,15 @@ const ALL_NAV = [
   { to: '/admin',                end: true, label: 'Overview',     icon: Layers   },
   { to: '/admin/verification',              label: 'Verification', icon: ShieldCheck },
   { to: '/admin/registry',                  label: 'Registry',     icon: Database  },
-  { to: '/admin/staff',                     label: 'Staff Passes', icon: KeyRound  },
-  { to: '/admin/teams',                     label: 'Squads & Berths', icon: Users  },
+  { to: '/admin/staff',                     label: 'Staff', icon: KeyRound  },
+  { to: '/admin/teams',                     label: 'Teams', icon: Users  },
   { to: '/directory',                       label: 'Directory',    icon: IdCard    },
-  { to: '/admin/rules',                     label: 'Train Rules',  icon: Settings  },
+  { to: '/admin/rules',                     label: 'Rules',  icon: Settings  },
   { to: '/admin/rounds',                    label: 'Rounds',       icon: Lock      },
   { to: '/admin/taxonomy',                  label: 'Taxonomy',     icon: ListChecks },
-  { to: '/admin/broadcast',                 label: 'Announcements', icon: Megaphone },
+  { to: '/admin/broadcast',                 label: 'Broadcast', icon: Megaphone },
   { to: '/admin/audit',                     label: 'Audit Log',    icon: History   },
-  { to: '/admin/testing',                   label: 'Testing Sim',  icon: FlaskConical, testingOnly: true },
+  { to: '/admin/testing',                   label: 'Testing',  icon: FlaskConical, testingOnly: true },
 ];
 
 const NAV = ALL_NAV.filter((item) => TESTING_ENABLED || !item.testingOnly);
@@ -29,6 +29,7 @@ export const AdminShell = () => {
   const { user, logout } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
 
+  const location = useLocation(); // fresh fade-in on every page
   const close = () => setIsOpen(false);
 
   return (
@@ -133,7 +134,7 @@ export const AdminShell = () => {
         </div>
 
         {/* Routed Admin Pages */}
-        <main className="flex-1 p-6 md:p-10">
+        <main key={location.pathname} className="route-enter flex-1 p-6 md:p-10">
           <Outlet />
         </main>
       </div>

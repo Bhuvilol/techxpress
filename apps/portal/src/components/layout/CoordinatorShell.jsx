@@ -1,18 +1,19 @@
 import { useState } from 'react';
-import { NavLink, Outlet, Link } from 'react-router-dom';
+import { NavLink, Outlet, Link, useLocation } from 'react-router-dom';
 import { ShieldCheck, LogOut, Menu, IdCard, Train } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext.jsx';
 import { cn } from '../../utils/cn.js';
 
 const NAV = [
-  { to: '/coordinator', end: true, label: 'Candidate Verification', icon: ShieldCheck },
-  { to: '/directory', label: 'Passenger Directory', icon: IdCard },
+  { to: '/coordinator', end: true, label: 'Student Review', icon: ShieldCheck },
+  { to: '/directory', label: 'Directory', icon: IdCard },
 ];
 
 export const CoordinatorShell = () => {
   const { user, logout } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
 
+  const location = useLocation(); // fresh fade-in on every page
   const close = () => setIsOpen(false);
 
   return (
@@ -110,7 +111,7 @@ export const CoordinatorShell = () => {
           <div className="w-8" />
         </div>
 
-        <main className="flex-1 p-6 md:p-10">
+        <main key={location.pathname} className="route-enter flex-1 p-6 md:p-10">
           <Outlet />
         </main>
       </div>

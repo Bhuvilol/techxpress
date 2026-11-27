@@ -455,3 +455,14 @@ body::before {
 .scroll-panel::-webkit-scrollbar-thumb:hover {
   background: var(--txp-yellow);
 }
+
+/* Page fade-in inside the admin and coordinator shells (keyed by route). */
+.route-enter {
+  animation: route-enter 280ms var(--ease-out) both;
+}
+@keyframes route-enter {
+  from { opacity: 0; transform: translateY(4px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .route-enter { animation: none; }
+}

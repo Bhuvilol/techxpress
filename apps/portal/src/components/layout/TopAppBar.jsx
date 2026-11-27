@@ -81,13 +81,13 @@ export const TopAppBar = () => {
           <TechXpressLink />
           <NavItem to="/leaderboard">Leaderboard</NavItem>
           <NavItem to="/problem-statements">Problems</NavItem>
-          <NavItem to="/awards">Awards</NavItem>
+          <NavItem to="/awards">Awards & Fare Chart</NavItem>
 
           {isAuth ? (
             <div className="ml-3 flex items-center gap-1.5 border-l border-border-mid pl-3">
               <NavItem to={homePathForRole(user.role)}>Dashboard</NavItem>
-              <NavItem to="/directory">Directory</NavItem>
-              {user.role === 'STUDENT'  && <NavItem to="/teams">My Team</NavItem>}
+              <NavItem to="/directory">Passenger Directory</NavItem>
+              {user.role === 'STUDENT'  && <NavItem to="/teams">My Team / Berth</NavItem>}
               {user.role === 'JURY'     && <NavItem to="/jury">Evaluations</NavItem>}
               {user.role === 'ADMIN'    && <NavItem to="/admin">Admin</NavItem>}
               {user.role === 'COORDINATOR' && <NavItem to="/coordinator">Coordinator</NavItem>}
@@ -146,8 +146,8 @@ export const TopAppBar = () => {
               <NavItem to="/directory" onClick={closeMenu}>Passenger Directory</NavItem>
               {user.role === 'STUDENT'  && <NavItem to="/teams" onClick={closeMenu}>My Team / Berth</NavItem>}
               {user.role === 'JURY'     && <NavItem to="/jury" onClick={closeMenu}>Evaluations</NavItem>}
-              {user.role === 'ADMIN'    && <NavItem to="/admin" onClick={closeMenu}>Admin Switchboard</NavItem>}
-              {user.role === 'COORDINATOR' && <NavItem to="/coordinator" onClick={closeMenu}>Coordinator Review</NavItem>}
+              {user.role === 'ADMIN'    && <NavItem to="/admin" onClick={closeMenu}>Admin</NavItem>}
+              {user.role === 'COORDINATOR' && <NavItem to="/coordinator" onClick={closeMenu}>Coordinator</NavItem>}
               <button
                 onClick={() => { logout(); closeMenu(); }}
                 className="danger-button mt-6 inline-flex w-full items-center justify-center gap-2 !py-2.5 font-cond text-[16px] font-bold uppercase tracking-wider"

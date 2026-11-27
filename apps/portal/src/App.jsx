@@ -4,7 +4,6 @@ import { AdminShell } from './components/layout/AdminShell.jsx';
 import { CoordinatorShell } from './components/layout/CoordinatorShell.jsx';
 import { RequireAuth, RedirectIfAuth } from './components/layout/RouteGuards.jsx';
 
-import { HomePage }            from './pages/public/HomePage.jsx';
 import { LoginPage }           from './pages/public/LoginPage.jsx';
 import { RegistrationPage }    from './pages/public/RegistrationPage.jsx';
 import { LeaderboardPage }     from './pages/public/LeaderboardPage.jsx';
@@ -34,7 +33,8 @@ import { CoordinatorVerificationPage } from './pages/coordinator/CoordinatorVeri
 export const App = () => (
   <Routes>
     <Route element={<AppLayout />}>
-      <Route path="/" element={<HomePage />} />
+      {/* No home page: signed out -> login, signed in -> their dashboard. */}
+      <Route path="/" element={<RedirectIfAuth><Navigate to="/login" replace /></RedirectIfAuth>} />
 
       <Route path="/login"    element={<RedirectIfAuth><LoginPage /></RedirectIfAuth>} />
       <Route path="/register" element={<RedirectIfAuth><RegistrationPage /></RedirectIfAuth>} />
