@@ -1158,7 +1158,11 @@ section > .tt-day:first-child { margin-top: 0; }
 }
 .faq-item[open] .faq-chevron { transform: rotate(225deg) translateY(-3px); }
 .faq-item[open] summary { border-bottom: 1px dashed rgba(21, 19, 32, 0.4); }
-.faq-a { padding: 12px 14px 14px 58px; }
+.faq-a {
+  padding: 12px 14px 14px 58px;
+  white-space: pre-line;
+  line-height: 1.5;
+}
 .faq-contact {
   margin-top: 16px;
   text-align: center;

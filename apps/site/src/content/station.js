@@ -169,7 +169,10 @@ export const FAQ = [
   { q: 'Where is the hackathon?', a: 'ITER campus, SOA, Bhubaneswar: BGA A and the CL 3rd floor.' }, // ⚠ CONFIRM
   { q: 'What should I bring?', a: 'Your laptop, charger and college ID card.' }, // ⚠ CONFIRM
   { q: 'Will food be provided?', a: 'Yes, meals are provided during the event. See the timetable.' }, // ⚠ CONFIRM
-  { q: 'Who do I contact?', a: 'Write to team@soatechxpress.in.' },
+  {
+    q: 'Who do I contact?',
+    a: 'Contact Us\nFor any inquiries, reach out to either number below.\n+91 98618 82015  |  +91 94305 61857\nWhatsApp or SMS preferred',
+  },
 ];
 
 export const PNR = {
