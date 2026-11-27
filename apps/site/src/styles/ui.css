@@ -1785,25 +1785,33 @@ section > .tt-day:first-child { margin-top: 0; }
   .guide { right: 12px; top: max(12px, var(--txp-safe-t)); }
   .guide-plate { min-height: 48px; padding: 6px 14px 6px 12px; }
   .guide-plate-en { font-size: 18px; }
+  /* Phones: Login and Register side by side in one row, the same size, so
+     they take one ticket's height and fit the width. */
   .book-tickets-wrap {
-    left: max(16px, calc(50% - 300px));
-    right: max(16px, calc(50% - 300px));
-    bottom: calc(16px + var(--txp-safe-b));
-    flex-direction: column;
+    left: max(12px, calc(50% - 300px));
+    right: max(12px, calc(50% - 300px));
+    bottom: calc(14px + var(--txp-safe-b));
+    flex-direction: row;
     gap: 8px;
     align-items: stretch;
   }
   .book-ticket,
   .book-ticket--login,
   .book-ticket--register {
-    width: 100%;
+    min-width: 0;
+    width: auto;
     transform: none;
   }
+  .book-ticket--login { flex: 1 1 0; }
+  .book-ticket--register { flex: 1 1 0; }
   .book-ticket:hover { transform: translateY(-2px); }
-  .book-ticket-face { min-height: 64px; }
-  .book-ticket-body { flex: 1; }
-  .book-ticket-en { font-size: 24px; }
-  .hints { bottom: calc(175px + var(--txp-safe-b)); flex-direction: column; align-items: center; }
+  .book-ticket-face { min-height: 62px; }
+  .book-ticket-stub,
+  .book-ticket-arrow { display: none; }
+  .book-ticket-body { flex: 1; min-width: 0; padding: 8px 10px 8px 18px; }
+  .book-ticket-en { font-size: clamp(17px, 5.4vw, 24px); white-space: nowrap; }
+  .book-ticket-hi { font-size: clamp(11px, 3.4vw, 15px); white-space: nowrap; }
+  .hints { bottom: calc(96px + var(--txp-safe-b)); flex-direction: column; align-items: center; }
 }
 
 @media (max-width: 680px) and (min-aspect-ratio: 1/1) {
