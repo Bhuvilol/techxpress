@@ -13,6 +13,7 @@ import { Spinner } from '../../components/ui/Spinner.jsx';
 import { Pagination } from '../../components/ui/Pagination.jsx';
 import { confirm } from '../../components/ui/Confirm.jsx';
 import { issueLabel } from '../../utils/format.js';
+import { IdCardModal } from '../../components/verification/IdCardModal.jsx';
 
 const STATUS_TONE = { FORMING: 'warn', QUALIFIED: 'live', FINALIZED: 'cyan', DISQUALIFIED: 'crit' };
 
@@ -24,6 +25,7 @@ export const AdminTeamsPage = () => {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
   const [active, setActive] = useState(null);
+  const [viewing, setViewing] = useState(null); // team whose member details are open
 
   // Debounce search input to avoid flood on each keystroke
   useEffect(() => {
@@ -135,7 +137,15 @@ export const AdminTeamsPage = () => {
 
       <div className="grid gap-3 lg:grid-cols-2">
         {teams.data?.teams.map((t) => (
-          <article key={t.id} className="glass-card flat space-y-3">
+          <article
+            key={t.id}
+            className="glass-card flat space-y-3 cursor-pointer transition-colors hover:border-white/20"
+            role="button"
+            tabIndex={0}
+            title="View member details"
+            onClick={() => setViewing(t)}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setViewing(t); } }}
+          >
             <div className="flex items-start justify-between gap-3">
               <div>
                 <div className="kicker mb-1">{t.domain?.name}{t.problemStatement && ` · ${t.problemStatement.title}`}</div>
@@ -155,7 +165,7 @@ export const AdminTeamsPage = () => {
               <span className="text-text-dim">{t.domainExpertCount} experts</span>
             </div>
             <div className="flex justify-end">
-              <button className="ghost-button" onClick={() => setActive(t)}>
+              <button className="ghost-button" onClick={(e) => { e.stopPropagation(); setActive(t); }}>
                 <Settings size={12} /> Manage
               </button>
             </div>
@@ -179,6 +189,7 @@ export const AdminTeamsPage = () => {
         />
       )}
 
+      {viewing && <TeamDetailsModal key={viewing.id} team={viewing} onClose={() => setViewing(null)} />}
       <ManageModal key={active?.id ?? 'none'} team={active} onClose={() => setActive(null)} onDone={refresh} />
     </>
   );
@@ -407,3 +418,116 @@ const ManageModal = ({ team, onClose, onDone }) => {
     </Modal>
   );
 };
+
+// Every member of one team with their full registration details, for admins.
+const TeamDetailsModal = ({ team, onClose }) => {
+  const details = useApi(() => api.get(`/api/admin/teams/${team.id}/members`), [team.id]);
+  const [idCardFor, setIdCardFor] = useState(null);
+  const members = details.data?.team?.members ?? [];
+  // Which member's details are shown; the leader (else the first) to start.
+  const [selectedId, setSelectedId] = useState(null);
+  const selected = members.find((m) => m.user.id === selectedId) ?? members.find((m) => m.isLeader) ?? members[0];
+
+  return (
+    <>
+      <Modal open onClose={onClose} title={`${team.name} · members`} size="lg">
+        <div className="mb-4 font-mono text-[12px] text-text-secondary">
+          {team.domain?.name}{team.problemStatement && ` · ${team.problemStatement.title}`}
+          <span className="ml-2"><Badge tone={STATUS_TONE[team.status]} dot>{team.status}</Badge></span>
+        </div>
+
+        {details.loading && <div className="flex justify-center py-8"><Spinner /></div>}
+        {details.error && <div className="font-mono text-[12px] text-status-crit">{details.error.message ?? 'Could not load members.'}</div>}
+        {!details.loading && !details.error && members.length === 0 && (
+          <Empty icon={Users} title="No members" description="This team has no members yet." />
+        )}
+
+        {members.length > 0 && (
+          <div role="tablist" aria-label="Team members" className="mb-3 flex flex-wrap gap-2">
+            {members.map(({ user: m, isLeader: lead }) => {
+              const on = m.id === selected?.user.id;
+              return (
+                <button
+                  key={m.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={on}
+                  onClick={() => setSelectedId(m.id)}
+                  className={`inline-flex items-center gap-1.5 rounded-[4px] border px-3 py-1.5 font-mono text-[12px] transition-colors ${
+                    on ? 'border-status-warn bg-status-warn/15 text-text-primary' : 'border-white/10 text-text-secondary hover:border-white/30'
+                  }`}
+                >
+                  {lead && <Crown size={12} className="text-status-warn" aria-label="Leader" />}
+                  {m.fullName}
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        {selected && (() => {
+          const { user: u, isLeader, joinedAt } = selected;
+          return (
+        <section className="rounded-[4px] border border-white/10 p-4">
+          <div className="mb-3 flex flex-wrap items-start justify-between gap-2">
+            <div>
+              <div className="flex items-center gap-2 font-sans text-[15px] font-bold">
+                {isLeader && <Crown size={14} className="text-status-warn" aria-label="Leader" />}
+                {u.fullName}
+              </div>
+              <div className="font-mono text-[11px] text-text-dim">
+                {isLeader ? 'Leader' : 'Member'} · joined {new Date(joinedAt).toLocaleDateString()} · {u.publicId}
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-1">
+              {u.isDomainExpert && <Badge tone="cyan">Domain expert</Badge>}
+              <Badge tone={u.verificationStatus === 'VERIFIED' ? 'live' : 'warn'}>{u.verificationStatus}</Badge>
+            </div>
+          </div>
+
+          <dl className="grid gap-x-6 gap-y-2 font-mono text-[12px] sm:grid-cols-2">
+            <Detail label="Email" value={u.email && <a className="underline" href={`mailto:${u.email}`}>{u.email}</a>} />
+            <Detail label="Phone" value={u.phone && <a className="underline" href={`tel:${u.phone}`}>{u.phone}</a>} />
+            <Detail label="Registration no." value={u.registrationNo} />
+            <Detail label="Institution" value={u.institution?.name} />
+            <Detail label="Degree" value={u.degree} />
+            <Detail label="Branch" value={u.branch} />
+            <Detail label="Year / semester" value={u.yearSemester} />
+            <Detail label="Gender" value={u.gender && u.gender.charAt(0) + u.gender.slice(1).toLowerCase().replace(/_/g, " ")} />
+            <Detail label="T-shirt" value={u.tshirtSize} />
+            <Detail label="Domain" value={u.domain?.name} />
+            <Detail label="Team role" value={u.preferredTeamRole} />
+            <Detail label="Discord" value={u.discordId} />
+            <Detail label="Contribution areas" value={u.contributionAreas?.length ? u.contributionAreas.join(', ') : null} wide />
+            <Detail label="Technical skills" value={u.technicalSkills} wide />
+            <Detail label="Non-technical skills" value={u.nonTechnicalSkills} wide />
+          </dl>
+
+          <div className="mt-3 flex flex-wrap gap-3 font-mono text-[12px]">
+            {[['LinkedIn', u.linkedinUrl], ['GitHub', u.githubUrl], ['Portfolio', u.portfolioUrl], ['Resume', u.resumeDriveLink]]
+              .filter(([, href]) => href)
+              .map(([label, href]) => (
+                <a key={label} className="underline" href={href} target="_blank" rel="noopener noreferrer">{label} ↗</a>
+              ))}
+            {u.hasIdCard && (
+              <button type="button" className="ghost-button !py-1" onClick={() => setIdCardFor(u)}>View ID card</button>
+            )}
+          </div>
+        </section>
+          );
+        })()}
+      </Modal>
+
+      {idCardFor && (
+        <IdCardModal student={idCardFor} basePath="/api/admin/verification" onClose={() => setIdCardFor(null)} />
+      )}
+    </>
+  );
+};
+
+const Detail = ({ label, value, wide = false }) => (
+  <div className={wide ? 'sm:col-span-2' : undefined}>
+    <dt className="text-[10px] uppercase tracking-wider text-text-dim">{label}</dt>
+    <dd className="break-words text-text-secondary">{value || '—'}</dd>
+  </div>
+);

@@ -15,6 +15,12 @@ const router = Router();
 
 router.use(requireAuth, requireRole('ADMIN'));
 
+// Full member profiles for one team (contact details, college, ID card flag).
+router.get('/:id/members',
+  validate({ params: teamIdParamSchema }),
+  ah(admin.teamMembers),
+);
+
 router.post('/:id/force-add',
   validate({ params: teamIdParamSchema, body: forceAddSchema }),
   ah(admin.forceAddMember),
