@@ -122,7 +122,7 @@ export const CoordinatorVerificationPage = () => {
         <Search size={16} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-text-dim" />
         <input
           className="input-glass !h-12 !pl-12"
-          placeholder="Search name / email / reg #"
+          placeholder="Search name / email / reg # / TXP ref"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />

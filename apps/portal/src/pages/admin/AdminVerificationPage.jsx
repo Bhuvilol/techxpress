@@ -176,7 +176,7 @@ export const AdminVerificationPage = () => {
         <Search size={16} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-white/20" />
         <input
           className="input-glass !h-14 !pl-12 !bg-[#050505] border-white/10 focus:border-white/40"
-          placeholder="Search name / email / reg #"
+          placeholder="Search name / email / reg # / TXP ref"
           value={search}
           onChange={handleSearchChange}
         />
