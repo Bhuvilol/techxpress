@@ -106,7 +106,8 @@ const ProfileTab = ({ user, myTeam }) => {
       <ProfileLinks user={user} />
     </section>
 
-    <aside className="glass-card flat space-y-6 border-border-mid bg-bg-surface-1 shadow-[0_4px_24px_rgba(0,0,0,0.4)]">
+    {/* First on phones so the boarding-pass QR is the first thing a student sees; right column from md up. */}
+    <aside className="glass-card flat space-y-6 order-first md:order-none border-border-mid bg-bg-surface-1 shadow-[0_4px_24px_rgba(0,0,0,0.4)]">
       <div className="flex items-center gap-4">
         <div className="grid h-14 w-14 place-items-center rounded-[3px] border-2 border-txp-yellow/40 bg-bg-surface-3 font-cond text-[22px] font-black text-txp-yellow shadow-[0_0_12px_-2px_rgba(245,184,0,0.25)]">
           {(user.fullName ?? '?').slice(0, 2).toUpperCase()}
