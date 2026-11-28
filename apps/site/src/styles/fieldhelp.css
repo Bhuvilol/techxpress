@@ -1,0 +1,65 @@
+/* The "?" field help in the registration form: the button beside a label
+   and the note it opens (see guide/FieldHelp.jsx). Uses the station's paper,
+   ink and yellow materials from ui.css. */
+
+.fh-btn {
+  display: inline-grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  margin-left: 8px;
+  padding: 0;
+  vertical-align: middle;
+  font: 800 16px/1 var(--txp-cond);
+  color: var(--txp-ink);
+  background: var(--txp-yellow);
+  border: 2px solid var(--txp-ink);
+  border-radius: 50%;
+  box-shadow: 0 2px 0 var(--txp-ink);
+  cursor: pointer;
+}
+.fh-btn:active { transform: translateY(1px); box-shadow: 0 1px 0 var(--txp-ink); }
+.fh-btn.is-open { background: var(--txp-ink); color: var(--txp-yellow); }
+@media (pointer: coarse) {
+  .fh-btn { width: 34px; height: 34px; font-size: 19px; }
+}
+
+.fh-note {
+  margin: 0 0 10px;
+  padding: 10px 12px;
+  color: var(--txp-ink);
+  background: var(--txp-paper-hi);
+  border: 2px solid var(--txp-ink);
+  border-left-width: 6px;
+  border-left-color: var(--txp-yellow);
+  border-radius: 4px;
+  animation: txp-pop 160ms var(--txp-ease);
+}
+.fh-who {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+  font: 700 16px/1 var(--txp-cond);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.fh-row {
+  display: grid;
+  grid-template-columns: 72px 1fr;
+  column-gap: 8px;
+  font: 500 16px/1.4 var(--txp-sans);
+}
+.fh-row + .fh-row { margin-top: 4px; }
+.fh-row strong {
+  font: 700 14px/1.6 var(--txp-cond);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--txp-teal-ink);
+}
+.fh-row--avoid strong { color: var(--txp-red); }
+.fh-ex { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 15px; word-break: break-word; }
+
+@media (prefers-reduced-motion: reduce) {
+  .fh-note { animation: none; }
+}

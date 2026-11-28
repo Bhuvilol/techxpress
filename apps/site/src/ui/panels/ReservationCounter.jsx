@@ -9,6 +9,8 @@ import { shutterKey } from '../../lib/countdown.js';
 import { BOOK, EVENT, LABELS, PNR, UI } from '../../content/station.js';
 import { goToPortal, PORTAL_URL } from '../portal.js';
 import { useNow } from '../hooks.js';
+import { HelpButton, HelpNote } from '../../guide/FieldHelp.jsx';
+import { hasFieldHelp } from '../../content/fieldGuide.js';
 import { compressImage } from '../../utils/imageCompress';
 import { normalizeRegistrationNo } from '../../utils/registrationNo';
 import {
@@ -117,12 +119,16 @@ const focusField = (key) => {
 };
 
 function FieldWrap({ field, label, required, hint, error, children, fullWidth = false }) {
+  const [helpOpen, setHelpOpen] = useState(false);
+  const help = hasFieldHelp(field);
   return (
     <div data-field={field} className={`input-group ${fullWidth ? 'reg-span-2' : ''} ${error ? 'has-error' : ''}`}>
       <label>
         {label}
         {required && <span className="req-star"> *</span>}
+        {help && <HelpButton field={field} open={helpOpen} onToggle={() => setHelpOpen((v) => !v)} />}
       </label>
+      {help && <HelpNote field={field} open={helpOpen} />}
       {children}
       {hint && !error && <span className="field-hint">{hint}</span>}
       {error && <span className="field-error">{error}</span>}
