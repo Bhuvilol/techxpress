@@ -12,6 +12,7 @@ test('institution-based domains', () => {
   assert.equal(isDomainExpertFor(m('IBCS | SOA'), 'Management'), true);
   assert.equal(isDomainExpertFor(m('IAS | SOA'), 'Agriculture'), true);
   assert.equal(isDomainExpertFor(m('SPS | SOA'), 'Biotechnology & Pharmacy'), true);
+  assert.equal(isDomainExpertFor(m('CBT | SOA'), 'Biotechnology & Pharmacy'), true);
 });
 
 test('ITER branch-based domains', () => {
