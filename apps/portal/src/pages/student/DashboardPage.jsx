@@ -23,6 +23,7 @@ import { formatRelative, titleCase } from '../../utils/format.js';
 import { DomainPicker, DOMAINS_SAVED_EVENT } from '../../components/student/DomainPicker.jsx';
 import logoUrl from '../../assets/logo.webp';
 import trainUrl from '../../assets/train-a.webp';
+import { BoardingPassQr } from '../../components/student/BoardingPassQr.jsx';
 
 const ROLE_TONE = { ADMIN: 'crit', JURY: 'cyan', COORDINATOR: 'warn', STUDENT: 'live' };
 const EXPLORE_CARD_CLASS = 'glass-card flat min-h-[188px] rounded-none px-5 py-6 transition duration-200 ease-out hover:border-white hover:bg-white/[0.04]';
@@ -122,6 +123,8 @@ const ProfileTab = ({ user, myTeam }) => {
           {titleCase(user.verificationStatus)}
         </Badge>
       </div>
+
+      {user.role === 'STUDENT' && user.publicId && <BoardingPassQr publicId={user.publicId} />}
 
       {user.role === 'STUDENT' && (
         <div className="border-t border-border-dim pt-4">
