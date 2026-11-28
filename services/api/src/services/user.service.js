@@ -426,7 +426,14 @@ export const userService = {
     if (current?.institution?.name !== BRANCH_INSTITUTION_NAME) {
       throw BadRequest(`Branch is only asked of ${BRANCH_INSTITUTION_NAME} students.`);
     }
-    const user = await prisma.user.update({ where: { id: userId }, data: { branch }, select: PUBLIC_USER_FIELDS });
+    // A branch change can make or break the team's cross-branch rule, so
+    // re-check the team in the same transaction.
+    const user = await prisma.$transaction(async (tx) => {
+      const updated = await tx.user.update({ where: { id: userId }, data: { branch }, select: PUBLIC_USER_FIELDS });
+      const membership = await tx.teamMember.findUnique({ where: { userId }, select: { teamId: true } });
+      if (membership) await rulesService.recomputeTeamStatus(tx, membership.teamId);
+      return updated;
+    });
     return attachPreferredDomainDetails(user);
   },
 

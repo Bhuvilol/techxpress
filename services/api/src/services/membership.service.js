@@ -1,4 +1,5 @@
 import { Conflict, Forbidden, NotFound, BadRequest } from '../utils/errors.js';
+import { isDomainExpertFor, countDomainExperts } from '../utils/domainExperts.js';
 import { rulesService } from './rules.service.js';
 import { removeUserFromTeamRoom } from '../realtime/emitter.js';
 
@@ -37,6 +38,7 @@ const loadTeamForUpdate = async (tx, teamId) => {
       femaleCount: true,
       domainExpertCount: true,
       domainId: true,
+      domain: { select: { name: true } },
     },
   });
   if (!team) throw NotFound('Team not found');
@@ -50,18 +52,21 @@ const loadUserOrThrow = async (tx, userId) => {
       id: true,
       role: true,
       gender: true,
-      isDomainExpert: true,
       verificationStatus: true,
       domainId: true,
+      branch: true,
+      institution: { select: { name: true } },
     },
   });
   if (!user) throw NotFound('User not found');
   return user;
 };
 
+// Expert = matches the TEAM's domain by institution / ITER branch
+// (utils/domainExperts.js), whatever domain the member picked.
 const computeDelta = (user, team) => ({
   female: user.gender === 'FEMALE' ? 1 : 0,
-  expert: user.isDomainExpert && user.domainId === team.domainId ? 1 : 0,
+  expert: isDomainExpertFor({ institution: user.institution?.name ?? null, branch: user.branch ?? null }, team.domain?.name) ? 1 : 0,
 });
 
 // ── Cancellation helpers ────────────────────────────────────────────────────
@@ -278,14 +283,15 @@ export const membershipService = {
   async recountTeam(tx, teamId) {
     const members = await tx.teamMember.findMany({
       where: { teamId },
-      select: { user: { select: { gender: true, isDomainExpert: true, domainId: true } } },
+      select: { user: { select: { gender: true, branch: true, institution: { select: { name: true } } } } },
     });
-    const team = await tx.team.findUnique({ where: { id: teamId }, select: { domainId: true } });
+    const team = await tx.team.findUnique({ where: { id: teamId }, select: { domain: { select: { name: true } } } });
     const memberCount = members.length;
     const femaleCount = members.filter((m) => m.user.gender === 'FEMALE').length;
-    const domainExpertCount = members.filter(
-      (m) => m.user.isDomainExpert && m.user.domainId === team.domainId,
-    ).length;
+    const domainExpertCount = countDomainExperts(
+      members.map((m) => ({ institution: m.user.institution?.name ?? null, branch: m.user.branch ?? null })),
+      team?.domain?.name,
+    );
 
     await tx.team.update({
       where: { id: teamId },

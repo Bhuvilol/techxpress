@@ -86,7 +86,8 @@ export const ABOUT = {
   perks: 'Win prizes, incubation and mentoring support, and a feature on the SOA website.',
   whoTitle: 'Who can travel',
   // Team rule (confirmed 27 Nov): exactly 5 members, at least one female member.
-  who: 'Any registered SOA student. Teams of exactly 5 members, with at least one female member in every team.',
+  // All-ITER teams also need at least one member from a different branch (rules.service.js).
+  who: 'Any registered SOA student. Teams of exactly 5 members, with at least one female member in every team. If every member is from ITER, at least one must be from a different branch.',
 };
 
 // Timetable. ⚠ CONFIRM: every date and time here is from a draft schedule.
@@ -164,7 +165,7 @@ export const FARES = {
 export const FAQ = [
   { q: 'Who can register?', a: 'Any SOA student. Register on this site with your college ID card.' },
   { q: 'Is there a fee?', a: 'No, registration is free.' }, // ⚠ CONFIRM
-  { q: 'How big is a team?', a: '5 members per team (mandatory), with at least one female member.' },
+  { q: 'How big is a team?', a: '5 members per team (mandatory), with at least one female member. If all five are from ITER, at least one must be from a different branch.' },
   { q: 'Can I register without a team?', a: 'Register individually first, then join a team in the VORTEX portal.' },
   { q: 'What happens after I register?', a: 'Your college coordinator checks your details and ID card. Once you are approved, your login code arrives by email from team@soatechxpress.in.' },
   { q: "I haven't received my email.", a: 'Check your spam folder, then check your PNR status here. If it says CONFIRMED but no email arrived, write to the organisers.' },

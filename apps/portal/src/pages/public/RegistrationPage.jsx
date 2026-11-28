@@ -96,7 +96,7 @@ const TEAM_ROLE_OPTIONS = [
 // Branch is asked only of this institution's students. Kept in step with
 // BRANCH_INSTITUTION_NAME / BRANCH_OPTIONS in the server validator.
 const BRANCH_INSTITUTION_NAME = 'ITER | SOA';
-const BRANCH_OPTIONS = ['CSE Core', 'CSE AIML', 'CSE CS', 'CSE DS', 'CSE IOT', 'EE', 'ECE', 'EEE', 'Mech'];
+const BRANCH_OPTIONS = ['CSE Core', 'CSE AIML', 'CSE CS', 'CSE DS', 'CSE IOT', 'EE', 'ECE', 'EEE', 'Mech', 'Civil'];
 
 const DEGREE_OPTIONS = [
   'Undergraduate',

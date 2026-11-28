@@ -1,6 +1,6 @@
 import { teamService } from '../services/team.service.js';
 import { membershipChangeService } from '../services/membershipChange.service.js';
-import { rulesService } from '../services/rules.service.js';
+import { rulesService, loadMemberProfiles } from '../services/rules.service.js';
 import { auditService } from '../services/audit.service.js';
 import { prisma } from '../config/db.js';
 import { NotFound } from '../utils/errors.js';
@@ -84,7 +84,8 @@ export const evaluate = async (req, res) => {
   });
   if (!team) throw NotFound('Team not found');
   const rules = await rulesService.get();
-  const { isQualified, issues } = rulesService.evaluateTeam(team, rules);
+  const memberProfiles = await loadMemberProfiles(prisma, team.id);
+  const { isQualified, issues } = rulesService.evaluateTeam({ ...team, memberProfiles }, rules);
   res.json({ team, isQualified, issues, rules });
 };
 
