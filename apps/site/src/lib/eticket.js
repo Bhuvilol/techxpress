@@ -1,6 +1,7 @@
 // The souvenir e-ticket: a 1080x1350 PNG drawn on a canvas, styled after an
 // Indian Railways electronic reservation slip. The text-layout helpers at the
 // top are pure (they take a `measure` function) and unit tested.
+import { create as createQr } from 'qrcode';
 import { EVENT, PNR, TICKET } from '../content/station.js';
 
 export const TICKET_SIZE = { width: 1080, height: 1350 };
@@ -177,11 +178,11 @@ function value(ctx, text, x, y, { maxWidth, maxSize = 46, minSize = 28, weight =
   ctx.fillText(fitted.text, x, y);
 }
 
-function drawStamp(ctx, cx, cy) {
+function drawStamp(ctx, cx, cy, scale = 0.86) {
   ctx.save();
   ctx.translate(cx, cy);
   ctx.rotate(-0.21);
-  ctx.scale(0.86, 0.86);
+  ctx.scale(scale, scale);
   ctx.globalAlpha = 0.86;
   ctx.strokeStyle = C.red;
   ctx.fillStyle = C.red;
@@ -215,6 +216,25 @@ function drawStamp(ctx, cx, cy) {
   }
   ctx.restore();
 }
+
+// Draws `text` as a QR code in a white square (with quiet zone) of `size` px
+// at (x, y). Each module is snapped to whole pixels so it stays sharp.
+const drawQr = (ctx, text, x, y, size) => {
+  if (!/^TXP-/i.test(text)) return;
+  const { modules } = createQr(text, { errorCorrectionLevel: 'M' });
+  const quiet = 2;
+  const count = modules.size + quiet * 2;
+  const cell = Math.floor(size / count);
+  const box = cell * count;
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(x, y, box, box);
+  ctx.fillStyle = '#000000';
+  for (let r = 0; r < modules.size; r += 1) {
+    for (let c = 0; c < modules.size; c += 1) {
+      if (modules.get(r, c)) ctx.fillRect(x + (c + quiet) * cell, y + (r + quiet) * cell, cell, cell);
+    }
+  }
+};
 
 // Draws the slip and returns the canvas. Waits for the web fonts first.
 export async function drawTicket(ticket, doc = document) {
@@ -321,6 +341,10 @@ export async function drawTicket(ticket, doc = document) {
   ctx.fill();
 
   // Details grid.
+  // The rows share the left of the slip with the QR column on the right.
+  const QR_SIZE = 460;
+  const qrX = R - QR_SIZE;
+  const rowsW = qrX - L - 32;
   y = 590;
   const rows = [
     [[TICKET.labels.date, f.date], [TICKET.labels.departure, TICKET.departure]],
@@ -336,24 +360,25 @@ export async function drawTicket(ticket, doc = document) {
     ctx.moveTo(L, y - 34);
     ctx.lineTo(R, y - 34);
     ctx.stroke();
-    const colW = W / row.length;
+    const colW = rowsW / row.length;
     row.forEach(([lab, val, wide], i) => {
       const x = L + colW * i;
       label(ctx, lab, x, y);
       const mono = lab === TICKET.labels.institution || lab === TICKET.labels.cls;
       value(ctx, val, x, y + 50, {
-        maxWidth: (wide ? W * 0.66 : colW) - 24,
+        maxWidth: (wide ? rowsW : colW) - 24,
         maxSize: wide && !mono ? 50 : 40,
         minSize: 26,
         weight: mono ? 600 : 700,
         family: mono ? SANS : COND,
       });
     });
-    y += 112;
+    y += 104;
   }
 
-  // Over the right of the institution / class rows, clear of the values.
-  drawStamp(ctx, width - 215, 872);
+  // QR of the PNR (the passenger reference) for the check-in desk, which
+  // scans it on Admin → Check-in. Its own column, right of the rows.
+  drawQr(ctx, f.pnr, qrX, 590 - 34 + (5 * 104 - QR_SIZE) / 2, QR_SIZE);
 
   // Perforation and footer.
   y = height - 190;
@@ -367,15 +392,7 @@ export async function drawTicket(ticket, doc = document) {
   ctx.lineTo(width - 40, y);
   ctx.stroke();
   ctx.setLineDash([]);
-  // Barcode-ish bars from the PNR (decorative).
-  let bx = L;
-  const code = `${f.pnr}${f.name}`;
-  for (let i = 0; i < 64 && bx < L + 300; i += 1) {
-    const w = 2 + ((code.charCodeAt(i % code.length) + i) % 4) * 2;
-    ctx.fillStyle = C.ink;
-    ctx.fillRect(bx, y + 34, w, 70);
-    bx += w + 4;
-  }
+  // The CNF stamp across the perforation, bottom left, like a real stamp.
   ctx.textAlign = 'right';
   ctx.fillStyle = C.ink;
   const footW = W - 340;
@@ -394,6 +411,7 @@ export async function drawTicket(ticket, doc = document) {
   ctx.fillStyle = C.inkSoft;
   ctx.fillText(truncateToWidth(TICKET.footerSmall, footW, (t) => ctx.measureText(t).width), R, y + 100);
   ctx.textAlign = 'left';
+  drawStamp(ctx, L + 168, height - 160, 1.12);
 
   return canvas;
 }

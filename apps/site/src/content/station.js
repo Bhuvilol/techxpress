@@ -193,7 +193,7 @@ export const PNR = {
   },
   download: 'Download e-ticket',
   share: 'Share',
-  ticketFooter: 'Souvenir ticket · not valid for travel · soatechxpress.in',
+  ticketFooter: 'Souvenir ticket · soatechxpress.in',
 };
 
 export const BOOK = {
