@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { NavLink, Outlet, Link, useLocation } from 'react-router-dom';
 import {
   Users, ShieldCheck, Settings, Lock, Megaphone,
-  History, Layers, ListChecks, LogOut, Menu, FlaskConical, Database, IdCard, KeyRound, Train
+  History, Layers, ListChecks, LogOut, Menu, FlaskConical, ScanLine, IdCard, KeyRound, Train
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext.jsx';
 import { cn } from '../../utils/cn.js';
@@ -11,7 +11,7 @@ import { TESTING_ENABLED } from '../../lib/features.js';
 const ALL_NAV = [
   { to: '/admin',                end: true, label: 'Overview',     icon: Layers   },
   { to: '/admin/verification',              label: 'Verification', icon: ShieldCheck },
-  { to: '/admin/registry',                  label: 'Registry',     icon: Database  },
+  { to: '/admin/registry',                  label: 'Check-in',     icon: ScanLine  },
   { to: '/admin/staff',                     label: 'Staff', icon: KeyRound  },
   { to: '/admin/teams',                     label: 'Teams', icon: Users  },
   { to: '/directory',                       label: 'Directory',    icon: IdCard    },

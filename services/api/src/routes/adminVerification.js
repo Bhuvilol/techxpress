@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { participantLookup } from '../controllers/participantLookup.controller.js';
 import { validate } from '../middleware/validate.js';
 import { requireAuth, requireRole } from '../middleware/auth.js';
 import { ah } from '../utils/asyncHandler.js';
@@ -8,6 +9,7 @@ import {
   reregisterBodySchema,
   listStudentsQuerySchema,
   lookupByRegistrationNoQuerySchema,
+  participantLookupQuerySchema,
 } from '../validators/admin.schema.js';
 import {
   stats,
@@ -32,6 +34,8 @@ router.get('/pending', validate({ query: listStudentsQuerySchema }), ah(listPend
 router.get('/students', validate({ query: listStudentsQuerySchema }), ah(listStudents));
 // Resolve a registration number to a user (admin force add/remove member).
 router.get('/lookup', validate({ query: lookupByRegistrationNoQuerySchema }), ah(lookupByRegistrationNo));
+// Check-in desk: full details + team for a scanned or typed TXP reference / registration number.
+router.get('/participant', validate({ query: participantLookupQuerySchema }), ah(participantLookup));
 
 router.get('/students/:id/id-card',
   validate({ params: userIdParamSchema }), ah(idCard));

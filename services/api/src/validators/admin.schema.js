@@ -27,3 +27,9 @@ export const listStudentsQuerySchema = z.object({
 export const lookupByRegistrationNoQuerySchema = z.object({
   registrationNo: z.string().trim().min(1).max(50).transform(normalizeRegistrationNo),
 });
+
+// Check-in desk lookup: a passenger reference (TXP-XXXX-XXXX, from the
+// student's QR or typed) or a registration number.
+export const participantLookupQuerySchema = z.object({
+  ref: z.string().trim().min(3).max(60),
+});
