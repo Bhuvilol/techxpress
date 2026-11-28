@@ -144,34 +144,86 @@ export const AdminRegistryPage = () => {
   );
 };
 
-// Camera QR scanner. Uses the back camera where there is one; stops the
-// camera as soon as a code is read or the modal closes.
+// Camera QR scanner. Uses the back camera where there is one, in HD so small
+// codes on a phone screen still resolve. Reads with the browser's own
+// BarcodeDetector where it exists (Chrome / Edge / Android: fast and good with
+// real cameras), else with ZXing. Stops the camera as soon
+// as a code is read or the modal closes.
+const VIDEO_CONSTRAINTS = {
+  video: {
+    facingMode: { ideal: 'environment' },
+    width: { ideal: 1920 },
+    height: { ideal: 1080 },
+  },
+  audio: false,
+};
+
+const nativeQrDetector = async () => {
+  if (!('BarcodeDetector' in window)) return null;
+  try {
+    const formats = await window.BarcodeDetector.getSupportedFormats();
+    return formats.includes('qr_code') ? new window.BarcodeDetector({ formats: ['qr_code'] }) : null;
+  } catch {
+    return null;
+  }
+};
+
 const ScannerModal = ({ onResult, onClose }) => {
   const videoRef = useRef(null);
   const [error, setError] = useState('');
+  const [hint, setHint] = useState('Starting camera…');
   const doneRef = useRef(false);
   const onResultRef = useRef(onResult); // latest callback without restarting the camera
   onResultRef.current = onResult;
 
   useEffect(() => {
-    let controls;
+    let stream;
+    let timer;
+    let zxingControls;
     let cancelled = false;
+
+    const finish = (text) => {
+      if (doneRef.current || cancelled) return;
+      doneRef.current = true;
+      onResultRef.current(text);
+    };
+
     (async () => {
       try {
-        const { BrowserQRCodeReader } = await import('@zxing/browser'); // loaded only when scanning
-        const reader = new BrowserQRCodeReader();
-        controls = await reader.decodeFromConstraints(
-          { video: { facingMode: { ideal: 'environment' } } },
-          videoRef.current,
-          (res) => {
-            if (res && !doneRef.current) {
-              doneRef.current = true;
-              controls?.stop();
-              onResultRef.current(res.getText());
-            }
-          },
-        );
-        if (cancelled) controls.stop();
+        const detector = await nativeQrDetector();
+        if (detector) {
+          stream = await navigator.mediaDevices.getUserMedia(VIDEO_CONSTRAINTS);
+          if (cancelled) return;
+          // Keep refocusing (Android), so a QR held close on another phone's
+          // screen stays sharp. Ignored where the camera doesn't support it.
+          const [track] = stream.getVideoTracks();
+          if (track?.getCapabilities?.().focusMode?.includes('continuous')) {
+            track.applyConstraints({ advanced: [{ focusMode: 'continuous' }] }).catch(() => {});
+          }
+          const video = videoRef.current;
+          video.srcObject = stream;
+          await video.play();
+          setHint('Looking for a QR code…');
+          const tick = async () => {
+            if (cancelled || doneRef.current) return;
+            try {
+              if (video.readyState >= 2) {
+                const [code] = await detector.detect(video);
+                if (code?.rawValue) return finish(code.rawValue);
+              }
+            } catch { /* frame not ready; try the next one */ }
+            timer = setTimeout(tick, 150);
+          };
+          tick();
+        } else {
+          const { BrowserQRCodeReader } = await import('@zxing/browser'); // loaded only when needed
+          const reader = new BrowserQRCodeReader(undefined, { delayBetweenScanAttempts: 150 });
+          zxingControls = await reader.decodeFromConstraints(VIDEO_CONSTRAINTS, videoRef.current, (res) => {
+            if (res) finish(res.getText());
+          });
+          if (cancelled) zxingControls.stop();
+          else setHint('Looking for a QR code…');
+        }
       } catch (e) {
         setError(
           e?.name === 'NotAllowedError'
@@ -182,7 +234,13 @@ const ScannerModal = ({ onResult, onClose }) => {
         );
       }
     })();
-    return () => { cancelled = true; controls?.stop(); };
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+      zxingControls?.stop();
+      stream?.getTracks().forEach((t) => t.stop());
+    };
   }, []);
 
   return (
@@ -195,7 +253,9 @@ const ScannerModal = ({ onResult, onClose }) => {
             <video ref={videoRef} className="aspect-square w-full object-cover" muted playsInline />
             <div className="pointer-events-none absolute inset-[15%] rounded-[4px] border-2 border-status-warn/80" />
           </div>
-          <p className="mt-3 text-center font-mono text-[12px] text-text-dim">Point the camera at the QR on the student's dashboard.</p>
+          <p className="mt-3 text-center font-mono text-[12px] text-text-dim">
+            {hint} Hold the QR (dashboard or e-ticket) steady, filling about half the frame.
+          </p>
         </>
       )}
     </Modal>
