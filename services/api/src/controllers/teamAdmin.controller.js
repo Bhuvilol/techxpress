@@ -1,4 +1,5 @@
 import { teamAdminService } from '../services/teamAdmin.service.js';
+import { isDomainExpertFor } from '../utils/domainExperts.js';
 import { auditService } from '../services/audit.service.js';
 import { emitLeaderboardChanged } from '../realtime/emitter.js';
 import { prisma } from '../config/db.js';
@@ -22,7 +23,12 @@ export const teamMembers = async (req, res) => {
   const members = team.members.map(({ user: { idCard, ...user }, ...m }) => ({
     ...m,
     isLeader: user.id === team.leaderId,
-    user: { ...user, hasIdCard: Boolean(idCard) },
+    user: {
+      ...user,
+      hasIdCard: Boolean(idCard),
+      // Expert for THIS team's domain by the institution/branch table.
+      isDomainExpert: isDomainExpertFor({ institution: user.institution?.name ?? null, branch: user.branch ?? null }, team.domain?.name),
+    },
   }));
   res.json({ team: { ...team, members } });
 };

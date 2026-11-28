@@ -22,7 +22,8 @@ beforeEach(() => {
 test('the registration schema accepts only a branch from the list', () => {
   assert.equal(registrationSchema.safeParse(validBody({ branch: 'CSE AIML' })).success, true);
   assert.equal(registrationSchema.safeParse(validBody({ branch: 'EEE' })).success, true);
-  assert.equal(registrationSchema.safeParse(validBody({ branch: 'Civil' })).success, false);
+  assert.equal(registrationSchema.safeParse(validBody({ branch: 'Civil' })).success, true);
+  assert.equal(registrationSchema.safeParse(validBody({ branch: 'Chemical' })).success, false);
   assert.equal(registrationSchema.safeParse(validBody({ branch: '' })).success, true, 'empty means not given');
 });
 

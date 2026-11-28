@@ -7,7 +7,7 @@ import { PROFILE_SAVED_EVENT } from './TshirtSizePicker.jsx';
 // Kept in step with BRANCH_INSTITUTION_NAME / BRANCH_OPTIONS in
 // services/api/src/validators/registration.schema.js.
 export const BRANCH_INSTITUTION_NAME = 'ITER | SOA';
-export const BRANCH_OPTIONS = ['CSE Core', 'CSE AIML', 'CSE CS', 'CSE DS', 'CSE IOT', 'EE', 'ECE', 'EEE', 'Mech'];
+export const BRANCH_OPTIONS = ['CSE Core', 'CSE AIML', 'CSE CS', 'CSE DS', 'CSE IOT', 'EE', 'ECE', 'EEE', 'Mech', 'Civil'];
 
 // A branch dropdown with a Save button, for ITER | SOA students.
 export const BranchPicker = ({ current = '', onSaved, compact = false }) => {

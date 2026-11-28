@@ -1,5 +1,6 @@
 import { prisma } from '../config/db.js';
 import { BRANCH_INSTITUTION_NAME } from '../validators/registration.schema.js';
+import { countDomainExperts } from '../utils/domainExperts.js';
 import { NotFound, BadRequest, Forbidden } from '../utils/errors.js';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -176,6 +177,7 @@ export const rulesService = {
         memberCount: true,
         femaleCount: true,
         domainExpertCount: true,
+        domain: { select: { name: true } },
       },
     });
     if (!team) throw NotFound('Team not found');
@@ -189,7 +191,14 @@ export const rulesService = {
 
     const rules = await this.get(tx);
     const memberProfiles = await loadMemberProfiles(tx, teamId);
-    const { isQualified, issues } = this.evaluateTeam({ ...team, memberProfiles }, rules);
+    // Domain experts follow the institution/branch table for the team's
+    // domain; recount from the members so the stored counter never drifts
+    // (e.g. after a branch change, or teams from before the table).
+    const domainExpertCount = countDomainExperts(memberProfiles, team.domain?.name);
+    if (domainExpertCount !== team.domainExpertCount) {
+      await tx.team.update({ where: { id: teamId }, data: { domainExpertCount } });
+    }
+    const { isQualified, issues } = this.evaluateTeam({ ...team, domainExpertCount, memberProfiles }, rules);
     const desired = isQualified ? 'QUALIFIED' : 'FORMING';
 
     if (desired === team.status) {
