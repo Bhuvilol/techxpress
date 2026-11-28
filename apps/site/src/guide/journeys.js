@@ -46,6 +46,20 @@ const pnr = {
   ],
 };
 
+const login = {
+  id: 'login',
+  ...J.login,
+  steps: [
+    {
+      panel: '*',
+      say: S.loginIntro,
+      advance: 'next',
+      actions: [{ label: 'Check PNR status', panel: 'pnr' }],
+    },
+    { panel: null, target: '.book-ticket--login', say: S.loginTicket, advance: 'click' },
+  ],
+};
+
 // Shown instead of `book` once registration has closed.
 const closed = {
   id: 'book', // takes the place of `book`, so a run in progress carries over
@@ -64,7 +78,7 @@ const closed = {
 };
 
 // registrationOpen: true | false | null (unknown yet: treated as open).
-export const journeysFor = (registrationOpen) => [registrationOpen === false ? closed : book, pnr];
+export const journeysFor = (registrationOpen) => [registrationOpen === false ? closed : book, pnr, login];
 
 export const findJourney = (id, registrationOpen) =>
   journeysFor(registrationOpen).find((j) => j.id === id) ?? null;

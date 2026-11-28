@@ -7,7 +7,7 @@
 //   avoid    optional, the common mistakes
 //
 // ⚠ CONFIRM: the organisers should read this before launch, especially the
-// "avoid" lines and anything that explains why a detail is asked.
+// "avoid" lines and the Drive-link sharing advice.
 
 export const FIELD_GUIDE = {
   fullName: {
@@ -16,7 +16,7 @@ export const FIELD_GUIDE = {
     avoid: 'Nicknames, only your first name, or initials in place of your name.',
   },
   email: {
-    what: 'An email you check often. Your login details are sent here once your registration is approved.',
+    what: 'An email you check often. Your login details are sent here once your registration is approved. If a "Did you mean…?" suggestion appears under the field, check it and tap it to use it.',
     example: 'name@college.edu',
     avoid: 'Typing mistakes, or an address you no longer use.',
   },
@@ -35,8 +35,7 @@ export const FIELD_GUIDE = {
     avoid: 'Spaces, dashes, or +91. Digits only, exactly 10.',
   },
   gender: {
-    // ⚠ CONFIRM: reason taken from the About text (at least one girl per team).
-    what: 'Pick the option that applies to you. Teams need at least one girl, so this helps with team formation.',
+    what: 'Pick the option that applies to you. Every team needs at least one female member, so this helps with team formation.',
   },
   tshirtSize: {
     what: 'The T-shirt size you normally wear, from XS to XXXL.',
