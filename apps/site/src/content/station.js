@@ -95,10 +95,9 @@ export const ABOUT = {
 export const TIMETABLE = {
   preDeparture: [
     { date: '20–22 NOV', title: 'Registrations open', detail: 'Posters released, candidate onboarding and team formation' },
-    { date: '23 NOV', title: 'Public announcement', detail: 'Banner drop on campus (Monday)' },
-    { date: '24–30 NOV', title: 'Screening and campaigning', detail: 'Registrations continue with screening and outreach' },
-    { date: '27 NOV', title: 'Booking opens', detail: 'Registration opens on this site' },
+    { date: '23–30 NOV', title: 'Screening and campaigning', detail: 'Registrations continue with screening and outreach' },
     { date: '29 NOV', title: 'Booking closes', detail: 'Sunday, 12:00 noon: final call, the gates shut', key: true },
+    { date: '01 DEC', title: 'PPT submission deadline', detail: 'Submit your presentation by end of day', key: true },
     { date: '02–03 DEC', title: 'Final passenger list', detail: 'Shortlist announced; venue arrangements and preparations', key: true },
     { date: '04 DEC', title: 'Departure', detail: 'TechXpress leaves the station', key: true },
   ],

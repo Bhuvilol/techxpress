@@ -1004,7 +1004,7 @@ export const TeamFormationPage = () => {
       <PageHeader
         kicker="Squad & Berth Hub // दल गठन"
         title="Squad Formation"
-        description="Assemble your interdisciplinary squad of 3–5 passengers, select a track challenge, verify rules compliance, and lock your berth."
+        description="Assemble your interdisciplinary squad of 5 passengers, select a track challenge, verify rules compliance, and lock your berth."
       />
 
       {myTeam.loading && <CardSkeleton rows={3} />}
