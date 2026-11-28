@@ -1954,3 +1954,20 @@ section > .tt-day:first-child { margin-top: 0; }
   .txp-from-portal .txp-shell,
   .txp-pan--pan .txp-pan-terminal { animation: none; }
 }
+
+/* "Did you mean …?" under the registration email field. */
+.m-book .email-suggest {
+  display: block;
+  margin-top: 6px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 16px;
+  line-height: 1.35;
+  text-align: left;
+  color: #b0123f;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.m-book .email-suggest strong { font-weight: 700; }

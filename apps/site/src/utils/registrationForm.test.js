@@ -6,6 +6,7 @@ import {
   hasFormData,
   normalizeUrl,
   sanitizePayload,
+  suggestEmail,
   validateRegistration,
 } from './registrationForm';
 
@@ -13,6 +14,7 @@ import {
 const validForm = (overrides = {}) => ({
   fullName: 'Asha Kumar',
   email: 'asha@college.edu',
+  emailConfirm: 'asha@college.edu',
   registrationNo: '2024PS01',
   phone: '9876543210',
   gender: 'FEMALE',
@@ -255,5 +257,43 @@ describe('branch (ITER | SOA only)', () => {
     expect(validateRegistration(f, { needsBranch: true }).branch).toBe('Select your branch.');
     expect(validateRegistration({ ...f, branch: 'EEE' }, { needsBranch: true }).branch).toBeUndefined();
     expect(validateRegistration({ ...f, branch: 'Civil' }, { needsBranch: true }).branch).toBe('Select your branch.');
+  });
+});
+
+describe('email typos', () => {
+  it.each([
+    ['asha@gmial.com', 'asha@gmail.com'],
+    ['asha@gamil.com', 'asha@gmail.com'],
+    ['asha@gmail.co', 'asha@gmail.com'],
+    ['asha@gmail.con', 'asha@gmail.com'],
+    ['asha@gmai.com', 'asha@gmail.com'],
+    ['Asha@Gmail.Comm', 'asha@gmail.com'],
+    ['asha@yahoo.con', 'asha@yahoo.com'],
+    ['asha@outlok.com', 'asha@outlook.com'],
+    ['asha@hotmial.com', 'asha@hotmail.com'],
+  ])('suggests a fix for %s', (typed, fixed) => {
+    expect(suggestEmail(typed)).toBe(fixed);
+  });
+
+  it.each(['asha@gmail.com', 'asha@college.edu', 'asha@mail.com', 'asha@ymail.com', 'asha@soa.ac.in', 'asha@yahoo.co.in', 'not-an-email'])(
+    'leaves %s alone',
+    (typed) => {
+      expect(suggestEmail(typed)).toBeNull();
+    },
+  );
+
+  it('blocks submitting a typo domain', () => {
+    const e = validateRegistration(validForm({ email: 'asha@gmial.com', emailConfirm: 'asha@gmial.com' }));
+    expect(e.email).toMatch(/asha@gmail\.com/);
+  });
+
+  it('needs the email typed twice, matching', () => {
+    expect(validateRegistration(validForm({ emailConfirm: '' })).emailConfirm).toBeTruthy();
+    expect(validateRegistration(validForm({ emailConfirm: 'asha@colege.edu' })).emailConfirm).toBeTruthy();
+    expect(validateRegistration(validForm({ emailConfirm: ' ASHA@college.edu ' })).emailConfirm).toBeUndefined();
+  });
+
+  it('never sends the confirm field to the API', () => {
+    expect(buildSubmitPayload(validForm())).not.toHaveProperty('emailConfirm');
   });
 });

@@ -22,6 +22,7 @@ import {
   buildSubmitPayload,
   hasFormData,
   normalizeUrl,
+  suggestEmail,
   validateRegistration,
   TSHIRT_SIZES,
 } from '../../utils/registrationForm';
@@ -349,6 +350,13 @@ export default function ReservationCounter({ titleId, onOpen, onDirtyChange }) {
     clearError(key, ...(key === 'institutionId' ? ['branch'] : []));
   };
 
+  const emailSuggestion = suggestEmail(form.email);
+  const applyEmailSuggestion = () => {
+    if (!emailSuggestion) return;
+    setForm((prev) => ({ ...prev, email: emailSuggestion }));
+    clearError('email');
+  };
+
   const needsBranch = institutions.find((i) => i.id === form.institutionId)?.name === BRANCH_INSTITUTION_NAME;
 
   const toggleContribution = (area) => {
@@ -572,12 +580,35 @@ export default function ReservationCounter({ titleId, onOpen, onDirtyChange }) {
                   />
                 </FieldWrap>
 
-                <FieldWrap field="email" label="EMAIL ADDRESS" required error={errors.email}>
+                <FieldWrap
+                  field="email"
+                  label="EMAIL ADDRESS"
+                  required
+                  hint={emailSuggestion ? null : 'Your login details are sent here. Check it carefully.'}
+                  error={errors.email}
+                >
                   <input
                     type="email"
+                    autoComplete="email"
                     placeholder="name@college.edu"
                     value={form.email}
                     onChange={setField('email')}
+                    disabled={busy}
+                  />
+                  {emailSuggestion && (
+                    <button type="button" className="email-suggest" onClick={applyEmailSuggestion} disabled={busy}>
+                      Did you mean <strong>{emailSuggestion}</strong>? Tap to use it.
+                    </button>
+                  )}
+                </FieldWrap>
+
+                <FieldWrap field="emailConfirm" label="CONFIRM EMAIL" required error={errors.emailConfirm}>
+                  <input
+                    type="email"
+                    autoComplete="off"
+                    placeholder="Type the same email again"
+                    value={form.emailConfirm}
+                    onChange={setField('emailConfirm')}
                     disabled={busy}
                   />
                 </FieldWrap>
