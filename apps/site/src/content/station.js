@@ -29,11 +29,11 @@ export const LED = {
   // After the opening the board scrambles again and switches to a countdown
   // to this moment (India time): timer on top, `countdownLabel` below.
   // Once it passes, `closedLabel` shows under the headline.
-  countdownTo: '2026-11-27T23:59:59+05:30',
-  countdownLabel: 'REGISTRATION CLOSES IN',
+  countdownTo: '2026-11-29T23:59:59+05:30',
+  countdownLabel: 'REGISTRATION CLOSING 29 NOV',
   closedLabel: 'REGISTRATION CLOSED · PLATFORM 1',
   status: {
-    beforeOpen: 'REGISTRATION CLOSES 27 NOV · PLATFORM 1',
+    beforeOpen: 'REGISTRATION CLOSING 29 NOV · PLATFORM 1',
     open: 'BOARDING NOW · BOOK YOUR TICKET · PLATFORM 1',
     closed: 'BOOKING CLOSED · DEPARTS 04 DEC',
     departed: 'DEPARTED · HACKATHON IN PROGRESS',
