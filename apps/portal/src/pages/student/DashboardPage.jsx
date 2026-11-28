@@ -198,10 +198,11 @@ const ProfileLinks = ({ user }) => {
   );
 };
 
-const InboxTab = ({ onTeamChanged }) => {
+const InboxTab = ({ onTeamChanged, onInvitesChanged }) => {
   const toast = useToast();
+  const { user } = useAuth();
   const [busyId, setBusyId] = useState('');
-  const invites = useApi(() => api.get('/api/invites/me'), []);
+  const invites = useApi(() => api.get('/api/invites/me'), [], { pollMs: 30_000 });
   const requests = useApi(() => api.get('/api/join-requests/me'), []);
 
   useSocketEvent('invite:received', () => invites.refetch(), [invites.refetch]);
@@ -227,6 +228,7 @@ const InboxTab = ({ onTeamChanged }) => {
       await api.post(`/api/invites/${id}/decline`);
       toast.info('Invite declined.');
       invites.refetch();
+      onInvitesChanged?.();
     } catch (e) {
       toast.error(e.message);
     } finally {
@@ -253,7 +255,13 @@ const InboxTab = ({ onTeamChanged }) => {
         <h2 className="font-mono text-[11px] font-black uppercase tracking-[0.3em] text-white/40">Pending invites</h2>
         {invites.loading && <CardSkeleton rows={2} />}
         {invites.data?.invites.length === 0 && (
-          <Empty icon={Inbox} title="No pending invites" description="Leaders can send you invites from the Teams page." />
+          <Empty
+            icon={Inbox}
+            title="No pending invites"
+            description={user?.registrationNo
+              ? `To invite you, a team leader enters your registration number ${user.registrationNo} under Invite member.`
+              : 'Leaders can send you invites from the Teams page.'}
+          />
         )}
         {invites.data?.invites.map((inv) => (
           <article key={inv.id} className="glass-card flat space-y-4 border-white/10 hover:border-white">
@@ -899,10 +907,20 @@ export const DashboardPage = () => {
     return () => window.removeEventListener(DOMAINS_SAVED_EVENT, refetchMe);
   }, [refetchMe]);
 
+  // Pending team invites, so they can't be missed: a count on the Inbox tab
+  // and a banner on every tab. Refreshed live, on focus and every 30 s (in
+  // case a live update is missed).
+  const isStudent = u.role === 'STUDENT';
+  const myInvites = useApi(() => (isStudent ? api.get('/api/invites/me') : Promise.resolve({ invites: [] })), [isStudent], { pollMs: 30_000 });
+  const { refetch: refetchInvites } = myInvites;
+  useSocketEvent('invite:received', () => refetchInvites(), [refetchInvites]);
+  const inviteCount = myInvites.data?.invites?.length ?? 0;
+
   const handleTeamChanged = useCallback(() => {
     refetchTeam();
     refetchMe();
-  }, [refetchTeam, refetchMe]);
+    refetchInvites();
+  }, [refetchTeam, refetchMe, refetchInvites]);
 
   return (
     <section className="mx-auto max-w-6xl px-4 sm:px-6 py-8 sm:py-12">
@@ -917,6 +935,20 @@ export const DashboardPage = () => {
         }
       />
 
+      {inviteCount > 0 && tab !== 'inbox' && (
+        <button
+          type="button"
+          onClick={() => setTab('inbox')}
+          className="mb-4 flex w-full items-center gap-3 rounded-[4px] border border-txp-yellow/50 bg-txp-yellow/10 px-4 py-3 text-left font-mono text-[13px] text-text-primary transition-colors hover:bg-txp-yellow/20"
+        >
+          <Inbox size={16} className="shrink-0 text-txp-yellow" />
+          <span className="flex-1">
+            You have <strong>{inviteCount}</strong> team invite{inviteCount === 1 ? '' : 's'} waiting.
+          </span>
+          <span className="font-cond font-bold uppercase tracking-wider text-txp-yellow">View →</span>
+        </button>
+      )}
+
       <Tabs
         className="mb-6"
         value={tab}
@@ -924,7 +956,7 @@ export const DashboardPage = () => {
         items={[
           { value: 'profile', label: 'Profile', icon: User },
           ...(u.role === 'STUDENT' ? [{ value: 'explore', label: 'Explore', icon: Search }] : []),
-          { value: 'inbox', label: 'Inbox', icon: Inbox },
+          { value: 'inbox', label: 'Inbox', icon: Inbox, badge: inviteCount > 0 ? inviteCount : null },
           { value: 'broadcasts', label: 'Broadcasts', icon: Megaphone },
         ]}
       />
@@ -937,7 +969,7 @@ export const DashboardPage = () => {
             : tab === 'explore'
               ? <ExploreTab user={u} myTeam={myTeam.data?.team ?? null} />
               : tab === 'inbox'
-                ? <InboxTab onTeamChanged={handleTeamChanged} />
+                ? <InboxTab onTeamChanged={handleTeamChanged} onInvitesChanged={refetchInvites} />
                 : <BroadcastsTab />}
       </div>
     </section>
