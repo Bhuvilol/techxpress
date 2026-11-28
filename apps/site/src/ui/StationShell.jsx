@@ -10,6 +10,7 @@ import BookButton from './BookButton.jsx';
 import LoginButton from './LoginButton.jsx';
 import Hints from './Hints.jsx';
 import DoorTransition from './DoorTransition.jsx';
+import Guide from '../guide/Guide.jsx';
 import About from './panels/About.jsx';
 import Timetable from './panels/Timetable.jsx';
 import Prizes from './panels/Prizes.jsx';
@@ -141,6 +142,7 @@ export default function StationShell() {
         </Panel>
       )}
 
+      <Guide panel={panel} onOpen={openPanel} onClose={close} ready={introDone} />
       <LiveStatus ready={introDone} />
       <DoorTransition />
     </div>
