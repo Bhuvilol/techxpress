@@ -20,6 +20,10 @@ export const FIELD_GUIDE = {
     example: 'name@college.edu',
     avoid: 'Typing mistakes, or an address you no longer use.',
   },
+  emailConfirm: {
+    what: 'Type the same email again. This catches typing mistakes, so it has to match the first one exactly.',
+    avoid: 'Pasting the first one. Typing it again is what catches a slip.',
+  },
   registrationNo: {
     what: 'The registration number issued by your institution. It formats itself as you type.',
     example: '2024PS12345',

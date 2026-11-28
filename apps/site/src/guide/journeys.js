@@ -13,10 +13,11 @@ const book = {
   id: 'book',
   ...J.book,
   steps: [
-    { panel: null, target: '.book-ticket', say: S.bookTicket, advance: 'click' },
+    { panel: null, target: '.book-ticket--register', say: S.bookTicket, advance: 'click' },
     { panel: 'book', say: S.formIntro, advance: 'next' },
     { panel: 'book', target: '[data-field="fullName"]', say: S.fullName, advance: 'input' },
     { panel: 'book', target: '[data-field="email"]', say: S.email, advance: 'input' },
+    { panel: 'book', target: '[data-field="emailConfirm"]', say: S.emailConfirm, advance: 'input' },
     { panel: 'book', target: '[data-field="registrationNo"]', say: S.registrationNo, advance: 'input' },
     { panel: 'book', target: '[data-field="gender"]', say: S.gender, advance: 'input' },
     { panel: 'book', target: '[data-field="tshirtSize"]', say: S.tshirtSize, advance: 'input' },

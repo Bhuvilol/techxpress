@@ -35,10 +35,11 @@ export const JOURNEY_COPY = {
 };
 
 export const STEP_COPY = {
-  bookTicket: 'Namaste! I am Rajesh, your station guide. Tap the big pink ticket to open the booking counter.',
+  bookTicket: 'Namaste! I am Rajesh, your station guide. Tap the pink "Register here" ticket to open the registration form.',
   formIntro: 'This is the registration form. Fields marked with a red * are required. I will take you through the required ones. The rest are optional, so you can fill them in your own time.',
   fullName: 'Start with your full name, exactly as printed on your college ID card.',
   email: 'Now your email. Use one you check often: your login details are sent here once you are approved.',
+  emailConfirm: 'Type the same email again. This catches typing mistakes, so it has to match exactly.',
   registrationNo: 'Your registration number, as issued by your institution. It formats itself as you type.',
   gender: 'Pick the option that applies to you.',
   tshirtSize: 'Choose the T-shirt size you normally wear.',
