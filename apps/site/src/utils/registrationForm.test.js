@@ -256,7 +256,7 @@ describe('branch (ITER | SOA only)', () => {
     expect(validateRegistration(f).branch).toBeUndefined();
     expect(validateRegistration(f, { needsBranch: true }).branch).toBe('Select your branch.');
     expect(validateRegistration({ ...f, branch: 'EEE' }, { needsBranch: true }).branch).toBeUndefined();
-    expect(validateRegistration({ ...f, branch: 'Civil' }, { needsBranch: true }).branch).toBe('Select your branch.');
+    expect(validateRegistration({ ...f, branch: 'Chemical' }, { needsBranch: true }).branch).toBe('Select your branch.');
   });
 });
 

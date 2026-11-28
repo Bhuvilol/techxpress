@@ -1,12 +1,12 @@
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { Camera, Search, ScanLine, Users, Crown } from 'lucide-react';
 import { api } from '../../lib/api.js';
 import { PageHeader } from '../../components/ui/PageHeader.jsx';
 import { Badge } from '../../components/ui/Badge.jsx';
-import { Modal } from '../../components/ui/Modal.jsx';
 import { Spinner } from '../../components/ui/Spinner.jsx';
 import { ParticipantDetails } from '../../components/admin/ParticipantDetails.jsx';
 import { IdCardModal } from '../../components/verification/IdCardModal.jsx';
+import { QrScannerModal, passengerRefIn } from '../../components/ui/QrScannerModal.jsx';
 
 // Check-in desk (replaces the old college-registry list at /admin/registry).
 // Scan a student's QR from their dashboard, or type their passenger
@@ -41,7 +41,7 @@ export const AdminRegistryPage = () => {
 
   const onScanned = (text) => {
     setScanning(false);
-    setRef(text.match(/TXP-[0-9A-Z]{4}-[0-9A-Z]{4}/i)?.[0].toUpperCase() ?? text);
+    setRef(passengerRefIn(text) ?? text);
     lookup(text);
   };
 
@@ -138,66 +138,8 @@ export const AdminRegistryPage = () => {
         </div>
       )}
 
-      {scanning && <ScannerModal onResult={onScanned} onClose={() => { setScanning(false); inputRef.current?.focus(); }} />}
+      {scanning && <QrScannerModal onResult={onScanned} onClose={() => { setScanning(false); inputRef.current?.focus(); }} />}
       {idCardFor && <IdCardModal student={idCardFor} basePath="/api/admin/verification" onClose={() => setIdCardFor(null)} />}
     </>
-  );
-};
-
-// Camera QR scanner. Uses the back camera where there is one; stops the
-// camera as soon as a code is read or the modal closes.
-const ScannerModal = ({ onResult, onClose }) => {
-  const videoRef = useRef(null);
-  const [error, setError] = useState('');
-  const doneRef = useRef(false);
-  const onResultRef = useRef(onResult); // latest callback without restarting the camera
-  onResultRef.current = onResult;
-
-  useEffect(() => {
-    let controls;
-    let cancelled = false;
-    (async () => {
-      try {
-        const { BrowserQRCodeReader } = await import('@zxing/browser'); // loaded only when scanning
-        const reader = new BrowserQRCodeReader();
-        controls = await reader.decodeFromConstraints(
-          { video: { facingMode: { ideal: 'environment' } } },
-          videoRef.current,
-          (res) => {
-            if (res && !doneRef.current) {
-              doneRef.current = true;
-              controls?.stop();
-              onResultRef.current(res.getText());
-            }
-          },
-        );
-        if (cancelled) controls.stop();
-      } catch (e) {
-        setError(
-          e?.name === 'NotAllowedError'
-            ? 'Camera access was blocked. Allow the camera for this site in your browser settings, or type the reference instead.'
-            : e?.name === 'NotFoundError'
-              ? 'No camera found on this device. Type the reference instead.'
-              : `Could not start the camera: ${e?.message ?? e}`,
-        );
-      }
-    })();
-    return () => { cancelled = true; controls?.stop(); };
-  }, []);
-
-  return (
-    <Modal open onClose={onClose} title="Scan participant QR">
-      {error ? (
-        <p className="font-mono text-[12px] text-status-crit">{error}</p>
-      ) : (
-        <>
-          <div className="relative overflow-hidden rounded-[4px] bg-black">
-            <video ref={videoRef} className="aspect-square w-full object-cover" muted playsInline />
-            <div className="pointer-events-none absolute inset-[15%] rounded-[4px] border-2 border-status-warn/80" />
-          </div>
-          <p className="mt-3 text-center font-mono text-[12px] text-text-dim">Point the camera at the QR on the student's dashboard.</p>
-        </>
-      )}
-    </Modal>
   );
 };

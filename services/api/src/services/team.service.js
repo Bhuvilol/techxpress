@@ -2,7 +2,7 @@ import { prisma } from '../config/db.js';
 import { Conflict, Forbidden, NotFound, BadRequest } from '../utils/errors.js';
 import { membershipService } from './membership.service.js';
 import { membershipChangeService } from './membershipChange.service.js';
-import { rulesService } from './rules.service.js';
+import { rulesService, loadMemberProfiles } from './rules.service.js';
 import { normalizeRegistrationNo } from '../utils/registrationNo.js';
 import { generatePublicId, TEAM_PUBLIC_PREFIX } from '../utils/publicId.js';
 
@@ -420,7 +420,8 @@ export const teamService = {
       if (team.status === 'DISQUALIFIED') throw Conflict('Team is disqualified');
 
       const rules = await rulesService.get(tx);
-      const unmet = rulesService.unmetReasons(team, rules);
+      const memberProfiles = await loadMemberProfiles(tx, teamId);
+      const unmet = rulesService.unmetReasons({ ...team, memberProfiles }, rules);
       if (unmet.length) {
         throw Conflict('Team does not meet qualification rules', { unmet });
       }

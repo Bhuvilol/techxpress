@@ -18,6 +18,7 @@ import { Spinner } from '../../components/ui/Spinner.jsx';
 import { confirm } from '../../components/ui/Confirm.jsx';
 import { issueLabel, formatRelative } from '../../utils/format.js';
 import { TeamChat } from '../../components/team/TeamChat.jsx';
+import { TeamInviteLink } from '../../components/team/TeamInviteLink.jsx';
 import { normalizeRegistrationNo } from '../../utils/registrationNo.js';
 
 // ── Status banner derived from rules engine evaluation ─────────────────────
@@ -479,6 +480,13 @@ const MyTeamView = ({ team, evaluation, onMutate }) => {
   const pendingInvites  = (invites.data?.invites ?? []).filter((i) => i.status === 'PENDING');
   const pendingRequests = (requests.data?.requests ?? []).filter((r) => r.status === 'PENDING');
 
+  // A new join request (e.g. from the invite link) appears without a reload.
+  useSocketEvent('join-request:received', (payload) => {
+    if (payload?.request?.teamId && payload.request.teamId !== team.id) return;
+    requests.refetch();
+    toast.info('New request to join your team.');
+  }, [team.id]);
+
   // Run a team action, then refresh the team AND the invite / join-request
   // lists (they live in this component, so onMutate alone doesn't reload
   // them). Refresh even on failure so a stale card never lingers.
@@ -691,6 +699,8 @@ const MyTeamView = ({ team, evaluation, onMutate }) => {
           <Stat label="Female"  value={`${team.femaleCount}`} />
           <Stat label="Experts" value={`${team.domainExpertCount}`} />
         </div>
+
+        {!isFinalized && team.status !== 'DISQUALIFIED' && team.publicId && <TeamInviteLink team={team} />}
 
         <div className="flex flex-wrap gap-2 border-t border-white/10 pt-4">
           {isLeader && !isFinalized && !teamDisbandPending && (

@@ -1,11 +1,16 @@
 import { joinRequestService } from '../services/joinRequest.service.js';
 import { teamService } from '../services/team.service.js';
+import { prisma } from '../config/db.js';
+import { emitJoinRequestReceived } from '../realtime/emitter.js';
 
 export const create = async (req, res) => {
   const request = await joinRequestService.create({
     teamId:      req.params.id,
     requesterId: req.user.id,
   });
+  // Tell the leader live, so their team page shows the request without a reload.
+  const team = await prisma.team.findUnique({ where: { id: req.params.id }, select: { leaderId: true } });
+  if (team) emitJoinRequestReceived(team.leaderId, { id: request.id, teamId: req.params.id });
   res.status(201).json({ request });
 };
 

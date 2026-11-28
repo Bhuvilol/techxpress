@@ -75,17 +75,15 @@ function useScramble(text, mode) {
   return mode ? shown : text;
 }
 
-// Countdown on the board: "HH:MM:SS", with a day count in front when more
-// than a day is left.
+// Countdown on the board: always "HH:MM:SS", no day count. Hours run past
+// 24 when more than a day is left (e.g. 34:58:27).
 const DEADLINE = Date.parse(LED.countdownTo);
 const SWAP_DELAY_MS = 600; // pause after the opening before the board re-scrambles
 const SWAP_MS = 1400;
 const two = (n) => String(n).padStart(2, '0');
 const timerText = (now) => {
   const s = Math.max(0, Math.floor((DEADLINE - now) / 1000));
-  const d = Math.floor(s / 86400);
-  const hms = `${two(Math.floor((s % 86400) / 3600))}:${two(Math.floor((s % 3600) / 60))}:${two(s % 60)}`;
-  return d ? `${d}D ${hms}` : hms;
+  return `${two(Math.floor(s / 3600))}:${two(Math.floor((s % 3600) / 60))}:${two(s % 60)}`;
 };
 
 // After the opening (`ready`): 'intro' -> 'swap' (scramble into the timer)

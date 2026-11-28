@@ -11,10 +11,10 @@ const NavItem = ({ to, children, onClick }) => (
     to={to}
     onClick={onClick}
     className={({ isActive }) => cn(
-      'rounded-[3px] px-3.5 py-1.5 font-cond text-[15px] font-bold tracking-[0.06em] uppercase transition-all duration-160 ease-out-expo',
+      'inline-flex h-9 items-center whitespace-nowrap rounded-[3px] px-3 font-cond text-[15px] font-bold tracking-[0.06em] uppercase transition-colors duration-160 ease-out-expo',
       'text-text-secondary hover:text-txp-yellow hover:bg-txp-yellow/10',
-      isActive && 'text-txp-yellow bg-txp-yellow/15 border-b-2 border-txp-yellow shadow-[0_2px_10px_-2px_rgba(245,184,0,0.3)]',
-      'w-full md:w-auto md:text-center',
+      isActive && 'text-txp-yellow bg-txp-yellow/15 shadow-[inset_0_-2px_0_rgb(245,184,0)]',
+      'w-full xl:w-auto xl:justify-center',
     )}
   >
     {children}
@@ -33,18 +33,19 @@ const goToStation = (event) => {
   setTimeout(() => window.location.assign('/'), 380);
 };
 
-const TechXpressLink = () => (
+const TechXpressLink = ({ compact = false }) => (
   <a
     href="/"
     onClick={goToStation}
     className={cn(
-      'inline-flex items-center gap-1.5 rounded-[3px] px-3 py-1 font-cond text-[14px] font-bold uppercase tracking-[0.08em]',
+      'inline-flex h-9 items-center gap-1.5 whitespace-nowrap rounded-[3px] px-3 font-cond text-[14px] font-bold uppercase tracking-[0.08em]',
       'border border-txp-yellow/30 bg-txp-yellow/10 text-txp-yellow hover:bg-txp-yellow hover:text-txp-ink transition-all duration-160',
-      'w-full md:w-auto md:text-center shadow-[0_2px_8px_-2px_rgba(245,184,0,0.3)]',
+      'w-full xl:w-auto xl:justify-center',
     )}
+    title="Back to the TechXpress station"
   >
     <Train size={14} className="shrink-0" />
-    <span>← TechXpress Station</span>
+    <span>{compact ? '← Station' : '← TechXpress Station'}</span>
   </a>
 );
 
@@ -89,24 +90,24 @@ export const TopAppBar = () => {
         </Link>
 
         {/* Desktop Nav */}
-        <nav className="hidden items-center gap-1.5 md:flex">
-          <TechXpressLink />
+        <nav className="hidden items-center gap-1 xl:flex">
+          <TechXpressLink compact />
           <NavItem to="/leaderboard">Leaderboard</NavItem>
           <NavItem to="/problem-statements">Problems</NavItem>
-          <NavItem to="/awards">Awards & Fare Chart</NavItem>
+          <NavItem to="/awards">Awards</NavItem>
 
           {isAuth ? (
-            <div className="ml-3 flex items-center gap-1.5 border-l border-border-mid pl-3">
+            <div className="ml-2 flex items-center gap-1 border-l border-border-mid pl-2">
               <NavItem to={homePathForRole(user.role)}>Dashboard</NavItem>
-              <NavItem to="/directory">Passenger Directory</NavItem>
-              {user.role === 'STUDENT'  && <NavItem to="/teams">My Team / Berth</NavItem>}
+              <NavItem to="/directory">Directory</NavItem>
+              {user.role === 'STUDENT'  && <NavItem to="/teams">My Team</NavItem>}
               {user.role === 'JURY'     && <NavItem to="/jury">Evaluations</NavItem>}
               {user.role === 'ADMIN'    && <NavItem to="/admin">Admin</NavItem>}
               {user.role === 'COORDINATOR' && <NavItem to="/coordinator">Coordinator</NavItem>}
 
               <button
                 onClick={logout}
-                className="ghost-button ml-2 !py-1 !px-3 font-cond text-[14px] font-bold uppercase tracking-wider text-text-secondary hover:text-status-crit hover:border-status-crit/40"
+                className="ghost-button ml-2 !h-9 !py-0 !px-3 whitespace-nowrap font-cond text-[14px] font-bold uppercase tracking-wider text-text-secondary hover:text-status-crit hover:border-status-crit/40"
               >
                 <LogOut size={13} />
                 Logout
@@ -115,7 +116,7 @@ export const TopAppBar = () => {
           ) : (
             <div className="ml-4 flex items-center gap-2.5">
               <NavItem to="/login">Sign in</NavItem>
-              <Link to="/register" className="glow-button !py-1.5 !px-4 !text-[14px]">
+              <Link to="/register" className="glow-button !h-9 !py-0 !px-4 !text-[14px] whitespace-nowrap">
                 Book Ticket
               </Link>
             </div>
@@ -125,7 +126,7 @@ export const TopAppBar = () => {
         {/* Mobile Menu Button */}
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className="flex h-10 w-10 items-center justify-center rounded-[3px] border border-border-mid bg-bg-surface-2 text-text-primary transition-all duration-160 hover:border-txp-yellow hover:text-txp-yellow md:hidden shadow-[0_2px_8px_rgba(0,0,0,0.4)]"
+          className="flex h-10 w-10 items-center justify-center rounded-[3px] border border-border-mid bg-bg-surface-2 text-text-primary transition-all duration-160 hover:border-txp-yellow hover:text-txp-yellow xl:hidden shadow-[0_2px_8px_rgba(0,0,0,0.4)]"
           aria-label="Toggle menu"
         >
           {isOpen ? <X size={20} /> : <Menu size={20} />}
@@ -134,7 +135,7 @@ export const TopAppBar = () => {
 
       {/* Mobile Menu Overlay */}
       <div className={cn(
-        'fixed inset-x-0 top-16 z-40 border-b border-border-mid bg-bg-void/95 backdrop-blur-xl transition-all duration-320 ease-out-expo md:hidden',
+        'fixed inset-x-0 top-16 z-40 border-b border-border-mid bg-bg-void transition-all duration-320 ease-out-expo xl:hidden',
         isOpen ? 'h-[calc(100vh-64px)] opacity-100 overflow-y-auto' : 'h-0 overflow-hidden opacity-0',
       )}>
         <nav className="flex flex-col gap-2 p-6">

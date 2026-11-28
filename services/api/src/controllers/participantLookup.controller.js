@@ -1,4 +1,5 @@
 import { prisma } from '../config/db.js';
+import { isDomainExpertFor } from '../utils/domainExperts.js';
 import { NotFound } from '../utils/errors.js';
 import { normalizeRegistrationNo } from '../utils/registrationNo.js';
 import { ADMIN_MEMBER_FIELDS } from '../utils/adminMemberFields.js';
@@ -44,7 +45,12 @@ export const participantLookup = async (req, res) => {
   const { idCard, membership, ...rest } = user;
   const team = membership?.team ?? null;
   res.json({
-    participant: { ...rest, hasIdCard: Boolean(idCard) },
+    participant: {
+      ...rest,
+      hasIdCard: Boolean(idCard),
+      // Expert for their team's domain by the institution/branch table (no team: no).
+      isDomainExpert: Boolean(team) && isDomainExpertFor({ institution: rest.institution?.name ?? null, branch: rest.branch ?? null }, team.domain?.name),
+    },
     team: team && {
       ...team,
       joinedAt: membership.joinedAt,

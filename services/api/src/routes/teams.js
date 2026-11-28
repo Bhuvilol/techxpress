@@ -24,11 +24,16 @@ import { teamChatLimiter } from '../middleware/rateLimit.js';
 import * as team    from '../controllers/team.controller.js';
 import * as invite  from '../controllers/invite.controller.js';
 import * as join    from '../controllers/joinRequest.controller.js';
+import { teamInviteRefParamSchema } from '../validators/team.schema.js';
 import * as change  from '../controllers/membershipChange.controller.js';
 import * as evaluation from '../controllers/evaluation.controller.js';
 import * as chat from '../controllers/teamChat.controller.js';
 
 const router = Router();
+
+// Public: preview of a team from its invite link (/vortex/join/TXT-XXXX-XXXX),
+// so someone not logged in sees which team invited them. Safe fields only.
+router.get('/invite/:ref', validate({ params: teamInviteRefParamSchema }), ah(team.invitePreview));
 
 router.use(requireAuth);
 
