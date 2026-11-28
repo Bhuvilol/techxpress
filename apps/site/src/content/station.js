@@ -9,7 +9,9 @@ export const EVENT = {
   // ⚠ CONFIRM: the day registration opens (matches Admin → Rules being switched on).
   registrationOpensOn: '2026-11-27',
   // ⚠ CONFIRM: registration closing day (from the draft timeline).
-  registrationClosesOn: '2026-12-01',
+  registrationClosesOn: '2026-11-29',
+  // Exact closing moment (Sun 29 Nov 2026, 12:00 noon IST).
+  registrationClosesAt: '2026-11-29T12:00:00+05:30',
   trainNo: '12026',
   trainName: 'TECHXPRESS',
   contactEmail: 'team@soatechxpress.in',
@@ -29,11 +31,11 @@ export const LED = {
   // After the opening the board scrambles again and switches to a countdown
   // to this moment (India time): timer on top, `countdownLabel` below.
   // Once it passes, `closedLabel` shows under the headline.
-  countdownTo: '2026-11-27T23:59:59+05:30',
+  countdownTo: '2026-11-29T12:00:00+05:30',
   countdownLabel: 'REGISTRATION CLOSES IN',
   closedLabel: 'REGISTRATION CLOSED · PLATFORM 1',
   status: {
-    beforeOpen: 'REGISTRATION CLOSES 27 NOV · PLATFORM 1',
+    beforeOpen: 'REGISTRATION CLOSES 29 NOV · PLATFORM 1',
     open: 'BOARDING NOW · BOOK YOUR TICKET · PLATFORM 1',
     closed: 'BOOKING CLOSED · DEPARTS 04 DEC',
     departed: 'DEPARTED · HACKATHON IN PROGRESS',
@@ -96,7 +98,7 @@ export const TIMETABLE = {
     { date: '23 NOV', title: 'Public announcement', detail: 'Banner drop on campus (Monday)' },
     { date: '24–30 NOV', title: 'Screening and campaigning', detail: 'Registrations continue with screening and outreach' },
     { date: '27 NOV', title: 'Booking opens', detail: 'Registration opens on this site' },
-    { date: '01 DEC', title: 'Booking closes', detail: 'Final call: the gates shut', key: true },
+    { date: '29 NOV', title: 'Booking closes', detail: 'Sunday, 12:00 noon: final call, the gates shut', key: true },
     { date: '02–03 DEC', title: 'Final passenger list', detail: 'Shortlist announced; venue arrangements and preparations', key: true },
     { date: '04 DEC', title: 'Departure', detail: 'TechXpress leaves the station', key: true },
   ],
