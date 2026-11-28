@@ -13,7 +13,7 @@ export const DOMAIN_EXPERT_SOURCES = {
   'Hospital Management':      { institutions: ['IBCS | SOA'] },
   'Management':               { institutions: ['IBCS | SOA'] },
   'Agriculture':              { institutions: ['IAS | SOA'] },
-  'Biotechnology & Pharmacy': { institutions: ['SPS | SOA'] },
+  'Biotechnology & Pharmacy': { institutions: ['SPS | SOA', 'CBT | SOA'] },
   'Electrical':               { iterBranches: ['ECE', 'EEE', 'EE'] },
   'Mechanical':               { iterBranches: ['Mech', 'Civil'] },
 };
