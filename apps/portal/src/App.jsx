@@ -9,6 +9,7 @@ import { RegistrationPage }    from './pages/public/RegistrationPage.jsx';
 import { LeaderboardPage }     from './pages/public/LeaderboardPage.jsx';
 import { AwardsPage }          from './pages/public/AwardsPage.jsx';
 import { ProblemStatementsPage } from './pages/public/ProblemStatementsPage.jsx';
+import { JoinTeamPage }        from './pages/public/JoinTeamPage.jsx';
 
 import { DashboardPage }       from './pages/student/DashboardPage.jsx';
 import { TeamFormationPage }   from './pages/student/TeamFormationPage.jsx';
@@ -44,6 +45,7 @@ export const App = () => (
       <Route path="/leaderboard"        element={<LeaderboardPage />} />
       <Route path="/awards"             element={<AwardsPage />} />
       <Route path="/problem-statements" element={<ProblemStatementsPage />} />
+      <Route path="/join/:ref"          element={<JoinTeamPage />} />
 
       <Route path="/dashboard" element={<RequireAuth role="STUDENT"><DashboardPage /></RequireAuth>} />
       <Route path="/teams"     element={<RequireAuth role="STUDENT"><TeamFormationPage /></RequireAuth>} />

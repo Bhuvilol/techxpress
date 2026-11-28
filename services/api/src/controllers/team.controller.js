@@ -140,3 +140,28 @@ export const disband = async (req, res) => {
   });
   res.json(result);
 };
+
+// GET /api/teams/invite/:ref (public). What an invite link shows before the
+// visitor logs in: no member names or contacts, only the leader's first name.
+export const invitePreview = async (req, res) => {
+  const team = await prisma.team.findUnique({
+    where: { publicId: req.params.ref },
+    select: {
+      id: true, publicId: true, name: true, status: true, memberCount: true,
+      domain: { select: { name: true } },
+      problemStatement: { select: { title: true } },
+      leader: { select: { fullName: true } },
+    },
+  });
+  if (!team) throw NotFound('This invite link is not valid. Ask the team for a new one.');
+  const rules = await rulesService.get();
+  const { leader, ...rest } = team;
+  res.json({
+    team: {
+      ...rest,
+      leaderFirstName: leader?.fullName?.split(/\s+/)[0] ?? null,
+      maxTeamSize: rules.maxTeamSize,
+      acceptingRequests: !['FINALIZED', 'DISQUALIFIED'].includes(team.status) && team.memberCount < rules.maxTeamSize,
+    },
+  });
+};
