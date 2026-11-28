@@ -1,0 +1,142 @@
+/* ── Rajesh: the guided walkthrough ───────────────────────────────────
+   Layers: launcher 55 (above the panels at 50), dim + ring 60, bubble 65, all
+   below the door transition (100). Styled from the same paper/ink/yellow
+   materials as the rest of the station. */
+
+.gs-launcher {
+  position: fixed;
+  left: 16px;
+  bottom: calc(16px + var(--txp-safe-b));
+  z-index: 55;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+}
+.gs-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 16px 5px 5px;
+  border: 2px solid var(--txp-ink);
+  border-radius: 999px;
+  background: var(--txp-yellow);
+  color: var(--txp-ink);
+  box-shadow: 0 3px 0 var(--txp-ink), 0 10px 22px rgba(10, 5, 20, 0.35);
+  cursor: pointer;
+}
+.gs-chip:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--txp-ink); }
+.gs-chip-text {
+  font: 700 19px/1 var(--txp-cond);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.gs-menu {
+  width: min(320px, calc(100vw - 32px));
+  padding: 14px;
+  color: var(--txp-ink);
+  background: var(--txp-paper-hi);
+  border: 2px solid var(--txp-ink);
+  border-radius: 6px;
+  box-shadow: 0 6px 0 var(--txp-ink), 0 16px 40px rgba(0, 0, 0, 0.4);
+}
+.gs-menu-title { font: 700 24px/1.1 var(--txp-cond); letter-spacing: 0.04em; text-transform: uppercase; }
+.gs-menu-intro { margin: 4px 0 10px; font: 500 14px/1.4 var(--txp-sans); color: var(--txp-ink-soft); }
+.gs-menu ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.gs-menu-item {
+  display: grid;
+  gap: 2px;
+  width: 100%;
+  padding: 10px 12px;
+  text-align: left;
+  color: var(--txp-ink);
+  background: var(--txp-paper);
+  border: 2px solid var(--txp-ink);
+  border-radius: 4px;
+  cursor: pointer;
+}
+.gs-menu-item:hover { background: var(--txp-paper-deep); }
+.gs-menu-item strong { font: 700 20px/1.1 var(--txp-cond); letter-spacing: 0.03em; text-transform: uppercase; }
+.gs-menu-item span { font: 500 13px/1.3 var(--txp-sans); color: var(--txp-ink-soft); }
+
+/* Phones with a full-screen form open: just the badge. */
+.gs-launcher--compact .gs-chip { padding: 4px; }
+.gs-launcher--compact .gs-chip-text { display: none; }
+
+/* Spotlight */
+.gs-spot { position: fixed; inset: 0; z-index: 60; pointer-events: none; }
+.gs-dim { position: fixed; background: rgba(12, 9, 24, 0.66); pointer-events: auto; }
+.gs-dim--all { inset: 0; z-index: 60; }
+.gs-ring {
+  position: fixed;
+  border-radius: 8px;
+  border: 3px solid var(--txp-yellow);
+  box-shadow: 0 0 0 3px var(--txp-ink), 0 0 26px 4px rgba(245, 184, 0, 0.55);
+  pointer-events: none;
+  animation: gs-pulse 1.6s ease-in-out infinite;
+}
+@keyframes gs-pulse { 50% { box-shadow: 0 0 0 3px var(--txp-ink), 0 0 12px 1px rgba(245, 184, 0, 0.35); } }
+
+/* Bubble */
+.gs-dock {
+  position: fixed;
+  left: 0;
+  right: 0;
+  z-index: 65;
+  display: flex;
+  justify-content: center;
+  padding: 0 12px;
+  pointer-events: none;
+}
+.gs-dock--bottom { bottom: calc(12px + var(--txp-safe-b)); }
+.gs-dock--top { top: calc(12px + var(--txp-safe-t)); }
+.gs-bubble {
+  width: min(440px, 100%);
+  padding: 14px 16px;
+  color: var(--txp-ink);
+  background: var(--txp-paper-hi);
+  border: 2px solid var(--txp-ink);
+  border-radius: 6px;
+  box-shadow: 0 6px 0 var(--txp-ink), 0 16px 40px rgba(0, 0, 0, 0.45);
+  pointer-events: auto;
+  animation: txp-pop 180ms var(--txp-ease);
+}
+.gs-bubble-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
+.gs-who { display: flex; align-items: center; gap: 8px; font: 700 20px/1 var(--txp-cond); letter-spacing: 0.06em; text-transform: uppercase; }
+.gs-count { font: 600 13px/1 var(--txp-cond); letter-spacing: 0.12em; text-transform: uppercase; color: var(--txp-ink-soft); }
+.gs-say { font: 600 17px/1.4 var(--txp-sans); }
+.gs-hint { margin-top: 8px; font: 500 13px/1.3 var(--txp-sans); color: var(--txp-ink-soft); }
+.gs-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.gs-bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 14px; }
+.gs-nav { display: flex; gap: 8px; }
+.gs-stop {
+  padding: 4px 0;
+  font: 600 14px/1 var(--txp-cond);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--txp-ink-soft);
+  background: none;
+  border: 0;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gs-ring, .gs-bubble { animation: none; }
+}
+
+/* Tall screens: the ticket spans the bottom of the stage and the booking form
+   has a sticky submit bar, so the launcher rides above both. */
+@media (max-aspect-ratio: 1/1) {
+  .gs-launcher { bottom: calc(100px + var(--txp-safe-b)); }
+  .gs-launcher--compact { bottom: calc(88px + var(--txp-safe-b)); }
+}
+
+.gs-avatar {
+  display: block;
+  flex: none;
+  border-radius: 50%;
+  background: var(--txp-yellow);
+  border: 2px solid var(--txp-ink);
+  object-fit: cover;
+}
