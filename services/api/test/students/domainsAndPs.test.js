@@ -117,8 +117,17 @@ test('T-shirt size update takes one of the listed sizes', () => {
   assert.equal(updateTshirtSizeSchema.safeParse({}).success, false);
 });
 
-test('a student saves their T-shirt size', async () => {
+test('a student with no T-shirt size can set it once', async () => {
   prisma.domain.findMany = mock.fn(async () => []);
+  prisma.user.updateMany = mock.fn(async () => ({ count: 1 }));
+  prisma.user.findUnique = mock.fn(async () => ({ id: 'cstudent000000000000000a', tshirtSize: 'M', preferredDomains: [] }));
   await userService.updateTshirtSize('cstudent000000000000000a', 'M');
-  assert.deepEqual(prisma.user.update.mock.calls[0].arguments[0].data, { tshirtSize: 'M' });
+  const { where, data } = prisma.user.updateMany.mock.calls[0].arguments[0];
+  assert.deepEqual(where, { id: 'cstudent000000000000000a', tshirtSize: null });
+  assert.deepEqual(data, { tshirtSize: 'M' });
+});
+
+test('a T-shirt size that is already set cannot be changed', async () => {
+  prisma.user.updateMany = mock.fn(async () => ({ count: 0 }));
+  await assert.rejects(userService.updateTshirtSize('cstudent000000000000000a', 'XL'), (err) => err.status === 409);
 });
