@@ -463,6 +463,7 @@ export const userService = {
           { fullName: { contains: search, mode: 'insensitive' } },
           { email: { contains: search, mode: 'insensitive' } },
           { registrationNo: { contains: search, mode: 'insensitive' } },
+          { publicId: { contains: search, mode: 'insensitive' } }, // passenger reference, TXP-XXXX-XXXX
         ],
       }),
     };
@@ -508,6 +509,7 @@ export const userService = {
           { fullName: { contains: search, mode: 'insensitive' } },
           { email: { contains: search, mode: 'insensitive' } },
           { registrationNo: { contains: search, mode: 'insensitive' } },
+          { publicId: { contains: search, mode: 'insensitive' } }, // passenger reference, TXP-XXXX-XXXX
         ],
       }),
     };
