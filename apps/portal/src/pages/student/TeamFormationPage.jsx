@@ -18,6 +18,7 @@ import { Spinner } from '../../components/ui/Spinner.jsx';
 import { confirm } from '../../components/ui/Confirm.jsx';
 import { issueLabel, formatRelative } from '../../utils/format.js';
 import { TeamChat } from '../../components/team/TeamChat.jsx';
+import { TeamInviteLink } from '../../components/team/TeamInviteLink.jsx';
 import { normalizeRegistrationNo } from '../../utils/registrationNo.js';
 
 // ── Status banner derived from rules engine evaluation ─────────────────────
@@ -691,6 +692,8 @@ const MyTeamView = ({ team, evaluation, onMutate }) => {
           <Stat label="Female"  value={`${team.femaleCount}`} />
           <Stat label="Experts" value={`${team.domainExpertCount}`} />
         </div>
+
+        {!isFinalized && team.status !== 'DISQUALIFIED' && team.publicId && <TeamInviteLink team={team} />}
 
         <div className="flex flex-wrap gap-2 border-t border-white/10 pt-4">
           {isLeader && !isFinalized && !teamDisbandPending && (

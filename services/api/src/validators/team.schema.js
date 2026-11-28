@@ -11,6 +11,11 @@ export const createTeamSchema = z.object({
 
 export const teamIdParamSchema = z.object({ id: cuid });
 
+// A team's invite link carries its public reference, TXT-XXXX-XXXX.
+export const teamInviteRefParamSchema = z.object({
+  ref: z.string().trim().toUpperCase().regex(/^TXT-[0-9A-Z]{4}-[0-9A-Z]{4}$/, 'Not a team invite link.'),
+});
+
 // The leader picks (or clears, with null) the team's problem statement.
 export const changeProblemStatementSchema = z.object({ psId: cuid.nullable() });
 
