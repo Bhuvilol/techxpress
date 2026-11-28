@@ -2,7 +2,7 @@ import { evaluationService } from '../services/evaluation.service.js';
 import { auditService } from '../services/audit.service.js';
 import { rulesService } from '../services/rules.service.js';
 import { prisma } from '../config/db.js';
-import { Forbidden } from '../utils/errors.js';
+import { Forbidden, NotFound } from '../utils/errors.js';
 import { emitLeaderboardChanged } from '../realtime/emitter.js';
 
 export const submit = async (req, res) => {
@@ -88,4 +88,19 @@ export const scoringBoard = async (_req, res) => {
     orderBy: { name: 'asc' },
   });
   res.json({ count: teams.length, teams });
+};
+
+// GET /api/jury/team-for-member?ref=TXP-XXXX-XXXX
+// The jury scans any team member's QR; this finds that member's team, only
+// among teams on the scoring board (FINALIZED). Nothing about the member is
+// returned. Unknown reference, no team and not-finalized all look the same.
+const TXP_REF = /TXP-[0-9A-Z]{4}-[0-9A-Z]{4}/i;
+export const teamForMember = async (req, res) => {
+  const ref = req.query.ref.match(TXP_REF)?.[0].toUpperCase();
+  const membership = ref && await prisma.teamMember.findFirst({
+    where: { user: { publicId: ref }, team: { status: 'FINALIZED' } },
+    select: { team: { select: { id: true, name: true } } },
+  });
+  if (!membership) throw NotFound('No finalized team found for that QR code.');
+  res.json({ team: membership.team });
 };

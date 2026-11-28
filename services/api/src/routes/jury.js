@@ -9,6 +9,7 @@ import {
 } from '../validators/evaluation.schema.js';
 import * as juryAssignment from '../controllers/juryAssignment.controller.js';
 import * as evaluation     from '../controllers/evaluation.controller.js';
+import { participantLookupQuerySchema } from '../validators/admin.schema.js';
 
 // Jury-only routes. The route layer pre-blocks scoring on a locked round
 // via requireRoundUnlocked; the service layer re-checks inside its txn.
@@ -23,6 +24,13 @@ router.get('/teams', ah(evaluation.scoringBoard));
 
 // Legacy: still served so any caller that references it works, but the
 // admin-side assignment UI has been removed.
+// Scan a member's QR (passenger reference) to find their team on the board.
+// Returns only the team id and name, never the member's details.
+router.get('/team-for-member',
+  validate({ query: participantLookupQuerySchema }),
+  ah(evaluation.teamForMember),
+);
+
 router.get('/assignments',
   validate({ query: myAssignmentsQuerySchema }),
   ah(juryAssignment.myAssignments),
