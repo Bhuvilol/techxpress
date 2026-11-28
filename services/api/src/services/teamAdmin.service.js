@@ -2,7 +2,7 @@ import { prisma } from '../config/db.js';
 import { Conflict, BadRequest, NotFound } from '../utils/errors.js';
 import { membershipService } from './membership.service.js';
 import { membershipChangeService } from './membershipChange.service.js';
-import { rulesService } from './rules.service.js';
+import { rulesService, loadMemberProfiles } from './rules.service.js';
 import { teamService } from './team.service.js';
 import { leaderboardService } from './leaderboard.service.js';
 
@@ -209,7 +209,8 @@ export const teamAdminService = {
       if (team.status === 'DISQUALIFIED') throw Conflict('Team is disqualified');
 
       const rules = await rulesService.get(tx);
-      const unmet = rulesService.unmetReasons(team, rules);
+      const memberProfiles = await loadMemberProfiles(tx, teamId);
+      const unmet = rulesService.unmetReasons({ ...team, memberProfiles }, rules);
 
       // Cancel still-open invites + join requests (same as leader finalize).
       await tx.teamInvite.updateMany({

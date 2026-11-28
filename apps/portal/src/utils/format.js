@@ -40,4 +40,5 @@ export const issueLabel = (code) => ({
   MAX_TEAM_SIZE_EXCEEDED:     'Too many members',
   MIN_FEMALE_MEMBERS_NOT_MET: 'Needs a female member',
   MIN_DOMAIN_EXPERTS_NOT_MET: 'Needs a domain expert',
+  CROSS_BRANCH_REQUIRED:      'Needs a member from another branch',
 }[code] ?? code);

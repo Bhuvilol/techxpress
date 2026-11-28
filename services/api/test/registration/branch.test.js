@@ -53,8 +53,51 @@ test('branch update: schema needs a listed branch', () => {
 test('an ITER | SOA student saves their branch', async () => {
   prisma.user.findUnique = mock.fn(async () => ({ institution: { name: 'ITER | SOA' } }));
   prisma.domain.findMany = mock.fn(async () => []);
+  prisma.teamMember = { findUnique: mock.fn(async () => null) }; // not in a team
   await userService.updateBranch('cstudent000000000000000a', 'EE');
   assert.deepEqual(prisma.user.update.mock.calls[0].arguments[0].data, { branch: 'EE' });
+});
+
+// ── Cross-branch rule: an all-ITER team needs one member from another branch ─
+const RULES = { minTeamSize: 1, maxTeamSize: 6, minFemaleMembers: 0, minDomainExperts: 0 };
+const team = (memberProfiles) => ({ memberCount: memberProfiles.length, femaleCount: 0, domainExpertCount: 0, memberProfiles });
+const iter = (branch) => ({ institution: 'ITER | SOA', branch });
+const codes = (t) => rulesService.evaluateTeam(t, RULES).issues.map((i) => i.code);
+
+test('an all-ITER team from one branch needs a cross-branch member', () => {
+  const { isQualified, issues } = rulesService.evaluateTeam(team([iter('CSE Core'), iter('CSE Core'), iter('CSE Core')]), RULES);
+  assert.equal(isQualified, false);
+  assert.deepEqual(issues, [{ code: 'CROSS_BRANCH_REQUIRED', need: 1, have: 0 }]);
+});
+
+test('one member from another branch is enough', () => {
+  assert.deepEqual(codes(team([iter('CSE Core'), iter('CSE Core'), iter('EE')])), []);
+});
+
+test('a member from another institution lifts the cross-branch rule', () => {
+  assert.deepEqual(codes(team([iter('CSE Core'), iter('CSE Core'), { institution: 'Other College', branch: null }])), []);
+});
+
+test('a member with no branch set does not count as a different branch', () => {
+  assert.deepEqual(codes(team([iter('CSE Core'), iter(null)])), ['CROSS_BRANCH_REQUIRED']);
+});
+
+test('without member profiles the rule is not applied (count-only callers)', () => {
+  assert.deepEqual(codes({ memberCount: 3, femaleCount: 0, domainExpertCount: 0 }), []);
+});
+
+test('changing branch re-checks the team the student is in', async () => {
+  prisma.user.findUnique = mock.fn(async () => ({ institution: { name: 'ITER | SOA' } }));
+  prisma.domain.findMany = mock.fn(async () => []);
+  prisma.teamMember = {
+    findUnique: mock.fn(async () => ({ teamId: 'cteam000000000000000000a' })),
+    findMany: mock.fn(async () => [{ user: { branch: 'EE', institution: { name: 'ITER | SOA' } } }]),
+  };
+  prisma.team = { ...prisma.team, findUnique: mock.fn(async () => ({ id: 'cteam000000000000000000a', status: 'FORMING', adminOverride: false, memberCount: 1, femaleCount: 0, domainExpertCount: 0 })), update: mock.fn(async () => ({})) };
+  prisma.hackathonRules.findUnique = mock.fn(async () => ({ id: 'rules', ...RULES }));
+  await userService.updateBranch('cstudent000000000000000a', 'EE');
+  assert.equal(prisma.teamMember.findMany.mock.callCount(), 1);
+  assert.equal(prisma.team.findUnique.mock.callCount(), 1);
 });
 
 test('a student of another institution cannot set a branch', async () => {

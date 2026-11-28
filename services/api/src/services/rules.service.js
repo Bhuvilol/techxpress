@@ -1,4 +1,5 @@
 import { prisma } from '../config/db.js';
+import { BRANCH_INSTITUTION_NAME } from '../validators/registration.schema.js';
 import { NotFound, BadRequest, Forbidden } from '../utils/errors.js';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -30,6 +31,21 @@ export const ISSUE_CODES = {
   MAX_TEAM_SIZE_EXCEEDED:     'MAX_TEAM_SIZE_EXCEEDED',
   MIN_FEMALE_MEMBERS_NOT_MET: 'MIN_FEMALE_MEMBERS_NOT_MET',
   MIN_DOMAIN_EXPERTS_NOT_MET: 'MIN_DOMAIN_EXPERTS_NOT_MET',
+  CROSS_BRANCH_REQUIRED:      'CROSS_BRANCH_REQUIRED',
+};
+
+// A team made up only of ITER | SOA students needs at least one member from
+// a different branch (i.e. not everyone in the same branch). Teams with
+// anyone from another institution are not affected.
+
+// Members' institution and branch, for the cross-branch rule. Works with a
+// transaction client or prisma.
+export const loadMemberProfiles = async (client, teamId) => {
+  const rows = await client.teamMember.findMany({
+    where: { teamId },
+    select: { user: { select: { branch: true, institution: { select: { name: true } } } } },
+  });
+  return rows.map(({ user }) => ({ institution: user.institution?.name ?? null, branch: user.branch ?? null }));
 };
 
 let cached = null;
@@ -77,7 +93,8 @@ export const rulesService = {
   // ── pure evaluation ─────────────────────────────────────────────────────
   /**
    * Pure function: given a team snapshot (must include memberCount,
-   * femaleCount, domainExpertCount) and the current rules, returns
+   * femaleCount, domainExpertCount; optionally memberProfiles from
+   * loadMemberProfiles for the cross-branch rule) and the current rules, returns
    * { isQualified, issues: [{ code, need, have }, ...] }.
    *
    * Side-effect-free. Safe to call from controllers for "preview" responses.
@@ -112,6 +129,16 @@ export const rulesService = {
         need: rules.minDomainExperts,
         have: team.domainExpertCount,
       });
+    }
+    // All-ITER team: at least one member from a different branch. Reported
+    // as cross-branch members needed (1) / have (branches beyond the first).
+    // A member who hasn't set a branch yet doesn't count.
+    const profiles = team.memberProfiles;
+    if (profiles?.length && profiles.every((m) => m.institution === BRANCH_INSTITUTION_NAME)) {
+      const branches = new Set(profiles.map((m) => m.branch).filter(Boolean)).size;
+      if (branches < 2) {
+        issues.push({ code: ISSUE_CODES.CROSS_BRANCH_REQUIRED, need: 1, have: Math.max(branches - 1, 0) });
+      }
     }
 
     return { isQualified: issues.length === 0, issues };
@@ -161,7 +188,8 @@ export const rulesService = {
     }
 
     const rules = await this.get(tx);
-    const { isQualified, issues } = this.evaluateTeam(team, rules);
+    const memberProfiles = await loadMemberProfiles(tx, teamId);
+    const { isQualified, issues } = this.evaluateTeam({ ...team, memberProfiles }, rules);
     const desired = isQualified ? 'QUALIFIED' : 'FORMING';
 
     if (desired === team.status) {
