@@ -21,7 +21,6 @@ import { Spinner } from '../../components/ui/Spinner.jsx';
 import { Modal } from '../../components/ui/Modal.jsx';
 import { formatRelative, titleCase } from '../../utils/format.js';
 import { DomainPicker, DOMAINS_SAVED_EVENT } from '../../components/student/DomainPicker.jsx';
-import { TshirtSizePicker } from '../../components/student/TshirtSizePicker.jsx';
 import logoUrl from '../../assets/logo.webp';
 import trainUrl from '../../assets/train-a.webp';
 
@@ -68,14 +67,8 @@ const ProfileTab = ({ user, myTeam }) => {
         {user.branch ? <Field icon={GraduationCap} label="Branch" value={user.branch} /> : null}
         <Field icon={BookOpen} label="Year / Semester" value={user.yearSemester ?? '-'} />
         <Field icon={Mail} label="Phone" value={user.phone ?? '-'} />
-        {user.role === 'STUDENT' ? (
-          <div className="space-y-1">
-            <div className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.16em] text-text-dim"><Shirt size={12} className="text-txp-yellow" /> T-shirt size</div>
-            <TshirtSizePicker key={user.tshirtSize ?? ''} current={user.tshirtSize ?? ''} compact />
-          </div>
-        ) : (
-          <Field icon={Shirt} label="T-shirt size" value={user.tshirtSize ?? '-'} />
-        )}
+        {/* Read-only: a missing size is set once from the banner (DomainBanner). */}
+        <Field icon={Shirt} label="T-shirt size" value={user.tshirtSize ?? '-'} />
         <Field icon={Briefcase} label="Preferred Team Role" value={user.preferredTeamRole ?? '-'} />
         <Field icon={Award} label="Contribution Areas" value={joinList(user.contributionAreas)} />
       </dl>

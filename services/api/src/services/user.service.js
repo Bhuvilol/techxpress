@@ -412,8 +412,12 @@ export const userService = {
     return attachPreferredDomainDetails(user);
   },
 
+  // Set once only (older accounts registered before the size was asked).
+  // After that it is fixed: T-shirts are ordered from these sizes.
   async updateTshirtSize(userId, tshirtSize) {
-    const user = await prisma.user.update({ where: { id: userId }, data: { tshirtSize }, select: PUBLIC_USER_FIELDS });
+    const { count } = await prisma.user.updateMany({ where: { id: userId, tshirtSize: null }, data: { tshirtSize } });
+    if (count === 0) throw Conflict('Your T-shirt size is already set and cannot be changed. Contact the organisers if it is wrong.');
+    const user = await prisma.user.findUnique({ where: { id: userId }, select: PUBLIC_USER_FIELDS });
     return attachPreferredDomainDetails(user);
   },
 

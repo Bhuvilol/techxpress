@@ -30,7 +30,7 @@ router.patch('/me/domains',
   }),
 );
 
-// A student sets or changes their T-shirt size.
+// A student sets their T-shirt size, once (see userService.updateTshirtSize).
 router.patch('/me/tshirt-size',
   requireAuth,
   requireRole('STUDENT'),
