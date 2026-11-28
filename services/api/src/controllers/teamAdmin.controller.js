@@ -1,6 +1,46 @@
 import { teamAdminService } from '../services/teamAdmin.service.js';
 import { auditService } from '../services/audit.service.js';
 import { emitLeaderboardChanged } from '../realtime/emitter.js';
+import { prisma } from '../config/db.js';
+import { NotFound } from '../utils/errors.js';
+
+// What an admin sees for each member in the team details view. An explicit
+// allow-list, so secrets (passwordHash) can never leak in.
+const ADMIN_MEMBER_FIELDS = {
+  id: true, publicId: true, fullName: true, email: true, phone: true,
+  registrationNo: true, gender: true, tshirtSize: true,
+  degree: true, branch: true, yearSemester: true,
+  isDomainExpert: true, verificationStatus: true, lastLoginAt: true,
+  preferredTeamRole: true, contributionAreas: true,
+  technicalSkills: true, nonTechnicalSkills: true,
+  linkedinUrl: true, githubUrl: true, portfolioUrl: true, resumeDriveLink: true,
+  discordId: true,
+  institution: { select: { id: true, name: true } },
+  domain: { select: { id: true, name: true } },
+  idCard: { select: { userId: true } },
+};
+
+export const teamMembers = async (req, res) => {
+  const team = await prisma.team.findUnique({
+    where: { id: req.params.id },
+    select: {
+      id: true, name: true, status: true, leaderId: true,
+      domain: { select: { id: true, name: true } },
+      problemStatement: { select: { id: true, title: true } },
+      members: {
+        orderBy: { joinedAt: 'asc' },
+        select: { role: true, joinedAt: true, user: { select: ADMIN_MEMBER_FIELDS } },
+      },
+    },
+  });
+  if (!team) throw NotFound('Team not found');
+  const members = team.members.map(({ user: { idCard, ...user }, ...m }) => ({
+    ...m,
+    isLeader: user.id === team.leaderId,
+    user: { ...user, hasIdCard: Boolean(idCard) },
+  }));
+  res.json({ team: { ...team, members } });
+};
 
 export const forceAddMember = async (req, res) => {
   const team = await teamAdminService.forceAddMember({
