@@ -97,6 +97,7 @@ export function useLedStatus() {
     open,
     opensOn: EVENT.registrationOpensOn,
     closesOn: EVENT.registrationClosesOn,
+    closesAt: EVENT.registrationClosesAt,
     startsAt: EVENT.startsAt,
   });
 }

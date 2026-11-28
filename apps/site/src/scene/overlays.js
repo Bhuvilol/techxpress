@@ -38,7 +38,7 @@ export const subBox = (box, f) => ({ x: box.w * f.x, y: box.h * f.y, w: box.w * 
 export function ledStatus(now = Date.now()) {
   const day = (d) => Date.parse(`${d}T00:00:00+05:30`);
   if (now >= Date.parse(EVENT.startsAt)) return LED.status.departed;
-  if (now >= day(EVENT.registrationClosesOn) + 864e5) return LED.status.closed;
+  if (now >= Date.parse(EVENT.registrationClosesAt)) return LED.status.closed;
   if (now >= day(EVENT.registrationOpensOn)) return LED.status.open;
   return LED.status.beforeOpen;
 }

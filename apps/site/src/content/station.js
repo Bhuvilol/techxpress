@@ -9,7 +9,9 @@ export const EVENT = {
   // ⚠ CONFIRM: the day registration opens (matches Admin → Rules being switched on).
   registrationOpensOn: '2026-11-27',
   // ⚠ CONFIRM: registration closing day (from the draft timeline).
-  registrationClosesOn: '2026-12-01',
+  registrationClosesOn: '2026-11-29',
+  // Exact closing moment (Sun 29 Nov 2026, 11:59 pm IST). Keep in step with LED.countdownTo.
+  registrationClosesAt: '2026-11-29T23:59:59+05:30',
   trainNo: '12026',
   trainName: 'TECHXPRESS',
   contactEmail: 'team@soatechxpress.in',
@@ -94,10 +96,9 @@ export const ABOUT = {
 export const TIMETABLE = {
   preDeparture: [
     { date: '20–22 NOV', title: 'Registrations open', detail: 'Posters released, candidate onboarding and team formation' },
-    { date: '23 NOV', title: 'Public announcement', detail: 'Banner drop on campus (Monday)' },
-    { date: '24–30 NOV', title: 'Screening and campaigning', detail: 'Registrations continue with screening and outreach' },
-    { date: '27 NOV', title: 'Booking opens', detail: 'Registration opens on this site' },
-    { date: '01 DEC', title: 'Booking closes', detail: 'Final call: the gates shut', key: true },
+    { date: '23–30 NOV', title: 'Screening and campaigning', detail: 'Registrations continue with screening and outreach' },
+    { date: '29 NOV', title: 'Booking closes', detail: 'Sunday, 11:59 pm: final call, the gates shut', key: true },
+    { date: '01 DEC', title: 'PPT submission deadline', detail: 'Submit your presentation by end of day', key: true },
     { date: '02–03 DEC', title: 'Final passenger list', detail: 'Shortlist announced; venue arrangements and preparations', key: true },
     { date: '04 DEC', title: 'Departure', detail: 'TechXpress leaves the station', key: true },
   ],

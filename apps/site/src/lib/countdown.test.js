@@ -40,6 +40,11 @@ describe('ledStatusKey', () => {
     expect(s('2026-11-27T00:00:00+05:30', false)).toBe('closed');
     expect(s('2026-12-02T10:00:00+05:30', false)).toBe('closed');
   });
+  it('status unknown: the exact closing moment (closesAt) decides', () => {
+    const c = (iso) => ledStatusKey({ now: at(iso), open: null, ...EVENT, closesAt: '2026-11-29T23:59:59+05:30' });
+    expect(c('2026-11-29T23:59:58+05:30')).toBe('open');
+    expect(c('2026-11-29T23:59:59+05:30')).toBe('closed');
+  });
   it('after the start -> departed, even if still open', () => {
     expect(s('2026-12-04T09:30:00+05:30', true)).toBe('departed');
     expect(s('2026-12-04T10:00:00+05:30', null)).toBe('departed');

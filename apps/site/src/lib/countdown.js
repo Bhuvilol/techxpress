@@ -45,14 +45,15 @@ export const countdownSpoken = ({ days, hours, minutes }) => {
 // After the start it is always 'departed'. With a known status: open ->
 // 'open'; closed before the opening day -> 'beforeOpen', closed after it ->
 // 'closed'. Without one, the published dates decide.
-export const ledStatusKey = ({ now, open, opensOn, closesOn, startsAt }) => {
+export const ledStatusKey = ({ now, open, opensOn, closesOn, closesAt, startsAt }) => {
   const t = toMs(now);
   if (t >= toMs(startsAt)) return 'departed';
   const beforeOpening = t < startOfIstDay(opensOn);
   if (open === true) return 'open';
   if (open === false) return beforeOpening ? 'beforeOpen' : 'closed';
   if (beforeOpening) return 'beforeOpen';
-  if (closesOn && t >= endOfIstDay(closesOn)) return 'closed';
+  if (closesAt && t >= toMs(closesAt)) return 'closed';
+  if (!closesAt && closesOn && t >= endOfIstDay(closesOn)) return 'closed';
   return 'open';
 };
 
