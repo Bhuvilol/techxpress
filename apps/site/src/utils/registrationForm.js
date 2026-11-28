@@ -12,6 +12,7 @@ export const BRANCH_OPTIONS = ['CSE Core', 'CSE AIML', 'CSE CS', 'CSE DS', 'CSE 
 export const INITIAL_FORM = {
   fullName: '',
   email: '',
+  emailConfirm: '', // typed again to catch typos; never sent to the API
   registrationNo: '',
   phone: '',
   gender: '', // no default: a guessed value would feed the team gender rules
@@ -68,6 +69,7 @@ export const URL_EXAMPLES = {
 export const FIELD_ORDER = [
   'fullName',
   'email',
+  'emailConfirm',
   'registrationNo',
   'phone',
   'gender',
@@ -98,6 +100,7 @@ export const FIELD_ORDER = [
 export const FIELD_LABELS = {
   fullName: 'Full Name',
   email: 'Email',
+  emailConfirm: 'Confirm Email',
   registrationNo: 'Registration Number',
   phone: 'Phone',
   gender: 'Gender',
@@ -126,6 +129,45 @@ export const FIELD_LABELS = {
 };
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
+// Mail domains students actually use. A domain one typo away from one of
+// these (gmial.com, gmail.co, gamil.com, yahoo.con) is almost always a
+// mistake: login details sent there bounce or reach a stranger.
+const COMMON_EMAIL_DOMAINS = ['gmail.com', 'yahoo.com', 'yahoo.in', 'outlook.com', 'hotmail.com', 'icloud.com', 'rediffmail.com', 'soa.ac.in'];
+// Real domains that sit one typo from a common one; never "corrected".
+const REAL_LOOKALIKE_DOMAINS = ['mail.com', 'ymail.com', 'gmx.com', 'live.com', 'yahoo.co.in', 'outlook.in', 'hotmail.co.uk'];
+
+// Edit distance where swapping two neighbouring letters counts as one edit.
+const typoDistance = (a, b) => {
+  const d = Array.from({ length: a.length + 1 }, (_, i) => [i, ...Array(b.length).fill(0)]);
+  for (let j = 1; j <= b.length; j++) d[0][j] = j;
+  for (let i = 1; i <= a.length; i++) {
+    for (let j = 1; j <= b.length; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + cost);
+      if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) d[i][j] = Math.min(d[i][j], d[i - 2][j - 2] + 1);
+    }
+  }
+  return d[a.length][b.length];
+};
+
+// The corrected address when the domain looks like a typo of a common one
+// ("asha@gmial.com" -> "asha@gmail.com"), otherwise null.
+export const suggestEmail = (value) => {
+  const email = (value ?? '').trim().toLowerCase();
+  if (!EMAIL_RE.test(email)) return null;
+  const at = email.lastIndexOf('@');
+  const local = email.slice(0, at);
+  const domain = email.slice(at + 1);
+  if (COMMON_EMAIL_DOMAINS.includes(domain) || REAL_LOOKALIKE_DOMAINS.includes(domain)) return null;
+  // Typos in the ending: gmail.co, gmail.cm, gmail.comm, gmail.om.
+  const [name] = domain.split('.');
+  const byName = COMMON_EMAIL_DOMAINS.find((d) => d.split('.')[0] === name && d.endsWith('.com'));
+  const allowedEndingTypo = /\.(co|cm|om|con|cpm|comm|vom|xom|c)$/.test(domain);
+  if (byName && allowedEndingTypo) return `${local}@${byName}`;
+  const match = COMMON_EMAIL_DOMAINS.find((d) => typoDistance(domain, d) <= (d.length >= 9 ? 2 : 1));
+  return match ? `${local}@${match}` : null;
+};
 
 export const normalizeUrl = (value) => {
   const v = (value ?? '').trim();
@@ -187,6 +229,13 @@ export const validateRegistration = (f, { needsBranch = false } = {}) => {
   const email = f.email.trim();
   if (!email) e.email = 'Email is required — your login details are sent here.';
   else if (!EMAIL_RE.test(email)) e.email = 'That does not look like a valid email. Use name@college.edu.';
+  else if (suggestEmail(email)) e.email = `Did you mean ${suggestEmail(email)}? Your login details are sent to this address.`;
+
+  if (!e.email) {
+    const confirm = (f.emailConfirm ?? '').trim();
+    if (!confirm) e.emailConfirm = 'Type your email again to confirm it.';
+    else if (confirm.toLowerCase() !== email.toLowerCase()) e.emailConfirm = 'The two emails do not match. Check both for typos.';
+  }
 
   const reg = f.registrationNo.trim();
   if (!reg) e.registrationNo = 'Registration number is required — use the one issued by your institution.';
@@ -255,6 +304,7 @@ export const sanitizePayload = (form) =>
 // pick, so the API gets both fields the server validator expects.
 export const buildSubmitPayload = (form) => {
   const payload = sanitizePayload(form);
+  delete payload.emailConfirm; // client-side check only
   if (form.preferredDomains.length) {
     payload.preferredDomains = form.preferredDomains;
     payload.domainId = form.preferredDomains[0];
