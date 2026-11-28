@@ -231,7 +231,7 @@ export const JuryDashboardPage = () => {
 
   // The round being evaluated now: the open (UNLOCKED) one, set by admins on
   // Admin → Rounds. If more than one is open, the latest. Juries can't choose.
-  const currentRound = [...ROUNDS].reverse().find((r) => rounds.data?.control?.[ROUND_FIELD[r]] === 'UNLOCKED') ?? null;
+  const currentRound = ROUNDS.findLast((r) => rounds.data?.control?.[ROUND_FIELD[r]] === 'UNLOCKED') ?? null;
 
   // Clicking a team card opens its evaluation for the current round: the
   // score form if the slot is free or already mine, read-only if another
@@ -260,20 +260,16 @@ export const JuryDashboardPage = () => {
     }
   };
 
-  // Stats for the current round only.
-  const counts = useMemo(() => {
-    const all = board.data?.teams ?? [];
-    let todo = 0, mine = 0, others = 0;
-    if (currentRound) {
-      for (const t of all) {
-        const ev = t.evaluations.find((e) => e.round === currentRound);
-        if (!ev) todo++;
-        else if (ev.jury.id === user.id) mine++;
-        else others++;
-      }
+  // Stats for the current round only (a quick pass over the board).
+  const counts = { teams: board.data?.teams?.length ?? 0, todo: 0, mine: 0, others: 0 };
+  if (currentRound) {
+    for (const t of board.data?.teams ?? []) {
+      const ev = t.evaluations.find((e) => e.round === currentRound);
+      if (!ev) counts.todo++;
+      else if (ev.jury.id === user.id) counts.mine++;
+      else counts.others++;
     }
-    return { teams: all.length, todo, mine, others };
-  }, [board.data, user.id, currentRound]);
+  }
 
   return (
     <section className="mx-auto max-w-6xl px-6 py-12">
