@@ -135,7 +135,7 @@ export const TopAppBar = () => {
 
       {/* Mobile Menu Overlay */}
       <div className={cn(
-        'fixed inset-x-0 top-16 z-40 border-b border-border-mid bg-bg-void/95 backdrop-blur-xl transition-all duration-320 ease-out-expo xl:hidden',
+        'fixed inset-x-0 top-16 z-40 border-b border-border-mid bg-bg-void transition-all duration-320 ease-out-expo xl:hidden',
         isOpen ? 'h-[calc(100vh-64px)] opacity-100 overflow-y-auto' : 'h-0 overflow-hidden opacity-0',
       )}>
         <nav className="flex flex-col gap-2 p-6">
